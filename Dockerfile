@@ -15,7 +15,7 @@ WORKDIR /app
 COPY . .
 
 # Build the application in release mode
-RUN cargo build --release --bin loom_base
+RUN cargo build --release --bin loom_exex
 
 # Runtime stage
 FROM debian:bullseye-slim
@@ -32,7 +32,7 @@ RUN useradd -m loom
 WORKDIR /app
 
 # Copy the binary from the builder stage
-COPY --from=builder /app/target/release/loom_base /app/loom_base
+COPY --from=builder /app/target/release/loom_exex /app/loom_exex
 # Copy configuration files
 COPY --from=builder /app/config.toml /app/config.toml
 
@@ -43,8 +43,8 @@ RUN chown -R loom:loom /app
 USER loom
 
 # Set the entrypoint
-ENTRYPOINT ["/app/loom_base"]
+ENTRYPOINT ["/app/loom_exex"]
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD ps aux | grep loom_base | grep -v grep || exit 1
+    CMD ps aux | grep loom_exex | grep -v grep || exit 1
