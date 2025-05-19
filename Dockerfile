@@ -1,6 +1,10 @@
 FROM rust:1.84-slim-bullseye as builder
 
 # Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential clang cmake git libclang-dev libssl-dev llvm-dev pkg-config && \
+    rm -rf /var/lib/apt/lists/*
+
 RUN apt-get update && apt-get install -y \
     pkg-config \
     libssl-dev \
