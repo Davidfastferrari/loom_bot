@@ -1,0 +1,58 @@
+# Base Network Configuration
+
+[influxdb]
+url = "http://localhost:8086"
+database = "loom_metrics"
+tags = { environment = "production", network = "base" }
+
+[clients.local]
+url = "https://mainnet.base.org"
+transport = "http"
+node = "geth"
+
+[blockchains.base]
+chain_id = 8453
+
+[signers.env_signer]
+type = "env"
+blockchain = "base"
+
+[encoders.multicaller]
+type = "swapstep"
+address = "0x3dd35b4da6534230ff53048f7477f17f7f4e7a70"  # Use existing multicaller address or deploy a new one
+
+[actors.node]
+base = { bc = "base", client = "local" }
+
+[actors.mempool]
+base = { bc = "base", client = "local" }
+
+[actors.price]
+base = { bc = "base", client = "local" }
+
+[actors.pools]
+base = { bc = "base", client = "local", history = true, new = true, protocol = true }
+
+[actors.noncebalance]
+base = { bc = "base", client = "local" }
+
+[actors.estimator]
+base = { type = "evm", bc = "base", client = "local", encoder = "multicaller" }
+
+[actors.broadcaster]
+base = { type = "flashbots", bc = "base", client = "local", smart = true }
+
+[backrun_strategy]
+eoa = "0x0000000000000000000000000000000000000000"  # Replace with your EOA address
+smart = true
+chain_id = 8453
+base_config = { min_profit_wei = "1000000000000000", priority_fee = "100000000", max_gas_price = "30000000000" }
+
+# Base Network Tokens
+[tokens.base]
+weth = { address = "0x4200000000000000000000000000000000000006", symbol = "WETH", decimals = 18, basic = true, middle = false }
+usdc = { address = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", symbol = "USDC", decimals = 6, basic = true, middle = false }
+usdt = { address = "0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA", symbol = "USDT", decimals = 6, basic = true, middle = false }
+dai = { address = "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb", symbol = "DAI", decimals = 18, basic = true, middle = false }
+cbeth = { address = "0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22", symbol = "cbETH", decimals = 18, basic = false, middle = false }
+usdbc = { address = "0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA", symbol = "USDbC", decimals = 6, basic = true, middle = false }

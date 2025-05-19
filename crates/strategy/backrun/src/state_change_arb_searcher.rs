@@ -128,12 +128,18 @@ async fn state_change_arb_searcher_task<DB: DatabaseRef<Error = ErrReport> + Dat
                         trace!("Calc result received: {}", mut_item);
 
                         if let Ok(profit) = mut_item.profit() {
-                            if profit.is_positive() && mut_item.abs_profit_eth() > U256::from(state_update_event.next_base_fee * 100_000) {
+                            let min_profit_threshold = if backrun_config.is_base_network() {
+                                backrun_config.min_profit_wei()
+                            } else {
+                                U256::from(state_update_event.next_base_fee * 100_000)
+                            };
+                            
+                            if profit.is_positive() && mut_item.abs_profit_eth() > min_profit_threshold {
                                 if let Err(error) = swap_path_tx.try_send(Ok(mut_item)) {
                                     error!(%error, "swap_path_tx.try_send")
                                 }
                             } else {
-                                trace!("profit is not enough")
+                                trace!("profit is not enough: got={}, required={}", mut_item.abs_profit_eth(), min_profit_threshold)
                             }
                         }
                     }

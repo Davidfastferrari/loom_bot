@@ -1,0 +1,17 @@
+[package]
+name = "loom-strategy-simple-arb"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+alloy-primitives = { workspace = true }
+eyre = { workspace = true }
+revm = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+
+loom-core-actors = { path = "../../core/actors" }
+loom-core-actors-macros = { path = "../../core/actors-macros" }
+loom-core-blockchain = { path = "../../core/blockchain" }
+loom-types-entities = { path = "../../types/entities" }
+loom-types-events = { path = "../../types/events" }
