@@ -1,0 +1,42 @@
+version: 1
+services:
+  loom-base:
+    type: container
+    image:
+      registry: ghcr.io
+      repository: your-username/loom-base
+      tag: latest
+    resources:
+      cpu: 1000
+      memory: 2048
+    ports:
+      - port: 8080
+        protocol: TCP
+    environment:
+      - name: RUST_LOG
+        value: info
+    volumes:
+      - name: config-volume
+        mountPath: /app/config.toml
+        subPath: config.toml
+    healthCheck:
+      type: command
+      command: ps aux | grep loom_base | grep -v grep || exit 1
+      initialDelaySeconds: 5
+      periodSeconds: 30
+      timeoutSeconds: 30
+      failureThreshold: 3
+      successThreshold: 1
+
+volumes:
+  config-volume:
+    type: configMap
+    data:
+      config.toml: |
+        # Your config.toml content here
+        # Replace this with your actual configuration
+        [topology]
+        # Configuration details
+        
+        [backrun_strategy]
+        # Strategy configuration

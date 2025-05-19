@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  loom:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    volumes:
+      # Mount configuration file from host (optional)
+      - ./config.toml:/app/config.toml:ro
+    environment:
+      # Add any environment variables your application needs
+      - RUST_LOG=info
+    # If your application needs to expose ports, uncomment and adjust as needed
+    # ports:
+    #   - "8080:8080"
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
