@@ -5183,6 +5183,7 @@ dependencies = [
  "env_logger",
  "eyre",
  "futures",
+ "hex",
  "lazy_static",
  "loom-defi-abi",
  "loom-defi-address-book",

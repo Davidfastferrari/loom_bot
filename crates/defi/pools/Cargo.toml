@@ -19,6 +19,7 @@ loom-types-entities.workspace = true
 async-stream.workspace = true
 eyre.workspace = true
 futures.workspace = true
+hex.workspace = true
 lazy_static.workspace = true
 reth-storage-api.workspace = true
 revm.workspace = true
