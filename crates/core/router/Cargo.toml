@@ -1,0 +1,22 @@
+[package]
+name = "loom-core-router"
+edition.workspace = true
+exclude.workspace = true
+homepage.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[dependencies]
+loom-core-actors.workspace = true
+loom-core-actors-macros.workspace = true
+loom-core-blockchain.workspace = true
+loom-types-entities.workspace = true
+loom-types-events.workspace = true
+
+eyre.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+
+revm.workspace = true

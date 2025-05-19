@@ -1,0 +1,30 @@
+[package]
+name = "loom-core-mempool"
+edition.workspace = true
+exclude.workspace = true
+homepage.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[dependencies]
+loom-core-actors.workspace = true
+loom-core-actors-macros.workspace = true
+loom-core-blockchain.workspace = true
+loom-types-blockchain.workspace = true
+loom-types-events.workspace = true
+
+chrono.workspace = true
+eyre.workspace = true
+influxdb.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+
+#alloy
+alloy-consensus.workspace = true
+alloy-primitives.workspace = true
+alloy-rpc-types.workspace = true
+
+#revm
+revm.workspace = true

@@ -1,0 +1,27 @@
+[package]
+name = "nodebench"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+exclude.workspace = true
+
+[dependencies]
+loom-core-actors.workspace = true
+loom-core-blockchain.workspace = true
+loom-core-blockchain-actors.workspace = true
+loom-execution-multicaller.workspace = true
+loom-node-actor-config.workspace = true
+loom-types-events.workspace = true
+
+loom-evm-db.workspace = true
+
+alloy.workspace = true
+chrono.workspace = true
+clap.workspace = true
+env_logger.workspace = true
+eyre.workspace = true
+futures.workspace = true
+tokio.workspace = true

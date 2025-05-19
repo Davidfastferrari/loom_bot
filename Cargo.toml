@@ -1,0 +1,297 @@
+[workspace]
+default-members = [
+    "bin/exex_grpc_node",
+    "bin/gasbench",
+    "bin/keys",
+    "bin/loom_anvil",
+    "bin/loom_backrun",
+    "bin/loom_exex",
+    "bin/nodebench",
+    "bin/replayer",
+]
+members = [
+    "bin/exex_grpc_loom",
+    "bin/exex_grpc_node",
+    "bin/gasbench",
+    "bin/keys",
+    "bin/loom_anvil",
+    "bin/loom_backrun",
+    "bin/loom_exex",
+    "bin/nodebench",
+    "bin/replayer",
+    "crates/broadcast/accounts",
+    "crates/broadcast/broadcaster",
+    "crates/broadcast/flashbots",
+    "crates/core/block-history-actor",
+    "crates/core/blockchain",
+    "crates/core/blockchain-actors",
+    "crates/core/mempool",
+    "crates/core/router",
+    "crates/core/topology",
+    "crates/defi/abi",
+    "crates/defi/address-book",
+    "crates/defi/health-monitor",
+    "crates/defi/market",
+    "crates/defi/pools",
+    "crates/defi/preloader",
+    "crates/defi/price",
+    "crates/defi/uniswap-v3-math",
+    "crates/evm/db",
+    "crates/evm/utils",
+    "crates/execution/estimator",
+    "crates/execution/multicaller",
+    "crates/loom",
+    "crates/metrics",
+    "crates/node/db-access",
+    "crates/node/debug-provider",
+    "crates/node/exex",
+    "crates/node/grpc",
+    "crates/node/grpc-exex-proto",
+    "crates/node/json-rpc",
+    "crates/node/node-actor-config",
+    "crates/node/node-player",
+    "crates/rpc/handler",
+    "crates/rpc/state",
+    "crates/storage/db",
+    "crates/strategy/backrun",
+    "crates/strategy/merger",
+    "crates/types/blockchain",
+    "crates/types/entities",
+    "crates/types/events",
+]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+exclude = [".github/"]
+homepage = "https://github.com/dexloom/loom"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/dexloom/loom"
+rust-version = "1.84"
+version = "0.6.0"
+
+[workspace.dependencies]
+# broadcast
+loom-broadcast-accounts = { path = "crates/broadcast/accounts" }
+loom-broadcast-broadcaster = { path = "crates/broadcast/broadcaster" }
+loom-broadcast-flashbots = { path = "crates/broadcast/flashbots" }
+# core
+loom-core-actors = { path = "crates/core/actors" }
+loom-core-actors-macros = { path = "crates/core/actors-macros" }
+loom-core-block-history = { path = "crates/core/block-history-actor" }
+loom-core-blockchain = { path = "crates/core/blockchain" }
+loom-core-blockchain-actors = { path = "crates/core/blockchain-actors" }
+loom-core-mempool = { path = "crates/core/mempool" }
+loom-core-router = { path = "crates/core/router" }
+loom-core-topology = { path = "crates/core/topology" }
+# defi
+loom-defi-abi = { path = "crates/defi/abi" }
+loom-defi-address-book = { path = "crates/defi/address-book" }
+loom-defi-health-monitor = { path = "crates/defi/health-monitor" }
+loom-defi-market = { path = "crates/defi/market" }
+loom-defi-pools = { path = "crates/defi/pools" }
+loom-defi-preloader = { path = "crates/defi/preloader" }
+loom-defi-price = { path = "crates/defi/price" }
+loom-defi-uniswap-v3-math = { path = "crates/defi/uniswap-v3-math" }
+# evm
+loom-evm-db = { path = "crates/evm/db" }
+loom-evm-utils = { path = "crates/evm/utils" }
+# execution
+loom-execution-estimator = { path = "crates/execution/estimator" }
+loom-execution-multicaller = { path = "crates/execution/multicaller" }
+# loom
+loom = { path = "crates/loom" }
+# metrics
+loom-metrics = { path = "crates/metrics" }
+# node
+loom-node-actor-config = { path = "crates/node/node-actor-config" }
+loom-node-db-access = { path = "crates/node/db-access" }
+loom-node-debug-provider = { path = "crates/node/debug-provider" }
+loom-node-exex = { path = "crates/node/exex" }
+loom-node-grpc = { path = "crates/node/grpc" }
+loom-node-grpc-exex-proto = { path = "crates/node/grpc-exex-proto" }
+loom-node-json-rpc = { path = "crates/node/json-rpc" }
+loom-node-player = { path = "crates/node/node-player" }
+# rpc
+loom-rpc-handler = { path = "crates/rpc/handler" }
+loom-rpc-state = { path = "crates/rpc/state" }
+# storage
+loom-storage-db = { path = "crates/storage/db" }
+# strategy
+loom-strategy-backrun = { path = "crates/strategy/backrun" }
+loom-strategy-merger = { path = "crates/strategy/merger" }
+# types
+loom-types-blockchain = { path = "crates/types/blockchain" }
+loom-types-entities = { path = "crates/types/entities" }
+loom-types-events = { path = "crates/types/events" }
+
+# logging
+env_logger = "0.11.5"
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"
+
+# error handling
+eyre = "0.6.12"
+thiserror = "1.0.69"
+
+# async
+async-stream = "0.3.6"
+async-trait = "0.1.83"
+futures-core = "0.3.31"
+tokio = { version = "1.41.0", features = ["full"] }
+tokio-stream = "0.1.16"
+tokio-util = "0.7.12"
+
+# misc
+aes = "0.8.4"
+bincode = "1.3.3"
+chrono = "0.4.38"
+clap = { version = "4.5", features = ["derive"] }
+colored = "2.1.0"
+futures = "0.3.31"
+futures-util = "0.3"
+hex = "0.4.3"
+indexmap = "2.6.0"
+k256 = "0.13.4"
+lazy_static = "1.5.0"
+num_cpus = "1.16"
+pin-project = "1.1.7"
+proc-macro2 = "1.0.89"
+prost = "0.13"
+quote = "1.0.37"
+rand = "0.8.5"
+rayon = "1.10.0"
+reqwest = { version = "0.12.9", features = ["json", "trust-dns"] }
+serde = "1.0.214"
+serde_json = "1.0.132"
+sha2 = "0.10.8"
+strum = { version = "0.26.3" }
+strum_macros = { version = "0.26.4" }
+syn = { version = "2.0.85", features = ["fold", "full"] }
+tikv-jemalloc-ctl = "0.6"
+tikv-jemallocator = "0.6"
+toml = "0.8.19"
+tonic = "0.12.3"
+tower = "0.5.1"
+url = "2.5.2"
+
+# db
+bb8 = "0.8.6"
+diesel = { version = "2.2.4", features = ["chrono", "numeric", "postgres"] }
+diesel-async = { version = "0.5.0", features = ["bb8", "postgres"] }
+diesel-derive-enum = { version = "2.1.0", features = ["postgres"] }
+influxdb = "0.7.2"
+
+# web
+axum = { version = "0.7.7", features = ["macros", "ws"] }
+tower-http = { version = "0.6.1", features = ["fs", "trace"] }
+utoipa = { version = "5.1.3", features = ["axum_extras", "chrono", "uuid"] }
+utoipa-swagger-ui = { version = "8.0.3", features = ["axum"] }
+
+# build
+tonic-build = "0.12.3"
+
+# testing
+criterion = { version = "0.5.1", features = ["async_tokio"] }
+wiremock = "0.6.2"
+
+## We keep revm and alloy dependencies pinned to specific versions as reth depends on them
+
+# revm
+revm = { version = "19.5.0", features = ["blst", "optional_balance_check", "secp256k1", "std"], default-features = false }
+revm-inspectors = "0.15.0"
+revm-interpreter = { version = "15.2.0", default-features = false }
+revm-primitives = { version = "15.2.0", features = ["std"], default-features = false }
+
+# alloy
+alloy = { version = "0.11.1", features = [
+    "consensus",
+    "contract",
+    "full",
+    "json-rpc",
+    "map-fxhash",
+    "node-bindings",
+    "rand",
+    "rlp",
+    "rpc-types-anvil",
+    "rpc-types-json",
+    "rpc-types-trace",
+    "serde",
+    "sol-types",
+], default-features = false }
+alloy-consensus = "0.11.1"
+alloy-contract = "0.11.1"
+alloy-eips = "0.11.1"
+alloy-json-rpc = "0.11.1"
+alloy-network = "0.11.1"
+alloy-node-bindings = "0.11.1"
+alloy-provider = { version = "0.11.1", features = ["anvil-api", "anvil-node", "debug-api", "ipc", "pubsub", "reqwest", "ws"] }
+alloy-pubsub = "0.11.1"
+alloy-rpc-client = { version = "0.11.1", features = ["ipc", "pubsub", "reqwest", "ws"] }
+alloy-rpc-types = "0.11.1"
+alloy-rpc-types-anvil = "0.11.1"
+alloy-rpc-types-beacon = "0.11.1"
+alloy-rpc-types-engine = "0.11.1"
+alloy-rpc-types-eth = "0.11.1"
+alloy-rpc-types-trace = "0.11.1"
+alloy-serde = "0.11.1"
+alloy-signer = "0.11.1"
+alloy-signer-local = "0.11.1"
+alloy-transport = "0.11.1"
+alloy-transport-http = "0.11.1"
+alloy-transport-ipc = "0.11.1"
+alloy-transport-ws = "0.11.1"
+
+#alloy-core
+alloy-dyn-abi = { version = "0.8.21", features = ["json", "std"] }
+alloy-primitives = { version = "0.8.21", features = ["map-foldhash", "map-fxhash", "rand"], default-features = false }
+alloy-sol-macro = { version = "0.8.21", features = ["json"] }
+alloy-sol-types = { version = "0.8.21", features = ["json"] }
+
+#alloy-related
+alloy-chains = "0.1.59"
+alloy-rlp = "0.3.10"
+alloy-trie = "0.7.9"
+
+
+# reth
+reth = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e", features = ["asm-keccak"] }
+reth-chainspec = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
+reth-codecs = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
+reth-codecs-derive = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
+reth-db = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
+reth-ethereum-forks = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
+reth-execution-types = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
+reth-exex = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e", features = ["serde"] }
+reth-exex-test-utils = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
+reth-node-api = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
+reth-node-builder = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
+reth-node-core = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e", features = ["asm-keccak"] }
+reth-node-ethereum = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
+reth-node-types = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
+reth-primitives = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e", features = ["asm-keccak"] }
+reth-provider = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
+reth-revm = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
+reth-rpc = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
+reth-rpc-types-compat = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
+reth-storage-api = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
+reth-testing-utils = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
+reth-tracing = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
+reth-transaction-pool = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
+
+[profile.test]
+debug = 1
+incremental = true
+
+[profile.release]
+debug = "line-tables-only"
+lto = "thin"
+opt-level = 3
+panic = "unwind"
+strip = true # stripping of debuginfo
+
+[profile.maxperf]
+# set parallel codegen to 1 to increase performance
+codegen-units = 1
+inherits = "release"
+lto = "fat"

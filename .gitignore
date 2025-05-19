@@ -1,0 +1,8 @@
+/target
+.idea
+.vscode
+.cache
+*.iml
+private.rs
+config.toml
+*.bkp
