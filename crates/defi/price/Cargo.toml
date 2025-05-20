@@ -18,6 +18,7 @@ loom-types-entities.workspace = true
 
 tokio.workspace = true
 tracing.workspace = true
+eyre.workspace = true
 
 # alloy
 alloy-network.workspace = true

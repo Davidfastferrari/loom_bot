@@ -5234,6 +5234,7 @@ dependencies = [
  "alloy-primitives",
  "alloy-provider",
  "alloy-transport",
+ "eyre",
  "loom-core-actors",
  "loom-core-actors-macros",
  "loom-core-blockchain",

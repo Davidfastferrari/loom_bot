@@ -3,7 +3,7 @@ use std::sync::Arc;
 use alloy_primitives::{Address, U256};
 use eyre::{eyre, Result};
 use tokio::sync::RwLock;
-use tracing::{debug, error, info};
+use tracing::trace;
 
 use loom_types_entities::Market;
 
@@ -50,11 +50,18 @@ impl PriceFeed {
         }
         
         // If the token doesn't have a price, try to calculate it from pools
-        let pools = market_guard.get_pools_by_token(token_address);
+        // Use get_token_pools instead of get_pools_by_token
+        let pool_ids = market_guard.get_token_pools(token_address)
+            .ok_or_else(|| eyre!("No pools found for token"))?;
+        
+        // Convert pool IDs to pool wrappers
+        let pools: Vec<_> = pool_ids.iter()
+            .filter_map(|pool_id| market_guard.get_pool(pool_id))
+            .collect();
         
         for pool in pools {
             // Find a pool with a token that has a price
-            let token_addresses = pool.get_token_addresses();
+            let token_addresses = pool.get_tokens();
             let other_token_address = if token_addresses[0] == *token_address {
                 token_addresses[1]
             } else {
@@ -119,15 +126,15 @@ impl PriceFeed {
         // Get the market
         let market_guard = self.market.read().await;
         
-        // Get all tokens
-        let tokens = market_guard.get_tokens();
+        // Get all tokens from the tokens HashMap
+        let tokens: Vec<_> = market_guard.tokens().values().cloned().collect();
         
         // Update prices for basic tokens
         for token in tokens {
             if token.is_basic() && token.usd_price.is_some() {
                 let price = token.usd_price.unwrap();
                 let price_u256 = U256::from((price * 1_000_000.0) as u64);
-                self.prices.write().await.insert(token.address(), price_u256);
+                self.prices.write().await.insert(token.get_address(), price_u256);
             }
         }
         

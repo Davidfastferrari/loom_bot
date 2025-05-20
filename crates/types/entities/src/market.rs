@@ -177,6 +177,12 @@ impl<LDT: LoomDataTypes> Market<LDT> {
     pub fn pools(&self) -> &HashMap<PoolId<LDT>, PoolWrapper<LDT>> {
         &self.pools
     }
+    
+    /// Get a reference to the tokens map in the market.
+    #[inline]
+    pub fn tokens(&self) -> &HashMap<LDT::Address, Arc<Token<LDT>>> {
+        &self.tokens
+    }
 
     pub fn swap_paths(&self) -> &SwapPaths<LDT> {
         &self.swap_paths
