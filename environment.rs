@@ -663,7 +663,7 @@ impl EnvironmentBuilder {
             }
 
             // Fixed flags usage
-            let mut flags = self.flags.as_flags() | self.kind.extra_flags();
+            let mut flags = self.flags.make_flags() | self.kind.extra_flags();
             mdbx_result(ffi::mdbx_env_open(env, path_c.as_ptr(), flags, 0o600))?;
 
             // Get the actual flags that were applied

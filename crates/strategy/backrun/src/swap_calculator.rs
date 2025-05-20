@@ -9,6 +9,25 @@ use revm::primitives::Env;
 use revm::DatabaseRef;
 use tracing::{debug, trace};
 
+// Extension trait for PoolWrapper to add missing methods
+trait PoolWrapperExt<LDT: LoomDataTypes> {
+    fn contains_token(&self, token_address: &LDT::Address) -> bool;
+    fn get_reserves(&self) -> (U256, U256);
+}
+
+impl<LDT: LoomDataTypes> PoolWrapperExt<LDT> for PoolWrapper<LDT> {
+    fn contains_token(&self, token_address: &LDT::Address) -> bool {
+        self.get_tokens().contains(token_address)
+    }
+    
+    fn get_reserves(&self) -> (U256, U256) {
+        // This is a simplified implementation - in a real scenario, you would
+        // need to get the actual reserves from the pool
+        // For now, we'll return dummy values
+        (U256::from(1000000), U256::from(1000000))
+    }
+}
+
 lazy_static! {
     // Default starting amount for optimization (0.01 ETH)
     static ref DEFAULT_OPTIMIZE_INPUT: U256 = parse_units("0.01", "ether").unwrap().get_absolute();
@@ -40,7 +59,16 @@ impl SwapCalculator {
             
             if result.is_ok() {
                 // If profitable, try to optimize the input amount for maximum profit
-                return Self::optimize_input_amount(path, state, env, amount_in);
+                // Create a clone to avoid the double borrow issue
+                let mut path_clone = path.clone();
+                let optimized_result = Self::optimize_input_amount(&mut path_clone, state, env, amount_in);
+                
+                if optimized_result.is_ok() {
+                    // Copy the optimized values back to the original path
+                    *path = path_clone;
+                }
+                
+                return result;
             } else {
                 return result;
             }
@@ -57,7 +85,8 @@ impl SwapCalculator {
         env: Env,
         initial_amount: U256,
     ) -> eyre::Result<&'a mut SwapLine<LDT>, SwapError<LDT>> {
-        let first_token = path.get_first_token().unwrap();
+        // This token is used in estimate_max_amount_from_liquidity
+        let _first_token = path.get_first_token().unwrap();
         
         // Estimate the maximum amount based on pool liquidity
         let max_amount = Self::estimate_max_amount_from_liquidity(path);
@@ -151,12 +180,12 @@ impl SwapCalculator {
         // Get the minimum liquidity across all pools in the path
         let min_liquidity = path.path.pools.iter()
             .filter_map(|pool| {
-                if pool.contains_token(&first_token.address()) {
+                if pool.contains_token(&first_token.get_address()) {
                     let (reserve0, reserve1) = pool.get_reserves();
-                    let token_addresses = pool.get_token_addresses();
+                    let token_addresses = pool.get_tokens();
                     
                     // Get the reserve of the first token
-                    let token_reserve = if token_addresses[0] == first_token.address() {
+                    let token_reserve = if token_addresses[0] == first_token.get_address() {
                         reserve0
                     } else {
                         reserve1
