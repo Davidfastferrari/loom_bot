@@ -9,6 +9,8 @@ RUN apt-get update && apt-get install -y \
     llvm \
     libclang-dev \
     clang \
+    curl \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a new empty project
@@ -27,6 +29,8 @@ FROM debian:bullseye-slim
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     libssl1.1 \
+    curl \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a non-root user to run the application
