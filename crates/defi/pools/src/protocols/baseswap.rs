@@ -23,10 +23,10 @@ impl BaseSwapV2Protocol {
 
     pub fn init_code_hash(&self) -> [u8; 32] {
         // BaseSwap init code hash
-        hex::decode("f4ccce374816856d11f00e4069e7cada164065686fbef53c6167a63ec2fd8c5b")
-            .unwrap()
-            .try_into()
-            .unwrap()
+        let bytes = hex::decode("f4ccce374816856d11f00e4069e7cada164065686fbef53c6167a63ec2fd8c5b").unwrap();
+        let mut result = [0u8; 32];
+        result.copy_from_slice(&bytes);
+        result
     }
 
     pub fn supports_chain_id(&self, chain_id: u64) -> bool {
@@ -36,10 +36,9 @@ impl BaseSwapV2Protocol {
     
     pub fn get_pool_address_for_tokens(token0: Address, token1: Address) -> Address {
         let factory = "0xFDa619b6d20975be80A10332cD39b9a4b0FAa8BB".parse().unwrap();
-        let init_code_hash = hex::decode("f4ccce374816856d11f00e4069e7cada164065686fbef53c6167a63ec2fd8c5b")
-            .unwrap()
-            .try_into()
-            .unwrap();
+        let bytes = hex::decode("f4ccce374816856d11f00e4069e7cada164065686fbef53c6167a63ec2fd8c5b").unwrap();
+        let mut init_code_hash = [0u8; 32];
+        init_code_hash.copy_from_slice(&bytes);
         get_uniswap2pool_address(token0, token1, factory, init_code_hash)
     }
 }

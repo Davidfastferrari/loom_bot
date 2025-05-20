@@ -63,82 +63,122 @@ async fn find_arbitrage_paths<DB: DatabaseRef<Error = ErrReport> + Send + Sync +
         return Err(eyre!("No main tokens found"));
     }
     
+    // Maximum path length (3-5 hops)
+    let max_path_length = 4;
+    
     // For each main token, find paths that start and end with it
     for start_token in main_tokens.iter() {
         let start_address = start_token.address();
         
-        // Get all pools that contain this token
-        let pools = market_guard.get_pools_by_token(&start_address);
+        // Use depth-first search to find all cycles up to max_path_length
+        find_cycles(
+            &market_guard, 
+            start_token.clone(), 
+            start_address, 
+            vec![start_token.clone()], 
+            vec![], 
+            HashSet::new(),
+            max_path_length,
+            &compose_channel_tx
+        ).await?;
+    }
+    
+    Ok(())
+}
+
+/// DFS to find all cycles with variable length
+async fn find_cycles<DB: DatabaseRef<Error = ErrReport> + Send + Sync + Clone + 'static>(
+    market: &Market,
+    start_token: Arc<Token>,
+    current_token_address: Address,
+    current_path: Vec<Arc<Token>>,
+    current_pools: Vec<Arc<PoolWrapper>>,
+    visited_tokens: HashSet<Address>,
+    max_depth: usize,
+    compose_channel_tx: &Broadcaster<MessageSwapCompose<DB>>,
+) -> Result<()> {
+    // If we've reached max depth, stop
+    if current_path.len() > max_depth {
+        return Ok(());
+    }
+    
+    // Get all pools that contain this token
+    let pools = market.get_pools_by_token(&current_token_address);
+    
+    for pool in pools {
+        // Skip if we've already used this pool
+        if current_pools.contains(&pool) {
+            continue;
+        }
         
-        for pool in pools {
-            // Get the other token in the pool
-            let token_addresses = pool.get_token_addresses();
-            let other_token = if token_addresses[0] == start_address {
-                token_addresses[1]
-            } else {
-                token_addresses[0]
+        // Get the other token in the pool
+        let token_addresses = pool.get_token_addresses();
+        let other_token_address = if token_addresses[0] == current_token_address {
+            token_addresses[1]
+        } else {
+            token_addresses[0]
+        };
+        
+        // If we've found a cycle back to the start token and path length >= 3
+        if other_token_address == start_token.address() && current_path.len() >= 3 {
+            // Create a complete cycle
+            let mut complete_path = current_path.clone();
+            complete_path.push(start_token.clone());
+            
+            let mut complete_pools = current_pools.clone();
+            complete_pools.push(pool.clone());
+            
+            // Create the path
+            let path = SwapPath {
+                tokens: complete_path,
+                pools: complete_pools,
+                disabled: false,
+                score: Some(1.0),
             };
             
-            // Find pools that contain the other token but not the start token
-            let second_pools = market_guard.get_pools_by_token(&other_token)
-                .into_iter()
-                .filter(|p| !p.contains_token(&start_address))
-                .collect::<Vec<_>>();
+            // Create a swap line
+            let swap_line = SwapLine {
+                path,
+                ..Default::default()
+            };
             
-            for second_pool in second_pools {
-                // Get the third token
-                let second_token_addresses = second_pool.get_token_addresses();
-                let third_token = if second_token_addresses[0] == other_token {
-                    second_token_addresses[1]
-                } else {
-                    second_token_addresses[0]
-                };
-                
-                // Find pools that connect the third token back to the start token
-                let third_pools = market_guard.get_pools_by_token(&third_token)
-                    .into_iter()
-                    .filter(|p| p.contains_token(&start_address))
-                    .collect::<Vec<_>>();
-                
-                for third_pool in third_pools {
-                    // We have a potential cycle: start_token -> other_token -> third_token -> start_token
-                    
-                    // Create the path
-                    let path = SwapPath {
-                        tokens: vec![
-                            start_token.clone(),
-                            market_guard.get_token(&other_token).unwrap(),
-                            market_guard.get_token(&third_token).unwrap(),
-                            start_token.clone(),
-                        ],
-                        pools: vec![
-                            pool.clone(),
-                            second_pool.clone(),
-                            third_pool.clone(),
-                        ],
-                        disabled: false,
-                        score: Some(1.0),
-                    };
-                    
-                    // Create a swap line
-                    let swap_line = SwapLine {
-                        path,
-                        ..Default::default()
-                    };
-                    
-                    // Send to the compose channel for further processing
-                    let compose_data = SwapComposeData {
-                        swap: Swap::BackrunSwapLine(swap_line),
-                        origin: Some("simple_arb_finder".to_string()),
-                        ..Default::default()
-                    };
-                    
-                    let compose_message = MessageSwapCompose::prepare(compose_data);
-                    if let Err(e) = compose_channel_tx.send(compose_message) {
-                        error!("Failed to send compose message: {}", e);
-                    }
-                }
+            // Send to the compose channel for further processing
+            let compose_data = SwapComposeData {
+                swap: Swap::BackrunSwapLine(swap_line),
+                origin: Some("enhanced_arb_finder".to_string()),
+                ..Default::default()
+            };
+            
+            let compose_message = MessageSwapCompose::prepare(compose_data);
+            if let Err(e) = compose_channel_tx.send(compose_message) {
+                error!("Failed to send compose message: {}", e);
             }
+        } else if !visited_tokens.contains(&other_token_address) {
+            // Continue the search with the new token
+            let other_token = match market.get_token(&other_token_address) {
+                Some(token) => token,
+                None => continue, // Skip if token not found
+            };
+            
+            let mut new_path = current_path.clone();
+            new_path.push(other_token.clone());
+            
+            let mut new_pools = current_pools.clone();
+            new_pools.push(pool.clone());
+            
+            let mut new_visited = visited_tokens.clone();
+            new_visited.insert(other_token_address);
+            
+            find_cycles(
+                market,
+                start_token.clone(),
+                other_token_address,
+                new_path,
+                new_pools,
+                new_visited,
+                max_depth,
+                compose_channel_tx
+            ).await?;
         }
     }
     

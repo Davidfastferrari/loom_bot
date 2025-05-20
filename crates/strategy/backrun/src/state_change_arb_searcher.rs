@@ -113,6 +113,7 @@ async fn state_change_arb_searcher_task<DB: DatabaseRef<Error = ErrReport> + Dat
                 let mut mut_item: SwapLine = SwapLine { path: item, ..Default::default() };
                 //#[cfg(not(debug_assertions))]
                 //let start_time = chrono::Local::now();
+                // Use enhanced SwapCalculator with dynamic capital allocation
                 let calc_result = SwapCalculator::calculate(&mut mut_item, req.1, req.2.clone());
                 //#[cfg(not(debug_assertions))]
                 //let took_time = chrono::Local::now() - start_time;
@@ -128,12 +129,14 @@ async fn state_change_arb_searcher_task<DB: DatabaseRef<Error = ErrReport> + Dat
                         trace!("Calc result received: {}", mut_item);
 
                         if let Ok(profit) = mut_item.profit() {
+                            // Calculate minimum profit threshold based on network
                             let min_profit_threshold = if backrun_config.is_base_network() {
                                 backrun_config.min_profit_wei()
                             } else {
                                 U256::from(state_update_event.next_base_fee * 100_000)
                             };
                             
+                            // Check if profit is positive and exceeds the minimum threshold
                             if profit.is_positive() && mut_item.abs_profit_eth() > min_profit_threshold {
                                 if let Err(error) = swap_path_tx.try_send(Ok(mut_item)) {
                                     error!(%error, "swap_path_tx.try_send")
