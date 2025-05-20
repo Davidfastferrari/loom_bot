@@ -297,6 +297,11 @@ pub(crate) struct EnvPtr(pub(crate) *mut ffi::MDBX_env);
 unsafe impl Send for EnvPtr {}
 unsafe impl Sync for EnvPtr {}
 
+/// Helper function to get the size of a type
+fn size_of<T>() -> usize {
+    std::mem::size_of::<T>()
+}
+
 /// Environment statistics.
 ///
 /// Contains information about the size and layout of an MDBX environment or database.

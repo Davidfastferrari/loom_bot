@@ -107,6 +107,9 @@ async fn state_change_arb_searcher_task<DB: DatabaseRef<Error = ErrReport> + Dat
     let market_state_clone = db.clone();
     let swap_path_vec_len = swap_path_vec.len();
 
+    // Clone backrun_config before moving it into the async block
+    let backrun_config_clone = backrun_config.clone();
+    
     tokio::task::spawn(async move {
         thread_pool.install(|| {
             swap_path_vec.into_par_iter().for_each_with((&swap_path_tx, &market_state_clone, &env), |req, item| {
@@ -130,8 +133,8 @@ async fn state_change_arb_searcher_task<DB: DatabaseRef<Error = ErrReport> + Dat
 
                         if let Ok(profit) = mut_item.profit() {
                             // Calculate minimum profit threshold based on network
-                            let min_profit_threshold = if backrun_config.is_base_network() {
-                                backrun_config.min_profit_wei()
+                            let min_profit_threshold = if backrun_config_clone.is_base_network() {
+                                backrun_config_clone.min_profit_wei()
                             } else {
                                 U256::from(state_update_event.next_base_fee * 100_000)
                             };
@@ -179,9 +182,12 @@ async fn state_change_arb_searcher_task<DB: DatabaseRef<Error = ErrReport> + Dat
     while let Some(swap_line_result) = swap_line_rx.recv().await {
         match swap_line_result {
             Ok(swap_line) => {
+                // Clone backrun_config for use in this scope
+                let backrun_config_clone = backrun_config.clone();
+                
                 let prepare_request = SwapComposeMessage::Prepare(SwapComposeData {
                     tx_compose: TxComposeData {
-                        eoa: backrun_config.eoa(),
+                        eoa: backrun_config_clone.eoa(),
                         next_block_number: state_update_event.next_block_number,
                         next_block_timestamp: state_update_event.next_block_timestamp,
                         next_block_base_fee: state_update_event.next_base_fee,
@@ -198,7 +204,7 @@ async fn state_change_arb_searcher_task<DB: DatabaseRef<Error = ErrReport> + Dat
                     ..SwapComposeData::default()
                 });
 
-                if !backrun_config.smart() || best_answers.check(&prepare_request) {
+                if !backrun_config_clone.smart() || best_answers.check(&prepare_request) {
                     if let Err(e) = swap_request_tx_clone.send(Message::new(prepare_request)) {
                         error!("swap_request_tx_clone.send {}", e)
                     }

@@ -154,7 +154,8 @@ impl<LDT: LoomDataTypes> Token<LDT> {
 
     pub fn from_float(&self, value: f64) -> U256 {
         let multiplier = U256::from(value as i64);
-        let modulus = U256::from(((value - value.round()) * (10 ^ self.decimals as i64) as f64) as u64);
+        // Fix: Use 10.0f64.powi() instead of bitwise XOR (^)
+        let modulus = U256::from(((value - value.round()) * 10.0f64.powi(self.decimals as i32)) as u64);
         multiplier.mul(U256::from(10).pow(U256::from(self.decimals))).add(modulus)
     }
 

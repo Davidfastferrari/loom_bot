@@ -13,6 +13,7 @@ use tracing::{debug, trace};
 trait PoolWrapperExt<LDT: LoomDataTypes> {
     fn contains_token(&self, token_address: &LDT::Address) -> bool;
     fn get_reserves(&self) -> (U256, U256);
+    fn get_token_addresses(&self) -> Vec<LDT::Address>;
 }
 
 impl<LDT: LoomDataTypes> PoolWrapperExt<LDT> for PoolWrapper<LDT> {
@@ -25,6 +26,11 @@ impl<LDT: LoomDataTypes> PoolWrapperExt<LDT> for PoolWrapper<LDT> {
         // need to get the actual reserves from the pool
         // For now, we'll return dummy values
         (U256::from(1000000), U256::from(1000000))
+    }
+    
+    fn get_token_addresses(&self) -> Vec<LDT::Address> {
+        // Return the tokens from the pool
+        self.get_tokens()
     }
 }
 
@@ -45,32 +51,37 @@ pub struct SwapCalculator {}
 impl SwapCalculator {
     /// Calculate the optimal input amount and profit for a swap path
     #[inline]
-    pub fn calculate<'a, DB: DatabaseRef<Error = ErrReport>, LDT: LoomDataTypes>(
-        path: &'a mut SwapLine<LDT>,
+    pub fn calculate<DB: DatabaseRef<Error = ErrReport>, LDT: LoomDataTypes>(
+        path: &mut SwapLine<LDT>,
         state: &DB,
         env: Env,
-    ) -> eyre::Result<&'a mut SwapLine<LDT>, SwapError<LDT>> {
+    ) -> eyre::Result<&mut SwapLine<LDT>, SwapError<LDT>> {
         let first_token = path.get_first_token().unwrap();
         
         // Start with the default amount
         if let Some(amount_in) = first_token.calc_token_value_from_eth(*DEFAULT_OPTIMIZE_INPUT) {
+            // First create a clone to work with
+            let mut path_clone = path.clone();
+            
             // First try with the default amount to see if the path is profitable
-            let result = path.optimize_with_in_amount(state, env.clone(), amount_in);
+            let result = path_clone.optimize_with_in_amount(state, env.clone(), amount_in);
             
             if result.is_ok() {
                 // If profitable, try to optimize the input amount for maximum profit
-                // Create a clone to avoid the double borrow issue
-                let mut path_clone = path.clone();
                 let optimized_result = Self::optimize_input_amount(&mut path_clone, state, env, amount_in);
                 
                 if optimized_result.is_ok() {
                     // Copy the optimized values back to the original path
                     *path = path_clone;
+                    return Ok(path);
                 }
                 
-                return result;
+                // Even if optimization failed, use the initial result
+                *path = path_clone;
+                return Ok(path);
             } else {
-                return result;
+                // Return the error from the initial attempt
+                return Err(path_clone.to_error("OPTIMIZATION_FAILED".to_string()));
             }
         } else {
             return Err(path.to_error("PRICE_NOT_SET".to_string()));

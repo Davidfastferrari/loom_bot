@@ -111,7 +111,7 @@ impl Environment {
                 sender: tx,
             });
             let res = rx.recv().unwrap();
-            if matches!(&res, Err(Error::Busy)) {
+            if let Err(Error::Busy) = res {
                 if !warned {
                     warned = true;
                     warn!(target: "libmdbx", "Process stalled, awaiting read-write transaction lock.");
@@ -361,6 +361,22 @@ pub struct GeometryInfo(ffi::MDBX_envinfo__bindgen_ty_1);
 impl GeometryInfo {
     pub const fn min(&self) -> u64 {
         self.0.lower
+    }
+    
+    pub const fn max(&self) -> u64 {
+        self.0.upper
+    }
+    
+    pub const fn current(&self) -> u64 {
+        self.0.current
+    }
+    
+    pub const fn shrink(&self) -> u64 {
+        self.0.shrink
+    }
+    
+    pub const fn grow(&self) -> u64 {
+        self.0.grow
     }
 }
 
