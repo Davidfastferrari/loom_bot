@@ -58,7 +58,7 @@ impl CapitalManager {
         
         // Calculate the maximum amount based on USD limit
         let max_from_usd = self.max_capital_usd
-            .checked_mul(U256::from(10).pow(U256::from(token.decimals)))
+            .checked_mul(U256::from(10).pow(U256::from(token.get_decimals())))
             .ok_or_else(|| eyre!("Overflow in max_from_usd calculation"))?
             .checked_div(token_price)
             .ok_or_else(|| eyre!("Division by zero in max_from_usd calculation"))?;
