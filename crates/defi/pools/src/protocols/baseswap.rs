@@ -1,4 +1,5 @@
-use alloy::primitives::{Address, loom_types_entities::PoolClass;
+use alloy::primitives::Address;
+use  loom_types_entities::PoolClass;
 use hex;
 
 use crate::protocols::helper::get_uniswap2pool_address;

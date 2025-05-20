@@ -1,4 +1,4 @@
-use alloy::primitives::{Address, B256ss, B256};
+use alloy::primitives::Address;
 use loom_types_entities::PoolClass;
 use hex;
 
