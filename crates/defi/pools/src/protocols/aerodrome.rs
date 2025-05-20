@@ -1,4 +1,4 @@
-use alloy::primitives::Address;
+use alloy::primitives::{Address, B256};
 use loom_types_entities::PoolClass;
 use hex;
 
@@ -21,12 +21,9 @@ impl AerodromeProtocol {
         "0x420DD381b31aEf6683db6B902084cB0FFECe40Da".parse().unwrap()
     }
 
-    pub fn init_code_hash(&self) -> [u8; 32] {
+    pub fn init_code_hash(&self) -> B256 {
         // Aerodrome init code hash
-        let bytes = hex::decode("9b3ee7f1379a9d34cdb09c1030616cb1c9c04cf9f7a3c4af8d1e6e3c9ce108e3").unwrap();
-        let mut result = [0u8; 32];
-        result.copy_from_slice(&bytes);
-        result
+        "9b3ee7f1379a9d34cdb09c1030616cb1c9c04cf9f7a3c4af8d1e6e3c9ce108e3".parse().unwrap()
     }
 
     pub fn supports_chain_id(&self, chain_id: u64) -> bool {
@@ -36,9 +33,7 @@ impl AerodromeProtocol {
     
     pub fn get_pool_address_for_tokens(token0: Address, token1: Address) -> Address {
         let factory = "0x420DD381b31aEf6683db6B902084cB0FFECe40Da".parse().unwrap();
-        let bytes = hex::decode("9b3ee7f1379a9d34cdb09c1030616cb1c9c04cf9f7a3c4af8d1e6e3c9ce108e3").unwrap();
-        let mut init_code_hash = [0u8; 32];
-        init_code_hash.copy_from_slice(&bytes);
+        let init_code_hash: B256 = "9b3ee7f1379a9d34cdb09c1030616cb1c9c04cf9f7a3c4af8d1e6e3c9ce108e3".parse().unwrap();
         get_uniswap2pool_address(token0, token1, factory, init_code_hash)
     }
 }
