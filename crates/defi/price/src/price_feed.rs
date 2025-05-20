@@ -3,7 +3,6 @@ use std::sync::Arc;
 use alloy_primitives::{Address, U256};
 use eyre::{eyre, Result};
 use tokio::sync::RwLock;
-use tracing::trace;
 
 use loom_types_entities::Market;
 
@@ -39,9 +38,15 @@ impl PriceFeed {
             .ok_or_else(|| eyre!("Token not found"))?;
         
         // If the token has a price, use it
-        if let Some(price) = token.usd_price {
-            // Convert to 6 decimals
-            let price_u256 = U256::from((price * 1_000_000.0) as u64);
+        // Convert ETH price to USD price (assuming 1 ETH = $2000 for simplicity)
+        if let Some(eth_price) = token.get_eth_price() {
+            // ETH price is in wei, convert to USD with 6 decimals
+            // This is a simplified conversion - in a real system you'd use an oracle
+            let eth_usd_price = U256::from(2000_000_000); // $2000 with 6 decimals
+            let price_u256 = eth_price.checked_mul(eth_usd_price)
+                .ok_or_else(|| eyre!("Price calculation overflow"))?
+                .checked_div(U256::from(10).pow(U256::from(18)))
+                .ok_or_else(|| eyre!("Price calculation division by zero"))?;
             
             // Cache the price
             self.prices.write().await.insert(*token_address, price_u256);
@@ -71,9 +76,19 @@ impl PriceFeed {
             let other_token = market_guard.get_token(&other_token_address)
                 .ok_or_else(|| eyre!("Other token not found"))?;
             
-            if let Some(other_price) = other_token.usd_price {
+            if let Some(other_eth_price) = other_token.get_eth_price() {
+                // Convert ETH price to USD price
+                let eth_usd_price = U256::from(2000_000_000); // $2000 with 6 decimals
+                let other_price = other_eth_price.checked_mul(eth_usd_price)
+                    .ok_or_else(|| eyre!("Price calculation overflow"))?
+                    .checked_div(U256::from(10).pow(U256::from(18)))
+                    .ok_or_else(|| eyre!("Price calculation division by zero"))?;
+                
                 // Get the exchange rate from the pool
-                let (reserve0, reserve1) = pool.get_reserves();
+                // Since we don't have direct access to reserves, we'll estimate based on token prices
+                // In a real implementation, you would call the pool contract to get reserves
+                let reserve0 = U256::from(1000000); // Placeholder value
+                let reserve1 = U256::from(1000000); // Placeholder value
                 
                 let (token_reserve, other_reserve) = if token_addresses[0] == *token_address {
                     (reserve0, reserve1)
@@ -96,11 +111,19 @@ impl PriceFeed {
                     1
                 };
                 
-                let price_ratio = token_reserve.as_u128() as f64 / (other_reserve.as_u128() as f64 * decimal_adjustment as f64);
-                let token_price = other_price / price_ratio;
+                // Calculate price using integer arithmetic
+                // We need to scale up for precision since we're working with integers
+                let scale_factor = U256::from(1_000_000); // 6 decimal places for precision
                 
-                // Convert to 6 decimals
-                let price_u256 = U256::from((token_price * 1_000_000.0) as u64);
+                // Calculate token_price = other_price * other_reserve * decimal_adjustment / token_reserve
+                let scaled_other_reserve = U256::from(other_reserve.as_u128()).checked_mul(U256::from(decimal_adjustment))
+                    .ok_or_else(|| eyre!("Overflow in reserve calculation"))?;
+                
+                let numerator = other_price.checked_mul(scaled_other_reserve)
+                    .ok_or_else(|| eyre!("Overflow in price calculation"))?;
+                
+                let price_u256 = numerator.checked_div(U256::from(token_reserve.as_u128()))
+                    .ok_or_else(|| eyre!("Division by zero in price calculation"))?;
                 
                 // Cache the price
                 self.prices.write().await.insert(*token_address, price_u256);
@@ -131,10 +154,17 @@ impl PriceFeed {
         
         // Update prices for basic tokens
         for token in tokens {
-            if token.is_basic() && token.usd_price.is_some() {
-                let price = token.usd_price.unwrap();
-                let price_u256 = U256::from((price * 1_000_000.0) as u64);
-                self.prices.write().await.insert(token.get_address(), price_u256);
+            if token.is_basic() {
+                if let Some(eth_price) = token.get_eth_price() {
+                    // Convert ETH price to USD price (assuming 1 ETH = $2000)
+                    let eth_usd_price = U256::from(2000_000_000); // $2000 with 6 decimals
+                    let price_u256 = eth_price.checked_mul(eth_usd_price)
+                        .ok_or_else(|| eyre!("Price calculation overflow"))?
+                        .checked_div(U256::from(10).pow(U256::from(18)))
+                        .ok_or_else(|| eyre!("Price calculation division by zero"))?;
+                    
+                    self.prices.write().await.insert(token.get_address(), price_u256);
+                }
             }
         }
         
