@@ -76,7 +76,7 @@ impl CapitalManager {
         debug!(
             "Optimal capital allocation: {} {} (${} USD)",
             token.to_float(optimal_amount),
-            token.symbol,
+            token.get_symbol(),
             (token.to_float(optimal_amount) * token.to_float(token_price))
         );
         
@@ -133,8 +133,8 @@ impl CapitalManager {
                 }
                 
                 // Calculate the price
-                let token_decimals = token.decimals;
-                let other_decimals = other_token.decimals;
+                let token_decimals = token.get_decimals();
+                let other_decimals = other_token.get_decimals();
                 
                 // Adjust for decimal differences
                 let decimal_adjustment = if token_decimals > other_decimals {

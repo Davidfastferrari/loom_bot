@@ -79,8 +79,8 @@ impl PriceFeed {
                 }
                 
                 // Calculate the price
-                let token_decimals = token.decimals;
-                let other_decimals = other_token.decimals;
+                let token_decimals = token.get_decimals();
+                let other_decimals = other_token.get_decimals();
                 
                 // Adjust for decimal differences
                 let decimal_adjustment = if token_decimals > other_decimals {
@@ -155,7 +155,7 @@ impl PriceFeed {
             .ok_or_else(|| eyre!("Token not found"))?;
         
         // Adjust for token decimals
-        let decimals = token.decimals;
+        let decimals = token.get_decimals();
         let max_amount = max_tokens.checked_mul(U256::from(10).pow(U256::from(decimals)))
             .ok_or_else(|| eyre!("Overflow in max_amount calculation"))?
             .checked_div(U256::from(10).pow(U256::from(6)))
