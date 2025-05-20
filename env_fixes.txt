@@ -1,0 +1,6 @@
+// Fix for the as_flags() method in EnvironmentFlags 
+impl EnvironmentFlags { 
+    pub fn as_flags(&self) -> ffi::MDBX_env_flags_t { 
+        let mut flags = ffi::MDBX_ENV_DEFAULTS; 
+ECHO is off.
+        if self.no_rdahead { 

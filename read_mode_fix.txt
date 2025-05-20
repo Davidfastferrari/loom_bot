@@ -1,0 +1,14 @@
+    /// Returns true if the environment was opened in [`crate::Mode::ReadOnly`] mode.
+    #[inline]
+    pub fn is_read_only(&self) -> Result<bool> {
+        let info = self.info()?;
+        let mode = info.mode();
+        Ok(matches!(mode, Mode::ReadOnly))
+    }
+
+    /// Returns true if the environment was opened in [`crate::Mode::ReadWrite`] mode.
+    #[inline]
+    pub fn is_read_write(&self) -> Result<bool> {
+        let is_read_only = self.is_read_only()?;
+        Ok(!is_read_only)
+    }

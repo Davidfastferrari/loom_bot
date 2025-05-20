@@ -29,7 +29,8 @@ impl AerodromeProtocol {
     pub fn supports_chain_id(&self, chain_id: u64) -> bool { 
         // Base chain ID 
         chain_id == 8453 
-    }
+    } 
+ECHO is off.
     pub fn get_pool_address_for_tokens(token0: Address, token1: Address) -> Address { 
         let factory = "0x420DD381b31aEf6683db6B902084cB0FFECe40Da".parse().unwrap(); 
         let init_code_hash: B256 = "9b3ee7f1379a9d34cdb09c1030616cb1c9c04cf9f7a3c4af8d1e6e3c9ce108e3".parse().unwrap(); 
