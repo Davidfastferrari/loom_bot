@@ -52,7 +52,7 @@ async fn find_arbitrage_paths<DB: DatabaseRef<Error = ErrReport> + Send + Sync +
     let market_guard = market.read().await;
     
     // Get all tokens
-    let tokens: Vec<Arc<Token>> = market_guard.get_tokens();
+    let tokens: Vec<Arc<Token>> = market_guard.tokens().values().cloned().collect();
     
     // Focus on main tokens for efficiency
     let main_tokens: Vec<Arc<Token>> = tokens.into_iter()
@@ -103,7 +103,12 @@ async fn find_cycles<DB: DatabaseRef<Error = ErrReport> + Send + Sync + Clone + 
     }
     
     // Get all pools that contain this token
-    let pools = market.get_pools_by_token(&current_token_address);
+    let pools = match market.get_token_pools(&current_token_address) {
+        Some(pool_ids) => pool_ids.iter()
+            .filter_map(|pool_id| market.get_pool(pool_id))
+            .collect::<Vec<_>>(),
+        None => Vec::new(),
+    };
     
     for pool in pools {
         // Skip if we've already used this pool
@@ -112,7 +117,7 @@ async fn find_cycles<DB: DatabaseRef<Error = ErrReport> + Send + Sync + Clone + 
         }
         
         // Get the other token in the pool
-        let token_addresses = pool.get_token_addresses();
+        let token_addresses = pool.get_tokens();
         let other_token_address = if token_addresses[0] == current_token_address {
             token_addresses[1]
         } else {
