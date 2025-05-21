@@ -93,7 +93,7 @@ fn main() -> eyre::Result<()> {
                 let topology_config = TopologyConfig::load_from_file(loom_args.loom_config.clone())?;
 
                 let client_config = topology_config.clients.get("remote").unwrap();
-                let transport = WsConnect { url: client_config.url, auth: None, config: None };
+                let transport = WsConnect { url: client_config.url.clone(), auth: None, config: None };
                 let client = ClientBuilder::default().ws(transport).await?;
                 let provider = ProviderBuilder::new().disable_recommended_fillers().on_client(client);
                 let bc = Blockchain::new(Chain::mainnet().id());
