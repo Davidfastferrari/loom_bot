@@ -68,7 +68,7 @@ async fn find_arbitrage_paths<DB: DatabaseRef<Error = ErrReport> + Send + Sync +
     
     // For each main token, find paths that start and end with it
     for start_token in main_tokens.iter() {
-        let start_address = start_token.address();
+        let start_address = start_token.get_address();
         
         // Use depth-first search to find all cycles up to max_path_length
         find_cycles(
@@ -112,7 +112,7 @@ async fn find_cycles<DB: DatabaseRef<Error = ErrReport> + Send + Sync + Clone + 
     
     for pool in pools {
         // Skip if we've already used this pool
-        if current_pools.contains(&pool) {
+        if current_pools.iter().any(|p| p.as_ref() == pool.as_ref()) {
             continue;
         }
         
@@ -125,19 +125,20 @@ async fn find_cycles<DB: DatabaseRef<Error = ErrReport> + Send + Sync + Clone + 
         };
         
         // If we've found a cycle back to the start token and path length >= 3
-        if other_token_address == start_token.address() && current_path.len() >= 3 {
+        if other_token_address == start_token.get_address() && current_path.len() >= 3 {
             // Create a complete cycle
             let mut complete_path = current_path.clone();
             complete_path.push(start_token.clone());
             
             let mut complete_pools = current_pools.clone();
-            complete_pools.push(pool.clone());
+            complete_pools.push(Arc::new(pool.clone()));
             
             // Create the path
             let path = SwapPath {
                 tokens: complete_path,
-                pools: complete_pools,
+                pools: complete_pools.into_iter().map(|p| (*p).clone()).collect(),
                 disabled: false,
+                disabled_pool: Vec::new(),
                 score: Some(1.0),
             };
             
@@ -169,7 +170,7 @@ async fn find_cycles<DB: DatabaseRef<Error = ErrReport> + Send + Sync + Clone + 
             new_path.push(other_token.clone());
             
             let mut new_pools = current_pools.clone();
-            new_pools.push(pool.clone());
+            new_pools.push(Arc::new(pool.clone()));
             
             let mut new_visited = visited_tokens.clone();
             new_visited.insert(other_token_address);
