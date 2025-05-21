@@ -112,7 +112,7 @@ async fn find_cycles<DB: DatabaseRef<Error = ErrReport> + Send + Sync + Clone + 
     
     for pool in pools {
         // Skip if we've already used this pool
-        if current_pools.iter().any(|p| p.as_ref() == pool.as_ref()) {
+        if current_pools.iter().any(|p| p.get_pool_id() == pool.get_pool_id()) {
             continue;
         }
         
