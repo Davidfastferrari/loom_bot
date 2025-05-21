@@ -8,7 +8,7 @@ use loom_broadcast_broadcaster::FlashbotsBroadcastActor;
 use loom_broadcast_flashbots::client::RelayConfig;
 use loom_broadcast_flashbots::Flashbots;
 use loom_core_actors::{Actor, ActorsManager, SharedState};
-use loom_core_block_history::BlockHistoryActor;
+use loom_core_block_history_actor::BlockHistoryActor;
 use loom_core_blockchain::{Blockchain, BlockchainState, Strategy};
 use loom_core_mempool::MempoolActor;
 use loom_core_router::SwapRouterActor;
