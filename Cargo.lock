@@ -4777,7 +4777,7 @@ dependencies = [
  "loom-broadcast-flashbots",
  "loom-core-actors",
  "loom-core-actors-macros",
- "loom-core-block-history",
+ "loom-core-block-history-actor",
  "loom-core-blockchain",
  "loom-core-blockchain-actors",
  "loom-core-mempool",
@@ -4809,6 +4809,7 @@ dependencies = [
  "loom-storage-db",
  "loom-strategy-backrun",
  "loom-strategy-merger",
+ "loom-strategy-simple-arb",
  "loom-types-blockchain",
  "loom-types-entities",
  "loom-types-events",
@@ -4929,7 +4930,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "loom-core-block-history"
+name = "loom-core-block-history-actor"
 version = "0.6.0"
 dependencies = [
  "alloy-eips",
@@ -4989,7 +4990,7 @@ dependencies = [
  "loom-broadcast-broadcaster",
  "loom-broadcast-flashbots",
  "loom-core-actors",
- "loom-core-block-history",
+ "loom-core-block-history-actor",
  "loom-core-blockchain",
  "loom-core-mempool",
  "loom-core-router",
@@ -5070,7 +5071,7 @@ dependencies = [
  "loom-broadcast-broadcaster",
  "loom-broadcast-flashbots",
  "loom-core-actors",
- "loom-core-block-history",
+ "loom-core-block-history-actor",
  "loom-core-blockchain",
  "loom-core-mempool",
  "loom-core-router",
@@ -5680,6 +5681,22 @@ dependencies = [
  "loom-execution-multicaller",
  "loom-node-debug-provider",
  "loom-types-blockchain",
+ "loom-types-entities",
+ "loom-types-events",
+ "revm",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "loom-strategy-simple-arb"
+version = "0.1.0"
+dependencies = [
+ "alloy-primitives",
+ "eyre",
+ "loom-core-actors",
+ "loom-core-actors-macros",
+ "loom-core-blockchain",
  "loom-types-entities",
  "loom-types-events",
  "revm",

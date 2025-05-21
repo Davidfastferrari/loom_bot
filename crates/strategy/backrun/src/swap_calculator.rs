@@ -7,7 +7,7 @@ use loom_types_blockchain::LoomDataTypes;
 use loom_types_entities::{PoolWrapper, SwapError, SwapLine};
 use revm::primitives::Env;
 use revm::DatabaseRef;
-use tracing::debu;
+use tracing::debugg;
 
 // Extension trait for PoolWrapper to add missing methods
 trait PoolWrapperExt<LDT: LoomDataTypes> {
