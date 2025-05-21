@@ -3,6 +3,7 @@ use eyre::{eyre, ErrReport, Result};
 use revm::DatabaseRef;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
+use std::pin::Pin;
 use tokio::sync::broadcast::error::RecvError;
 use tracing::{debug, error, info, trace};
 
@@ -10,7 +11,7 @@ use loom_core_actors::{subscribe, Accessor, Actor, ActorResult, Broadcaster, Con
 use loom_core_actors_macros::{Accessor, Consumer, Producer};
 use loom_core_blockchain::{Blockchain, Strategy};
 use loom_types_entities::{LatestBlock, Market, PoolWrapper, Swap, SwapDirection, SwapLine, SwapPath, Token};
-use loom_types_events::{MarketEvents, MessageSwapCompose, SwapComposeData, SwapComposeMessage};
+use loom_types_events::{MarketEvents, MessageSwapCompose, SwapComposeData};
 
 // Simple arbitrage path finder that looks for cycles of length 3
 pub async fn simple_arb_finder_worker<DB: DatabaseRef<Error = ErrReport> + Send + Sync + Clone + 'static>(
@@ -175,7 +176,7 @@ async fn find_cycles<DB: DatabaseRef<Error = ErrReport> + Send + Sync + Clone + 
             let mut new_visited = visited_tokens.clone();
             new_visited.insert(other_token_address);
             
-            find_cycles(
+            Box::pin(find_cycles(
                 market,
                 start_token.clone(),
                 other_token_address,
@@ -184,7 +185,7 @@ async fn find_cycles<DB: DatabaseRef<Error = ErrReport> + Send + Sync + Clone + 
                 new_visited,
                 max_depth,
                 compose_channel_tx
-            ).await?;
+            )).await?;
         }
     }
     
