@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     clang \
     curl \
     protobuf-compiler \
+    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a new empty project
