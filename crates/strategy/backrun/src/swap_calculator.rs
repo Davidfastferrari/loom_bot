@@ -7,7 +7,7 @@ use loom_types_blockchain::LoomDataTypes;
 use loom_types_entities::{PoolWrapper, SwapError, SwapLine};
 use revm::primitives::Env;
 use revm::DatabaseRef;
-use tracing::{debug, trace};
+use tracing::debu;
 
 // Extension trait for PoolWrapper to add missing methods
 trait PoolWrapperExt<LDT: LoomDataTypes> {
@@ -55,7 +55,7 @@ impl SwapCalculator {
         path: &mut SwapLine<LDT>,
         state: &DB,
         env: Env,
-    ) -> eyre::Result<&mut SwapLine<LDT>, SwapError<LDT>> {
+    ) -> Result<&mut SwapLine<LDT>, SwapError<LDT>> {
         let first_token = path.get_first_token().unwrap();
         
         // Start with the default amount
@@ -95,7 +95,7 @@ impl SwapCalculator {
         state: &DB,
         env: Env,
         initial_amount: U256,
-    ) -> eyre::Result<&'a mut SwapLine<LDT>, SwapError<LDT>> {
+    ) -> Result<&'a mut SwapLine<LDT>, SwapError<LDT>> {
         // This token is used in estimate_max_amount_from_liquidity
         let _first_token = path.get_first_token().unwrap();
         

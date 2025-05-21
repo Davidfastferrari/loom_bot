@@ -15,7 +15,7 @@ loom-broadcast-flashbots = { workspace = true, optional = true }
 # core
 loom-core-actors = { workspace = true, optional = true }
 loom-core-actors-macros = { workspace = true, optional = true }
-loom-core-block-history = { workspace = true, optional = true }
+loom-core-block-history-actor = { workspace = true, optional = true }
 loom-core-blockchain = { workspace = true, optional = true }
 loom-core-blockchain-actors = { workspace = true, optional = true }
 loom-core-mempool = { workspace = true, optional = true }
@@ -55,6 +55,7 @@ loom-storage-db = { workspace = true, optional = true }
 # strategy
 loom-strategy-backrun = { workspace = true, optional = true }
 loom-strategy-merger = { workspace = true, optional = true }
+loom-strategy-simple-arb = { workspace = true, optional = true }
 # types
 loom-types-blockchain = { workspace = true, optional = true }
 loom-types-entities = { workspace = true, optional = true }
@@ -79,7 +80,7 @@ broadcast-flashbots = ["broadcast", "dep:loom-broadcast-flashbots"]
 
 core-actors = ["core", "dep:loom-core-actors"]
 core-actors-macros = ["core", "dep:loom-core-actors-macros"]
-core-block-history = ["core", "dep:loom-core-block-history"]
+core-block-history = ["core", "dep:loom-core-block-history-actor"]
 core-blockchain = ["core", "dep:loom-core-blockchain"]
 core-blockchain-actors = ["core", "dep:loom-core-blockchain-actors"]
 core-mempool = ["core", "dep:loom-core-mempool"]
@@ -117,6 +118,7 @@ storage-db = ["dep:loom-storage-db", "storage"]
 
 strategy-backrun = ["dep:loom-strategy-backrun", "strategy"]
 strategy-merger = ["dep:loom-strategy-merger", "strategy"]
+strategy-simple-arb = ["dep:loom-strategy-simple-arb", "strategy"]
 
 types-blockchain = ["dep:loom-types-blockchain", "types"]
 types-entities = ["dep:loom-types-entities", "types"]
@@ -217,5 +219,5 @@ node-full = [
 ]
 rpc-full = ["rpc-handler", "rpc-state"]
 storage-full = ["storage-db"]
-strategy-full = ["strategy-backrun", "strategy-merger"]
+strategy-full = ["strategy-backrun", "strategy-merger", "strategy-simple-arb"]
 types-full = ["types-blockchain", "types-entities", "types-events"]

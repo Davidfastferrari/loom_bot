@@ -1,5 +1,20 @@
-[package]
-name = "loom-core-block-history"
+
+2025-05-21T06:53:16.35229313Z stdout F warning: unused import: `trace`
+2025-05-21T06:53:16.352295685Z stdout F   --> crates/strategy/backrun/src/swap_calculator.rs:10:22
+2025-05-21T06:53:16.352307817Z stdout F    |
+2025-05-21T06:53:16.352311815Z stdout F 10 | use tracing::{debug, trace};
+2025-05-21T06:53:16.35231448Z stdout F    |                      ^^^^^
+2025-05-21T06:53:16.352316934Z stdout F 
+2025-05-21T06:53:16.509215965Z stdout F    Compiling loom-node-grpc v0.6.0 (/app/crates/node/grpc)
+2025-05-21T06:53:17.057383789Z stdout F For more information about this error, try `rustc --explain E0106`.
+2025-05-21T06:53:17.077151139Z stdout F warning: `loom-strategy-backrun` (lib) generated 7 warnings
+2025-05-21T06:53:17.077288164Z stdout F error: could not compile `loom-strategy-backrun` (lib) due to 1 previous error; 7 warnings emitted
+2025-05-21T06:53:17.077293514Z stdout F warning: build failed, waiting for other jobs to finish...
+2025-05-21T06:53:19.159455081Z stdout F warning: `loom-defi-pools` (lib) generated 2 warnings (run `cargo fix --lib -p loom-defi-pools` to apply 2 suggestions)
+2025-05-21T06:53:19.272750745Z stdout F error building image: error building stage: failed to execute command: waiting for process to exit: exit status 101
+2025-05-21T06:53:19.324125544Z stderr F [error] BuildService - Build failed: Could not build the image.
+2025-05-21T06:53:19.330786053Z stdout F [2025-05-21T06:53:19Z INFO ] Process terminated with exit code 255[package]
+name = "loom-core-block-history-actor"
 edition.workspace = true
 exclude.workspace = true
 homepage.workspace = true

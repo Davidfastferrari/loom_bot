@@ -55,6 +55,7 @@ members = [
     "crates/storage/db",
     "crates/strategy/backrun",
     "crates/strategy/merger",
+    "crates/strategy/simple_arb",
     "crates/types/blockchain",
     "crates/types/entities",
     "crates/types/events",
@@ -78,7 +79,7 @@ loom-broadcast-flashbots = { path = "crates/broadcast/flashbots" }
 # core
 loom-core-actors = { path = "crates/core/actors" }
 loom-core-actors-macros = { path = "crates/core/actors-macros" }
-loom-core-block-history = { path = "crates/core/block-history-actor" }
+loom-core-block-history-actor = { path = "crates/core/block-history-actor" }
 loom-core-blockchain = { path = "crates/core/blockchain" }
 loom-core-blockchain-actors = { path = "crates/core/blockchain-actors" }
 loom-core-mempool = { path = "crates/core/mempool" }
@@ -120,6 +121,7 @@ loom-storage-db = { path = "crates/storage/db" }
 # strategy
 loom-strategy-backrun = { path = "crates/strategy/backrun" }
 loom-strategy-merger = { path = "crates/strategy/merger" }
+loom-strategy-simple-arb = { path = "crates/strategy/simple_arb" }
 # types
 loom-types-blockchain = { path = "crates/types/blockchain" }
 loom-types-entities = { path = "crates/types/entities" }
@@ -255,7 +257,7 @@ alloy-trie = "0.7.9"
 
 
 # reth
-reth = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e", features = ["asm-keccak"] }
+reth = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
 reth-chainspec = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
 reth-codecs = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
 reth-codecs-derive = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
@@ -266,10 +268,10 @@ reth-exex = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e", feat
 reth-exex-test-utils = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
 reth-node-api = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
 reth-node-builder = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
-reth-node-core = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e", features = ["asm-keccak"] }
+reth-node-core = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
 reth-node-ethereum = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
 reth-node-types = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
-reth-primitives = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e", features = ["asm-keccak"] }
+reth-primitives = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
 reth-provider = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
 reth-revm = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
 reth-rpc = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
