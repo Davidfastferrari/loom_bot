@@ -10,7 +10,7 @@ use tracing::{debug, error, info, trace};
 use loom_core_actors::{subscribe, Accessor, Actor, ActorResult, Broadcaster, Consumer, Producer, SharedState, WorkerResult};
 use loom_core_actors_macros::{Accessor, Consumer, Producer};
 use loom_core_blockchain::{Blockchain, Strategy};
-use loom_types_entities::{LatestBlock, Market, PoolWrapper, Swap, SwapDirection, SwapLine, SwapPath, Token};
+use loom_types_entities::{Market, PoolWrapper, Swap, SwapLine, SwapPath, Token};
 use loom_types_events::{MarketEvents, MessageSwapCompose, SwapComposeData};
 
 // Simple arbitrage path finder that looks for cycles of length 3

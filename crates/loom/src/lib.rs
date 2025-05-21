@@ -15,7 +15,7 @@ pub mod core {
     #[cfg(feature = "core-actors-macros")]
     pub use loom_core_actors_macros as macros;
     #[cfg(feature = "core-block-history")]
-    pub use loom_core_block_history as block_history;
+    pub use loom_core_block_history_actor as block_history;
     #[cfg(feature = "core-blockchain")]
     pub use loom_core_blockchain as blockchain;
     #[cfg(feature = "core-blockchain-actors")]
