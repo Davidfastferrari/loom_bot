@@ -7,7 +7,7 @@ use loom_types_blockchain::LoomDataTypes;
 use loom_types_entities::{PoolWrapper, SwapError, SwapLine};
 use revm::primitives::Env;
 use revm::DatabaseRef;
-use tracing::debugg;
+use tracing::debug;
 
 // Extension trait for PoolWrapper to add missing methods
 trait PoolWrapperExt<LDT: LoomDataTypes> {
@@ -51,11 +51,11 @@ pub struct SwapCalculator {}
 impl SwapCalculator {
     /// Calculate the optimal input amount and profit for a swap path
     #[inline]
-    pub fn calculate<DB: DatabaseRef<Error = ErrReport>, LDT: LoomDataTypes>(
-        path: &mut SwapLine<LDT>,
-        state: &DB,
+    pub fn calculate<'a, DB: DatabaseRef<Error = ErrReport>, LDT: LoomDataTypes>(
+        path: &'a mut SwapLine<LDT>,
+        state: &'a DB,
         env: Env,
-    ) -> Result<&mut SwapLine<LDT>, SwapError<LDT>> {
+    ) -> Result<&'a mut SwapLine<LDT>, SwapError<LDT>> {
         let first_token = path.get_first_token().unwrap();
         
         // Start with the default amount

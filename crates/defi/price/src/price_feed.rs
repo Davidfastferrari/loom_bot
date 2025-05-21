@@ -116,13 +116,13 @@ impl PriceFeed {
                 let scale_factor = U256::from(1_000_000); // 6 decimal places for precision
                 
                 // Calculate token_price = other_price * other_reserve * decimal_adjustment / token_reserve
-                let scaled_other_reserve = U256::from(other_reserve.low_u128()).checked_mul(U256::from(decimal_adjustment))
+                let scaled_other_reserve = other_reserve.checked_mul(U256::from(decimal_adjustment))
                     .ok_or_else(|| eyre!("Overflow in reserve calculation"))?;
                 
                 let numerator = other_price.checked_mul(scaled_other_reserve)
                     .ok_or_else(|| eyre!("Overflow in price calculation"))?;
                 
-                let price_u256 = numerator.checked_div(U256::from(token_reserve.low_u128()))
+                let price_u256 = numerator.checked_div(token_reserve)
                     .ok_or_else(|| eyre!("Division by zero in price calculation"))?;
                 
                 // Cache the price
