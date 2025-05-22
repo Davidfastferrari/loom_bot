@@ -12,15 +12,7 @@ pub enum Command {
     Remote(LoomArgs),
 }
 
-impl Default for AppArgs {
-    fn default() -> Self {
-        Self {
-            command: Command::Node(Default::default()),
-        }
-    }
-}
-
-#[derive(Parser, Debug, Default)]
+#[derive(Parser, Debug)]
 #[command(name="Loom", version, about, long_about = None)]
 pub struct AppArgs {
     #[command(subcommand)]
@@ -35,7 +27,7 @@ impl Default for AppArgs {
     }
 }
 
-#[derive(Parser, Debug, Default, Default)]
+#[derive(Parser, Debug, Default)]
 pub struct LoomArgsNode {}
 
 #[derive(Parser, Debug, Default)]

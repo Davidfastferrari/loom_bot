@@ -59,39 +59,8 @@ fn main() -> eyre::Result<()> {
             // If parsing fails, use default Node command
             info!("No valid subcommand provided, using default 'node' command");
             AppArgs { command: Command::Node(Default::default()) }
-        }    // If parsing fails, use default Node command
-            info!("No valid subcommand provided, using default 'node' command");
-            AppArgs { command: Command::Node(Default::default()) }
         }
     };
-use tracing::{error, info};
-use tracing_subscriber::layer::SubscriberExt;
-use tracing_subscriber::util::SubscriberInitExt;
-use tracing_subscriber::{fmt, EnvFilter, Layer};
-
-mod arguments;
-mod loom_runtime;
-
-fn main() -> eyre::Result<()> {
-    let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into());
-    let fmt_layer = fmt::Layer::default().with_thread_ids(true).with_file(false).with_line_number(true).with_filter(env_filter);
-    tracing_subscriber::registry().with(fmt_layer).init();
-
-    // Create a default config file if it doesn't exist
-    if !std::path::Path::new("config.toml").exists() {
-        if std::path::Path::new("config-example.toml").exists() {
-            std::fs::copy("config-example.toml", "config.toml")?;
-            info!("Created config.toml from config-example.toml");
-        } else if std::path::Path::new("config_base.toml").exists() {
-            std::fs::copy("config_base.toml", "config.toml")?;
-            info!("Created config.toml from config_base.toml");
-        } else {
-            error!("No config template found. Please create a config.toml file.");
-            return Err(eyre::eyre!("No config template found"));
-        }
-    }
-
-    // Parse command line arguments
     match app_args.command {
         Command::Node(_) => Cli::<EthereumChainSpecParser, LoomArgs>::parse().run(|builder, loom_args: LoomArgs| async move {
             let topology_config = TopologyConfig::load_from_file(loom_args.loom_config.clone())?;
