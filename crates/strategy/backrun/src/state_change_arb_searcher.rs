@@ -15,6 +15,7 @@ use tracing::warn;
 use tracing::{debug, error, info, trace};
 
 use crate::BackrunConfig;
+use crate::ProfitCalculator;
 use crate::SwapCalculator;
 use loom_core_actors::{subscribe, Accessor, Actor, ActorResult, Broadcaster, Consumer, Producer, SharedState, WorkerResult};
 use loom_core_actors_macros::{Accessor, Consumer, Producer};
@@ -141,6 +142,13 @@ async fn state_change_arb_searcher_task<DB: DatabaseRef<Error = ErrReport> + Dat
                             
                             // Check if profit is positive and exceeds the minimum threshold
                             if profit.is_positive() && mut_item.abs_profit_eth() > min_profit_threshold {
+                                // Calculate profit in multiple currencies for logging purposes
+                                // This doesn't block the main flow since we're just sending the original swap item
+                                let eth_profit = mut_item.abs_profit_eth();
+                                
+                                // Log the ETH profit for now - multi-currency calculation will be done later
+                                info!("Profitable opportunity found! ETH profit: {} wei", eth_profit);
+                                
                                 if let Err(error) = swap_path_tx.try_send(Ok(mut_item)) {
                                     error!(%error, "swap_path_tx.try_send")
                                 }
@@ -205,6 +213,25 @@ async fn state_change_arb_searcher_task<DB: DatabaseRef<Error = ErrReport> + Dat
                 });
 
                 if !backrun_config_clone.smart() || best_answers.check(&prepare_request) {
+                    // Calculate profit in multiple currencies
+                    if let Swap::BackrunSwapLine(ref swap_line) = prepare_request.get_swap() {
+                        let eth_profit = swap_line.abs_profit_eth();
+                        
+                        // Spawn a task to calculate and log multi-currency profits
+                        // This won't block the main execution flow
+                        tokio::spawn(async move {
+                            match ProfitCalculator::calculate_multi_currency_profit(eth_profit, &db, None).await {
+                                Ok(multi_profit) => {
+                                    // Log profits in multiple currencies
+                                    multi_profit.log_profits();
+                                },
+                                Err(e) => {
+                                    error!("Failed to calculate multi-currency profit: {}", e);
+                                }
+                            }
+                        });
+                    }
+                    
                     if let Err(e) = swap_request_tx_clone.send(Message::new(prepare_request)) {
                         error!("swap_request_tx_clone.send {}", e)
                     }
