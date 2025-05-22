@@ -25,27 +25,6 @@ use tracing_subscriber::{fmt, EnvFilter, Layer};
 
 mod arguments;
 mod loom_runtime;
-
-use crate::arguments::{AppArgs, Command, LoomArgs};
-use alloy::eips::BlockId;
-use alloy::providers::{ProviderBuilder, WsConnect};
-use alloy::rpc::client::ClientBuilder;
-use clap::{CommandFactory, FromArgMatches, Parser};
-use loom::core::blockchain::{Blockchain, BlockchainState, Strategy};
-use loom::core::topology::TopologyConfig;
-use loom::evm::db::{AlloyDB, LoomDB};
-use loom::node::actor_config::NodeBlockActorConfig;
-use loom::node::exex::mempool_worker;
-use loom::types::entities::MarketState;
-use reth::builder::engine_tree_config::TreeConfig;
-use reth::builder::EngineNodeLauncher;
-use reth::chainspec::{Chain, EthereumChainSpecParser};
-use reth::cli::Cli;
-use reth_node_ethereum::node::EthereumAddOns;
-use reth_node_ethereum::EthereumNode;
-use reth_provider::providers::BlockchainProvider;
-use std::time::Duration;
-use tokio::{signal, task};
 use tracing::{error, info};
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -59,16 +38,60 @@ fn main() -> eyre::Result<()> {
     let fmt_layer = fmt::Layer::default().with_thread_ids(true).with_file(false).with_line_number(true).with_filter(env_filter);
     tracing_subscriber::registry().with(fmt_layer).init();
 
-    // Check if a subcommand is provided
-    let matches = AppArgs::command().ignore_errors(true).get_matches();
+    // Create a default config file if it doesn't exist
+    if !std::path::Path::new("config.toml").exists() {
+        if std::path::Path::new("config-example.toml").exists() {
+            std::fs::copy("config-example.toml", "config.toml")?;
+            info!("Created config.toml from config-example.toml");
+        } else if std::path::Path::new("config_base.toml").exists() {
+            std::fs::copy("config_base.toml", "config.toml")?;
+            info!("Created config.toml from config_base.toml");
+        } else {
+            error!("No config template found. Please create a config.toml file.");
+            return Err(eyre::eyre!("No config template found"));
+        }
+    }
 
-    let app_args = if matches.subcommand_name().is_none() {
-        // No subcommand provided, use default Command::Node with default LoomArgsNode
-        AppArgs { command: Command::Node(Default::default()) }
-    } else {
-        AppArgs::from_arg_matches_mut(&mut matches.clone())?
+    // Parse command line arguments
+    let app_args = match AppArgs::try_parse() {
+        Ok(args) => args,
+        Err(_) => {
+            // If parsing fails, use default Node command
+            info!("No valid subcommand provided, using default 'node' command");
+            AppArgs { command: Command::Node(Default::default()) }
+        }    // If parsing fails, use default Node command
+            info!("No valid subcommand provided, using default 'node' command");
+            AppArgs { command: Command::Node(Default::default()) }
+        }
     };
+use tracing::{error, info};
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
+use tracing_subscriber::{fmt, EnvFilter, Layer};
 
+mod arguments;
+mod loom_runtime;
+
+fn main() -> eyre::Result<()> {
+    let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into());
+    let fmt_layer = fmt::Layer::default().with_thread_ids(true).with_file(false).with_line_number(true).with_filter(env_filter);
+    tracing_subscriber::registry().with(fmt_layer).init();
+
+    // Create a default config file if it doesn't exist
+    if !std::path::Path::new("config.toml").exists() {
+        if std::path::Path::new("config-example.toml").exists() {
+            std::fs::copy("config-example.toml", "config.toml")?;
+            info!("Created config.toml from config-example.toml");
+        } else if std::path::Path::new("config_base.toml").exists() {
+            std::fs::copy("config_base.toml", "config.toml")?;
+            info!("Created config.toml from config_base.toml");
+        } else {
+            error!("No config template found. Please create a config.toml file.");
+            return Err(eyre::eyre!("No config template found"));
+        }
+    }
+
+    // Parse command line arguments
     match app_args.command {
         Command::Node(_) => Cli::<EthereumChainSpecParser, LoomArgs>::parse().run(|builder, loom_args: LoomArgs| async move {
             let topology_config = TopologyConfig::load_from_file(loom_args.loom_config.clone())?;
