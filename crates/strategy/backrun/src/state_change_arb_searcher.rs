@@ -193,6 +193,27 @@ async fn state_change_arb_searcher_task<DB: DatabaseRef<Error = ErrReport> + Dat
                 // Clone backrun_config for use in this scope
                 let backrun_config_clone = backrun_config.clone();
                 
+                // Calculate optimized gas price with boost
+                let base_gas_price = U256::from(state_update_event.next_base_fee);
+                let optimized_gas_price = backrun_config_clone.calculate_gas_price(base_gas_price);
+                
+                // Determine if we should use private transactions
+                let use_private_tx = backrun_config_clone.private_tx_enabled();
+                let private_tx_url = backrun_config_clone.private_tx_url();
+                
+                // Determine if we should use MEV blocker
+                let use_mev_blocker = backrun_config_clone.mev_blocker_enabled();
+                
+                // Log gas optimization info
+                debug!(
+                    "Gas optimization: base_fee={}, optimized={}, boost={}%, private_tx={}, mev_blocker={}",
+                    base_gas_price,
+                    optimized_gas_price,
+                    backrun_config_clone.gas_boost_percent(),
+                    use_private_tx,
+                    use_mev_blocker
+                );
+                
                 let prepare_request = SwapComposeMessage::Prepare(SwapComposeData {
                     tx_compose: TxComposeData {
                         eoa: backrun_config_clone.eoa(),
@@ -200,8 +221,12 @@ async fn state_change_arb_searcher_task<DB: DatabaseRef<Error = ErrReport> + Dat
                         next_block_timestamp: state_update_event.next_block_timestamp,
                         next_block_base_fee: state_update_event.next_base_fee,
                         gas: swap_line.gas_used.unwrap_or(300000),
+                        gas_price: Some(optimized_gas_price),
                         stuffing_txs: state_update_event.stuffing_txs.clone(),
                         stuffing_txs_hashes: state_update_event.stuffing_txs_hashes.clone(),
+                        use_private_tx: Some(use_private_tx),
+                        private_tx_url: private_tx_url,
+                        use_mev_blocker: Some(use_mev_blocker),
                         ..TxComposeData::default()
                     },
                     swap: Swap::BackrunSwapLine(swap_line),
@@ -217,10 +242,13 @@ async fn state_change_arb_searcher_task<DB: DatabaseRef<Error = ErrReport> + Dat
                     if let Swap::BackrunSwapLine(ref swap_line) = prepare_request.get_swap() {
                         let eth_profit = swap_line.abs_profit_eth();
                         
+                        // Get the chain ID from the backrun config
+                        let chain_id = Some(backrun_config_clone.chain_id());
+                        
                         // Spawn a task to calculate and log multi-currency profits
                         // This won't block the main execution flow
                         tokio::spawn(async move {
-                            match ProfitCalculator::calculate_multi_currency_profit(eth_profit, &db, None).await {
+                            match ProfitCalculator::calculate_multi_currency_profit(eth_profit, &db, chain_id).await {
                                 Ok(multi_profit) => {
                                     // Log profits in multiple currencies
                                     multi_profit.log_profits();

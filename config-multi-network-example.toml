@@ -1,0 +1,31 @@
+# Enhanced backrun strategy configuration with multi-network support
+
+[backrun_strategy]
+eoa = "0x0000000000000000000000000000000000000000" # Replace with your EOA
+smart = true
+chain_id = 8453 # Base Network
+dynamic_capital = true
+max_path_length = 4
+private_tx_url = "https://api.blocknative.com/v1/transaction" # Example private tx service
+
+# Base Network configuration
+[backrun_strategy.base_config]
+min_profit_wei = "1000000000000000" # 0.001 ETH
+priority_fee = "100000000" # 0.1 Gwei
+max_gas_price = "30000000000" # 30 Gwei
+flash_loan_fee_bps = 30 # 0.3% flash loan fee
+max_capital_usd = 100000 # $100,000 USD
+gas_boost_percent = 15 # 15% gas boost
+private_tx_enabled = true
+mev_blocker_enabled = true
+
+# To use this configuration:
+# 1. Replace the EOA address with your own
+# 2. Adjust the chain_id based on the network you're targeting:
+#    - 1: Ethereum Mainnet
+#    - 8453: Base Network
+#    - 42161: Arbitrum
+#    - 10: Optimism
+#    - 137: Polygon
+# 3. Configure the base_config section with appropriate values for your target network
+# 4. Set private_tx_url if you're using a private transaction service

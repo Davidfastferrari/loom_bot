@@ -14,6 +14,9 @@ pub struct BaseNetworkConfig {
     pub max_gas_price: Option<U256>,
     pub flash_loan_fee_bps: Option<u64>, // Basis points (e.g., 30 = 0.3%)
     pub max_capital_usd: Option<u64>,    // Maximum capital in USD
+    pub gas_boost_percent: Option<u64>,  // Percentage to boost gas price by
+    pub private_tx_enabled: Option<bool>, // Whether to use private transactions
+    pub mev_blocker_enabled: Option<bool>, // Whether to use MEV blocker
 }
 
 impl Default for BaseNetworkConfig {
@@ -24,6 +27,9 @@ impl Default for BaseNetworkConfig {
             max_gas_price: Some(U256::from(30_000_000_000u64)), // 30 Gwei
             flash_loan_fee_bps: Some(30), // 0.3% flash loan fee
             max_capital_usd: Some(100_000), // $100,000 USD
+            gas_boost_percent: Some(10), // 10% gas boost
+            private_tx_enabled: Some(false), // Private transactions disabled by default
+            mev_blocker_enabled: Some(false), // MEV blocker disabled by default
         }
     }
 }
@@ -36,6 +42,7 @@ pub struct BackrunConfig {
     base_config: Option<BaseNetworkConfig>,
     dynamic_capital: Option<bool>,
     max_path_length: Option<usize>,
+    private_tx_url: Option<String>, // URL for private transaction service
 }
 
 impl StrategyConfig for BackrunConfig {
@@ -53,15 +60,20 @@ impl BackrunConfig {
         Self { 
             eoa: None, 
             smart: false,
-            chain_id: None,
+            chain_id: Some(8453), // Default to Base Network
             base_config: None,
             dynamic_capital: Some(true),
             max_path_length: Some(4),
+            private_tx_url: None,
         }
     }
     
     pub fn is_base_network(&self) -> bool {
         self.chain_id.unwrap_or(1) == 8453
+    }
+    
+    pub fn chain_id(&self) -> u64 {
+        self.chain_id.unwrap_or(1) // Default to Ethereum mainnet
     }
     
     pub fn base_config(&self) -> BaseNetworkConfig {
@@ -91,6 +103,43 @@ impl BackrunConfig {
     pub fn max_path_length(&self) -> usize {
         self.max_path_length.unwrap_or(4) // Default to 4 hops
     }
+    
+    // Gas optimization methods
+    pub fn gas_boost_percent(&self) -> u64 {
+        self.base_config().gas_boost_percent.unwrap_or(10) // Default 10%
+    }
+    
+    pub fn calculate_gas_price(&self, base_gas_price: U256) -> U256 {
+        let boost_percent = self.gas_boost_percent();
+        let boost_multiplier = 100 + boost_percent;
+        
+        // Apply boost: base_gas_price * (100 + boost_percent) / 100
+        let boosted_gas_price = base_gas_price
+            .saturating_mul(U256::from(boost_multiplier))
+            .saturating_div(U256::from(100));
+        
+        // Cap at max gas price if configured
+        if let Some(max_gas_price) = self.base_config().max_gas_price {
+            if boosted_gas_price > max_gas_price {
+                return max_gas_price;
+            }
+        }
+        
+        boosted_gas_price
+    }
+    
+    // MEV protection methods
+    pub fn private_tx_enabled(&self) -> bool {
+        self.base_config().private_tx_enabled.unwrap_or(false)
+    }
+    
+    pub fn private_tx_url(&self) -> Option<String> {
+        self.private_tx_url.clone()
+    }
+    
+    pub fn mev_blocker_enabled(&self) -> bool {
+        self.base_config().mev_blocker_enabled.unwrap_or(false)
+    }
 }
 
 impl Default for BackrunConfig {
@@ -98,10 +147,11 @@ impl Default for BackrunConfig {
         Self { 
             eoa: None, 
             smart: true,
-            chain_id: None,
+            chain_id: Some(8453), // Default to Base Network
             base_config: None,
             dynamic_capital: Some(true),
             max_path_length: Some(4),
+            private_tx_url: None,
         }
     }
 }
