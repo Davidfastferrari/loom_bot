@@ -40,12 +40,22 @@ WORKDIR /app
 
 # Copy the binary from the builder stage
 COPY --from=builder /app/target/release/loom_exex /app/loom_exex
-# Copy configuration files
-COPY --from=builder /app/config.toml /app/config.toml
-COPY --from=builder /app/config-example.toml /app/config-example.toml
-COPY --from=builder /app/config_base.toml /app/config_base.toml
-COPY --from=builder /app/config-example.toml /app/config-example.toml
-COPY --from=builder /app/config_base.toml /app/config_base.toml
+# Copy configuration files from builder stage
+COPY --from=builder /app/config-example.toml /app/config-example.toml || true
+COPY --from=builder /app/config_base.toml /app/config_base.toml || true
+
+# Create empty config files if they don't exist
+RUN if [ ! -f /app/config-example.toml ]; then touch /app/config-example.toml; fi && \
+    if [ ! -f /app/config_base.toml ]; then touch /app/config_base.toml; fi && \
+    if [ ! -f /app/config.toml ]; then \
+      if [ -f /app/config-example.toml ] && [ -s /app/config-example.toml ]; then \
+        cp /app/config-example.toml /app/config.toml; \
+      elif [ -f /app/config_base.toml ] && [ -s /app/config_base.toml ]; then \
+        cp /app/config_base.toml /app/config.toml; \
+      else \
+        touch /app/config.toml; \
+      fi; \
+    fi
 
 # Set ownership of the application directory
 RUN chown -R loom:loom /app
