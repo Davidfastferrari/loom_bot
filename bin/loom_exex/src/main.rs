@@ -25,13 +25,6 @@ use tracing_subscriber::{fmt, EnvFilter, Layer};
 
 mod arguments;
 mod loom_runtime;
-use tracing::{error, info};
-use tracing_subscriber::layer::SubscriberExt;
-use tracing_subscriber::util::SubscriberInitExt;
-use tracing_subscriber::{fmt, EnvFilter, Layer};
-
-mod arguments;
-mod loom_runtime;
 
 fn main() -> eyre::Result<()> {
     let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into());
