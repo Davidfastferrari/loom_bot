@@ -113,7 +113,7 @@ impl PriceFeed {
                 
                 // Calculate price using integer arithmetic
                 // We need to scale up for precision since we're working with integers
-                let scale_factor = U256::from(1_000_000); // 6 decimal places for precision
+                let _scale_factor = U256::from(1_000_000); // 6 decimal places for precision
                 
                 // Calculate token_price = other_price * other_reserve * decimal_adjustment / token_reserve
                 let scaled_other_reserve = other_reserve.checked_mul(U256::from(decimal_adjustment))

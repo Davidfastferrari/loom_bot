@@ -260,17 +260,18 @@ origin: Some(state_update_event.origin.clone() + &mev_info),
                         
                         // Spawn a task to calculate and log multi-currency profits
                         // This won't block the main execution flow
-                        tokio::spawn(async move {
-                            match ProfitCalculator::calculate_multi_currency_profit(eth_profit, &db, chain_id).await {
-                                Ok(multi_profit) => {
-                                    // Log profits in multiple currencies
-                                    multi_profit.log_profits();
-                                },
-                                Err(e) => {
-                                    error!("Failed to calculate multi-currency profit: {}", e);
-                                }
+                    let db_clone = db.clone();
+                    tokio::spawn(async move {
+                        match ProfitCalculator::calculate_multi_currency_profit(eth_profit, &db_clone, chain_id).await {
+                            Ok(multi_profit) => {
+                                // Log profits in multiple currencies
+                                multi_profit.log_profits();
+                            },
+                            Err(e) => {
+                                error!("Failed to calculate multi-currency profit: {}", e);
                             }
-                        });
+                        }
+                    });
                     }
                     
                     if let Err(e) = swap_request_tx_clone.send(Message::new(prepare_request)) {
