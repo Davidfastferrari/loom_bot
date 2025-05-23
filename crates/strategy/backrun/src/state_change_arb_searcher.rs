@@ -197,6 +197,9 @@ async fn state_change_arb_searcher_task<DB: DatabaseRef<Error = ErrReport> + Dat
                 let base_gas_price = U256::from(state_update_event.next_base_fee);
                 let optimized_gas_price = backrun_config_clone.calculate_gas_price(base_gas_price);
                 
+                // Calculate priority fee (the part above base fee)
+                let priority_fee = optimized_gas_price.saturating_sub(base_gas_price).as_u64();
+                
                 // Determine if we should use private transactions
                 let use_private_tx = backrun_config_clone.private_tx_enabled();
                 let private_tx_url = backrun_config_clone.private_tx_url();
@@ -206,13 +209,26 @@ async fn state_change_arb_searcher_task<DB: DatabaseRef<Error = ErrReport> + Dat
                 
                 // Log gas optimization info
                 debug!(
-                    "Gas optimization: base_fee={}, optimized={}, boost={}%, private_tx={}, mev_blocker={}",
+                    "Gas optimization: base_fee={}, optimized={}, priority_fee={}, boost={}%, private_tx={}, mev_blocker={}",
                     base_gas_price,
                     optimized_gas_price,
+                    priority_fee,
                     backrun_config_clone.gas_boost_percent(),
                     use_private_tx,
                     use_mev_blocker
                 );
+                
+                // Store MEV protection info in a custom field
+                let mev_info = if use_private_tx || use_mev_blocker {
+                    format!(
+                        "{{\"private_tx\":{},\"mev_blocker\":{},\"private_tx_url\":\"{}\"}}",
+                        use_private_tx,
+                        use_mev_blocker,
+                        private_tx_url.unwrap_or_default()
+                    )
+                } else {
+                    String::new()
+                };
                 
                 let prepare_request = SwapComposeMessage::Prepare(SwapComposeData {
                     tx_compose: TxComposeData {
@@ -221,16 +237,13 @@ async fn state_change_arb_searcher_task<DB: DatabaseRef<Error = ErrReport> + Dat
                         next_block_timestamp: state_update_event.next_block_timestamp,
                         next_block_base_fee: state_update_event.next_base_fee,
                         gas: swap_line.gas_used.unwrap_or(300000),
-                        gas_price: Some(optimized_gas_price),
+                        priority_gas_fee: priority_fee,
                         stuffing_txs: state_update_event.stuffing_txs.clone(),
                         stuffing_txs_hashes: state_update_event.stuffing_txs_hashes.clone(),
-                        use_private_tx: Some(use_private_tx),
-                        private_tx_url: private_tx_url,
-                        use_mev_blocker: Some(use_mev_blocker),
+                        origin: Some(state_update_event.origin.clone().unwrap_or_default() + &mev_info),
                         ..TxComposeData::default()
                     },
                     swap: Swap::BackrunSwapLine(swap_line),
-                    origin: Some(state_update_event.origin.clone()),
                     tips_pct: Some(state_update_event.tips_pct),
                     poststate: Some(db.clone()),
                     poststate_update: Some(state_update_event.state_update().clone()),

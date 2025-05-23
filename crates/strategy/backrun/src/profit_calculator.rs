@@ -4,20 +4,13 @@ use revm::DatabaseRef;
 use tracing::{info, debug};
 use std::collections::HashMap;
 
-// Token addresses
+// Token addresses for different networks
+// Base Network token addresses
 pub const BASE_USDC_ADDRESS: &str = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 pub const BASE_USDT_ADDRESS: &str = "0x4A3A6Dd60A34bB2Aba60D73B4C88315E9CeB6A3D";
 pub const BASE_WBTC_ADDRESS: &str = "0x77852193BD608A4523325bAB2e3Cfdb183424F34";
 pub const BASE_WETH_ADDRESS: &str = "0x4200000000000000000000000000000000000006";
 pub const BASE_DAI_ADDRESS: &str = "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb";
-
-// different networks
-// Base Network token addresses
-pub const ETH_BASE_USDC_ADDRESS: &str = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
-pub const ETH_BASE_USDT_ADDRESS: &str = "0x4A3A6Dd60A34bB2Aba60D73B4C88315E9CeB6A3D";
-pub const BASE_ETH_WBTC_ADDRESS: &str = "0x77852193BD608A4523325bAB2e3Cfdb183424F34";
-pub const BASE_ETH_WETH_ADDRESS: &str = "0x4200000000000000000000000000000000000006";
-pub const ETH_BASE_DAI_ADDRESS: &str = "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb";
 
 // Ethereum Mainnet token addresses
 pub const ETH_USDC_ADDRESS: &str = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
@@ -95,7 +88,7 @@ impl ProfitCalculator {
         let eth_amount = eth_profit.to_string().parse::<f64>().unwrap_or(0.0) / 1e18;
         let usd_value = eth_amount * eth_price_usd;
         
-        info!("Total profit value: ${:.2} USD", usd_value);
+        info!("Total profit value: ${} USD", usd_value.round());
         
         Ok(profit)
     }
