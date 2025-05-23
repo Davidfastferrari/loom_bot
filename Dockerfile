@@ -39,10 +39,10 @@ RUN useradd -m loom
 WORKDIR /app
 
 # Copy the binary from the builder stage
-COPY --from=builder /app/target/release/loom_exex /app/loom_exex
+COPY --from=builder /app/target/release/loom_exex /app/
 # Copy configuration files from builder stage
-COPY --from=builder /app/config-example.toml /app/config-example.toml || true
-COPY --from=builder /app/config_base.toml /app/config_base.toml || true
+COPY --from=builder /app/config-example.toml /app/config-example.toml
+COPY --from=builder /app/config_base.toml /app/config_base.toml
 
 # Create empty config files if they don't exist
 RUN if [ ! -f /app/config-example.toml ]; then touch /app/config-example.toml; fi && \
