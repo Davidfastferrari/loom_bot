@@ -15,7 +15,7 @@ use tracing::warn;
 use tracing::{debug, error, info, trace};
 
 use crate::BackrunConfig;
-use crate::ProfitCalculator;
+use crate::profit_calculator::ProfitCalculator;
 use crate::SwapCalculator;
 use loom_core_actors::{subscribe, Accessor, Actor, ActorResult, Broadcaster, Consumer, Producer, SharedState, WorkerResult};
 use loom_core_actors_macros::{Accessor, Consumer, Producer};
@@ -240,7 +240,7 @@ async fn state_change_arb_searcher_task<DB: DatabaseRef<Error = ErrReport> + Dat
                         priority_gas_fee: priority_fee,
                         stuffing_txs: state_update_event.stuffing_txs.clone(),
                         stuffing_txs_hashes: state_update_event.stuffing_txs_hashes.clone(),
-                        origin: Some(state_update_event.origin.clone().unwrap_or_else(String::new) + &mev_info),
+origin: Some(state_update_event.origin.clone() + &mev_info),
                         ..TxComposeData::default()
                     },
                     swap: Swap::BackrunSwapLine(swap_line),
