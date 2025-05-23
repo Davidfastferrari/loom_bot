@@ -65,7 +65,7 @@ USER loom
 
 # Set the entrypoint
 ENTRYPOINT ["/app/loom_exex"]
-CMD ["node"]
+CMD ["node", "--engine.persistence-threshold", "2", "--engine.memory-block-buffer-target", "2"]
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
