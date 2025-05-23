@@ -41,7 +41,11 @@ WORKDIR /app
 # Copy the binary from the builder stage
 COPY --from=builder /app/target/release/loom_exex /app/loom_exex
 # Copy configuration files
-# COPY --from=builder /app/config.toml /app/config.toml
+COPY --from=builder /app/config.toml /app/config.toml
+COPY --from=builder /app/config-example.toml /app/config-example.toml
+COPY --from=builder /app/config_base.toml /app/config_base.toml
+COPY --from=builder /app/config-example.toml /app/config-example.toml
+COPY --from=builder /app/config_base.toml /app/config_base.toml
 
 # Set ownership of the application directory
 RUN chown -R loom:loom /app
