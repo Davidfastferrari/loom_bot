@@ -116,7 +116,7 @@ impl BackrunConfig {
         // Apply boost: base_gas_price * (100 + boost_percent) / 100
         let boosted_gas_price = base_gas_price
             .saturating_mul(U256::from(boost_multiplier))
-            .saturating_add(U256::from(100));
+            / U256::from(100);
         
         // Cap at max gas price if configured
         if let Some(max_gas_price) = self.base_config().max_gas_price {

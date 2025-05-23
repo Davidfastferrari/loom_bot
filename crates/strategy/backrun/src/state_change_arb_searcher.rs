@@ -198,7 +198,7 @@ async fn state_change_arb_searcher_task<DB: DatabaseRef<Error = ErrReport> + Dat
                 let optimized_gas_price = backrun_config_clone.calculate_gas_price(base_gas_price);
                 
                 // Calculate priority fee (the part above base fee)
-                let priority_fee = optimized_gas_price.saturating_sub(base_gas_price).as_u64();
+                let priority_fee = u64::try_from(optimized_gas_price.saturating_sub(base_gas_price)).unwrap_or(0);
                 
                 // Determine if we should use private transactions
                 let use_private_tx = backrun_config_clone.private_tx_enabled();
@@ -240,7 +240,7 @@ async fn state_change_arb_searcher_task<DB: DatabaseRef<Error = ErrReport> + Dat
                         priority_gas_fee: priority_fee,
                         stuffing_txs: state_update_event.stuffing_txs.clone(),
                         stuffing_txs_hashes: state_update_event.stuffing_txs_hashes.clone(),
-                        origin: Some(state_update_event.origin.clone().unwrap_or_default() + &mev_info),
+                        origin: Some(state_update_event.origin.clone().unwrap_or_else(String::new) + &mev_info),
                         ..TxComposeData::default()
                     },
                     swap: Swap::BackrunSwapLine(swap_line),
@@ -252,7 +252,7 @@ async fn state_change_arb_searcher_task<DB: DatabaseRef<Error = ErrReport> + Dat
 
                 if !backrun_config_clone.smart() || best_answers.check(&prepare_request) {
                     // Calculate profit in multiple currencies
-                    if let Swap::BackrunSwapLine(ref swap_line) = prepare_request.get_swap() {
+                    if let Swap::BackrunSwapLine(ref swap_line) = prepare_request.swap {
                         let eth_profit = swap_line.abs_profit_eth();
                         
                         // Get the chain ID from the backrun config
