@@ -66,7 +66,7 @@ USER loom
 # Set the entrypoint
 # Use shell form to pass all arguments correctly
 ENTRYPOINT ["/bin/sh", "-c"]
-CMD ["/app/loom_exex --engine.persistence-threshold 2 --engine.memory-block-buffer-target 2"]
+CMD /app/loom_exex remote --engine.persistence-threshold 2 --engine.memory-block-buffer-target 2
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
