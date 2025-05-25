@@ -16,8 +16,8 @@ services:
       - DATA=87b9c2f432538c706b11c803258efc0b6e931381cd7e70d3ef1ec498dfee2b06
       - MULTICALLER_ADDRESS=0x6E3b634eBd2EbBffb41a49fA6edF6df6bFe8c0Ee
     # If your application needs to expose ports, uncomment and adjust as needed
-    # ports:
-    #   - "8080:8080"
+    ports:
+      - "3333:3333"
     deploy:
       resources:
         limits:
