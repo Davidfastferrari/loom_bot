@@ -10,8 +10,11 @@ services:
       # Mount configuration file from host (optional)
       - ./config.toml:/app/config.toml:ro
     environment:
-      # Add any environment variables your application needs
       - RUST_LOG=info
+      - MAINNET_WS=wss://base-mainnet.infura.io/ws/v3/86b0b71ddfee42459d5925e4f51c5d05
+      - MAINNET_HTTP=https://base-mainnet.infura.io/v3/86b0b71ddfee42459d5925e4f51c5d05
+      - DATA=87b9c2f432538c706b11c803258efc0b6e931381cd7e70d3ef1ec498dfee2b06
+      - MULTICALLER_ADDRESS=0x6E3b634eBd2EbBffb41a49fA6edF6df6bFe8c0Ee
     # If your application needs to expose ports, uncomment and adjust as needed
     # ports:
     #   - "8080:8080"

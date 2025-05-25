@@ -63,7 +63,7 @@ RUN chown -R loom:loom /app
 # Switch to the non-root user
 USER loom
 
-# Set the entrypoint
+# Set the entrypoint 
 # Use shell form to pass all arguments correctly
 ENTRYPOINT ["/bin/sh", "-c"]
 CMD /app/loom_exex remote --engine.persistence-threshold 2 --engine.memory-block-buffer-target 2
