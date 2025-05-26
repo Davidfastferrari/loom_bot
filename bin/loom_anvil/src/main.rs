@@ -15,7 +15,7 @@ use alloy_primitives::{address, TxHash, U256};
 use alloy_provider::network::eip2718::Encodable2718;
 use alloy_provider::Provider;
 use alloy_rpc_types::{BlockId, BlockNumberOrTag, BlockTransactionsKind};
-use clap::Parser;
+use clap::{Parser, FromArgMatches};
 use loom::node::debug_provider::AnvilDebugProviderFactory;
 
 use eyre::{ErrReport, OptionExt, Result};
@@ -323,7 +323,7 @@ async fn main() -> Result<()> {
                 debug!("Loading curve pool");
                 if let Ok(curve_contract) = CurveProtocol::get_contract_from_code(client.clone(), pool_config.address).await {
                     let curve_pool = CurvePool::fetch_pool_data_with_default_encoder(client.clone(), curve_contract).await?;
-                    fetch_state_and_add_pool(client.clone(), market_instance.clone(), market_state.clone(), curve_pool.into()).await?
+                    fetch_state_and_add_pool(client.clone(), market_instance.clone(), market_state.clone(), curve_pool.into()).await?;
                 } else {
                     error!("CURVE_POOL_NOT_LOADED");
                 }
@@ -561,7 +561,7 @@ async fn main() -> Result<()> {
     }
 
     // Sending block state update message
-    if let Err(e) = market_events_channel_clone.send(MarketEvents::BlockStateUpdate { block_hash: block_header.hash }).await {
+    if let Err(e) = market_events_channel_clone.send(MarketEvents::BlockStateUpdate { block_hash: block_header.hash }) {
         error!("{}", e);
     }
 
