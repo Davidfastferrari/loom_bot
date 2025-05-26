@@ -69,6 +69,9 @@ RUN chown -R loom:loom /app
 # Switch to the non-root user
 USER loom
 
+# Set environment variable for debug logging
+ENV RUST_LOG=debug
+
 # Set the entrypoint
 # Use shell form to pass all arguments correctly
 ENTRYPOINT ["/bin/sh", "-c"]
