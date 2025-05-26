@@ -24,7 +24,7 @@ COPY . .
 RUN cargo fetch
 
 # Build all required binaries in one command with increased jobs
-RUN cargo build --release --bins --jobs $(nproc)
+RUN cargo build --release --all --bins --jobs $(nproc)
 
 # Second stage for runtime image
 FROM rust:1.84-slim-bullseye
