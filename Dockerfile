@@ -14,19 +14,20 @@ RUN apt-get update && apt-get install -y --fix-missing \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Create a new empty project
+# Set working directory
 WORKDIR /app
 
-# Copy over manifests and source code
+# Copy only Cargo.toml and Cargo.lock to cache dependencies
+COPY Cargo.toml Cargo.lock ./
+
+# Cache dependencies
+RUN cargo fetch
+
+# Copy source code
 COPY . .
 
-# Build the application in release mode 
-
-RUN cargo build --release --bin loom_exex --jobs 2 && \
-    cargo build --release -p nodebench --jobs 2 && \
-    cargo build --release -p gasbench --jobs 2 && \
-    cargo build --release -p exex-grpc-node --jobs 2 && \
-    cargo build --release -p exex_grpc_loom --jobs 2
+# Build all required binaries in one command with increased jobs
+RUN cargo build --release --bins --jobs $(nproc)
 
 # Second stage for runtime image
 FROM rust:1.84-slim-bullseye
@@ -76,5 +77,4 @@ CMD /app/loom_exex remote --engine.persistence-threshold 2 --engine.memory-block
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD ps aux | grep loom_exex | grep -v grep || exit 1
 
-# Optimize image size by cleaning up unnecessary files
-RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+# Remove redundant cleanup in runtime stage
