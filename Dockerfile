@@ -75,3 +75,6 @@ CMD /app/loom_exex remote --engine.persistence-threshold 2 --engine.memory-block
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD ps aux | grep loom_exex | grep -v grep || exit 1
+
+# Optimize image size by cleaning up unnecessary files
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
