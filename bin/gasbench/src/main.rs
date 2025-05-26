@@ -108,7 +108,14 @@ async fn main() -> Result<()> {
 
     let mut btree_map: BTreeMap<PoolWrapper, Vec<(Address, Address)>> = BTreeMap::new();
 
-    btree_map.insert(pool.clone(), swap_directions);
+    let swap_directions_mapped: Vec<(Address, Address)> = swap_directions
+        .iter()
+        .map(|sd| (sd.0, sd.1))
+        .collect();
+
+    btree_map.insert(pool.clone(), swap_directions_mapped);
+
+
 
     //let swap_paths = market.build_swap_path_vec(&btree_map)?;
 
