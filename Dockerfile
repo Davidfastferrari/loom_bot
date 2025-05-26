@@ -17,14 +17,11 @@ RUN apt-get update && apt-get install -y --fix-missing \
 # Set working directory
 WORKDIR /app
 
-# Copy only Cargo.toml and Cargo.lock to cache dependencies
-COPY Cargo.toml Cargo.lock ./
+# Copy entire source code first
+COPY . .
 
 # Cache dependencies
 RUN cargo fetch
-
-# Copy source code
-COPY . .
 
 # Build all required binaries in one command with increased jobs
 RUN cargo build --release --bins --jobs $(nproc)
