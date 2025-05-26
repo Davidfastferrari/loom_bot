@@ -50,10 +50,7 @@ async fn main() -> Result<()> {
     let mut backrun_config: BackrunConfig = backrun_config.backrun_strategy;
     
     // Set Base network chain ID
-    backrun_config = BackrunConfig {
-        chain_id: Some(8453),
-        ..backrun_config
-    };
+    backrun_config = backrun_config.with_chain_id(8453);
 
     let block_nr = client.get_block_number().await?;
     info!("Current block: {}", block_nr);

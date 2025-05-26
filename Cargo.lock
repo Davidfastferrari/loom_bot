@@ -5849,6 +5849,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "loom_base"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "alloy-primitives",
+ "chrono",
+ "env_logger",
+ "eyre",
+ "futures",
+ "influxdb",
+ "loom 0.6.0",
+ "loom-core-actors",
+ "loom-core-router",
+ "loom-core-topology",
+ "loom-defi-health-monitor",
+ "loom-evm-db",
+ "loom-execution-multicaller",
+ "loom-metrics",
+ "loom-strategy-backrun",
+ "loom-strategy-merger",
+ "loom-strategy-simple-arb",
+ "loom-types-entities",
+ "loom-types-events",
+ "num_cpus",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "loom_exex"
 version = "0.6.0"
 dependencies = [

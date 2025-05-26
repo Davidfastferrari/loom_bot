@@ -2,7 +2,7 @@ use crate::arguments::{AppArgs, Command, LoomArgs};
 use alloy::eips::BlockId;
 use alloy::providers::{ProviderBuilder, WsConnect};
 use alloy::rpc::client::ClientBuilder;
-use clap::{CommandFactory, FromArgMatches, Parser};
+use clap::Parser;
 use loom::core::blockchain::{Blockchain, BlockchainState, Strategy};
 use loom::core::topology::TopologyConfig;
 use loom::evm::db::{AlloyDB, LoomDB};

@@ -76,6 +76,11 @@ impl BackrunConfig {
         self.chain_id.unwrap_or(1) // Default to Ethereum mainnet
     }
     
+    pub fn with_chain_id(mut self, chain_id: u64) -> Self {
+        self.chain_id = Some(chain_id);
+        self
+    }
+    
     pub fn base_config(&self) -> BaseNetworkConfig {
         self.base_config.clone().unwrap_or_default()
     }
