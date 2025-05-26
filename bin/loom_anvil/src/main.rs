@@ -15,7 +15,7 @@ use alloy_primitives::{address, TxHash, U256};
 use alloy_provider::network::eip2718::Encodable2718;
 use alloy_provider::Provider;
 use alloy_rpc_types::{BlockId, BlockNumberOrTag, BlockTransactionsKind};
-use clap::{Parser, FromArgMatches};
+use clap::Parser;
 use loom::node::debug_provider::AnvilDebugProviderFactory;
 
 use eyre::{ErrReport, OptionExt, Result};
@@ -244,7 +244,7 @@ async fn main() -> Result<()> {
             token.set_eth_price(Some(price_u256));
         };
 
-        market_instance.write().await.add_token(token)?;
+        market_instance.write().await.add_token(token);
     }
 
     info!("Starting market state preload actor");
