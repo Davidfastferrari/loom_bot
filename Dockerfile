@@ -29,6 +29,9 @@ RUN cargo build --release --all --bins --jobs $(nproc)
 # Second stage for runtime image
 FROM rust:1.84-slim-bullseye
 
+# Create non-root user
+RUN groupadd -r loom && useradd -r -g loom loom
+
 # Set working directory
 WORKDIR /app
 
@@ -39,6 +42,7 @@ COPY --from=builder /app/target/release/exex_grpc_loom /app/
 COPY --from=builder /app/target/release/loom_anvil /app/
 COPY --from=builder /app/target/release/loom_backrun /app/
 COPY --from=builder /app/target/release/loom_base /app/
+COPY --from=builder /app/target/release/loom_exex /app/
 COPY --from=builder /app/target/release/nodebench /app/
 COPY --from=builder /app/target/release/replayer /app/
 
