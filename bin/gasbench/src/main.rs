@@ -110,10 +110,11 @@ async fn main() -> Result<()> {
 
     let swap_directions_mapped: Vec<(Address, Address)> = swap_directions
         .iter()
-        .map(|sd| (sd.0, sd.1))
+        .map(|sd| (sd.from, sd.to))
         .collect();
 
     btree_map.insert(pool.clone(), swap_directions_mapped);
+
 
 
 
