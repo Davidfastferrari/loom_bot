@@ -22,11 +22,11 @@ COPY . .
 
 # Build the application in release mode 
 
-RUN cargo build --release --bin loom_exex && \
-    cargo build --release -p nodebench && \
-    cargo build --release -p gasbench && \
-    cargo build --release -p exex-grpc-node && \
-    cargo build --release -p exex_grpc_loom
+RUN cargo build --release --bin loom_exex --jobs 2 && \
+    cargo build --release -p nodebench --jobs 2 && \
+    cargo build --release -p gasbench --jobs 2 && \
+    cargo build --release -p exex-grpc-node --jobs 2 && \
+    cargo build --release -p exex_grpc_loom --jobs 2
 
 # Second stage for runtime image
 FROM rust:1.84-slim-bullseye
