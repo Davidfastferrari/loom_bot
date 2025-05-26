@@ -1,7 +1,7 @@
 FROM rust:1.84-slim-bullseye as builder
 
 # Install build dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --fix-missing \
     pkg-config \
     libssl-dev \
     build-essential \
