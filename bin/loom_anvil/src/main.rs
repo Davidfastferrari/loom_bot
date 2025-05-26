@@ -173,10 +173,10 @@ async fn main() -> Result<()> {
     let usdt_token = Token::new_with_data(TokenAddressEth::USDT, Some("USDT".to_string()), None, Some(6), true, false);
     let wbtc_token = Token::new_with_data(TokenAddressEth::WBTC, Some("WBTC".to_string()), None, Some(8), true, false);
     let dai_token = Token::new_with_data(TokenAddressEth::DAI, Some("DAI".to_string()), None, Some(18), true, false);
-    market_instance.add_token(usdc_token)?;
-    market_instance.add_token(usdt_token)?;
-    market_instance.add_token(wbtc_token)?;
-    market_instance.add_token(dai_token)?;
+    market_instance.add_token(usdc_token);
+    market_instance.add_token(usdt_token);
+    market_instance.add_token(wbtc_token);
+    market_instance.add_token(dai_token);
 
     let mempool_instance = Mempool::<LoomDataTypesEthereum>::new();
 
@@ -556,7 +556,6 @@ async fn main() -> Result<()> {
             base_fee: block_header.base_fee_per_gas.unwrap_or_default(),
             next_base_fee: next_block_base_fee,
         })
-        .await
     {
         error!("{}", e);
     }
@@ -587,9 +586,9 @@ async fn main() -> Result<()> {
                     let tx_hash: TxHash = tx.tx_hash();
 
                     mempool_guard.add_tx(tx.clone());
-                    if let Err(e) = mempool_events_channel.send(MempoolEvents::MempoolActualTxUpdate { tx_hash }).await {
-                        error!("{e}");
-                    }
+    if let Err(e) = mempool_events_channel.send(MempoolEvents::MempoolActualTxUpdate { tx_hash }) {
+        error!("{e}");
+    }
                 }
                 "block" => match client_clone.send_raw_transaction(tx.inner.encoded_2718().as_slice()).await {
                     Ok(p) => {
@@ -608,7 +607,7 @@ async fn main() -> Result<()> {
 
     println!("Test '{}' is started!", args.config);
 
-    let mut tx_compose_sub = swap_compose_channel.subscribe().await;
+    let mut tx_compose_sub = swap_compose_channel.subscribe();
 
     let mut stat = Stat::default();
     let timeout_duration = Duration::from_secs(args.timeout);
