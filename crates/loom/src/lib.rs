@@ -107,6 +107,8 @@ pub mod strategy {
     pub use loom_strategy_backrun as backrun;
     #[cfg(feature = "strategy-merger")]
     pub use loom_strategy_merger as merger;
+    #[cfg(feature = "strategy-simple-arb")]
+    pub use loom_strategy_simple_arb as simple_arb;
 }
 
 #[cfg(feature = "types")]

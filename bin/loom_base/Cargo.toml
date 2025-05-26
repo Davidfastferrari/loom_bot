@@ -15,16 +15,16 @@ num_cpus = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
 
-loom = { path = "../../" }
-loom-core-actors = { path = "../../crates/core/actors" }
-loom-core-router = { path = "../../crates/core/router" }
-loom-core-topology = { path = "../../crates/core/topology" }
-loom-defi-health-monitor = { path = "../../crates/defi/health-monitor" }
-loom-evm-db = { path = "../../crates/evm/db" }
-loom-execution-multicaller = { path = "../../crates/execution/multicaller" }
-loom-metrics = { path = "../../crates/metrics" }
-loom-strategy-backrun = { path = "../../crates/strategy/backrun" }
-loom-strategy-merger = { path = "../../crates/strategy/merger" }
-loom-strategy-simple-arb = { path = "../../crates/strategy/simple_arb" }
-loom-types-entities = { path = "../../crates/types/entities" }
-loom-types-events = { path = "../../crates/types/events" }
+loom = { workspace = true, features = ["full", "strategy-full"] }
+loom-core-actors = { workspace = true }
+loom-core-router = { workspace = true }
+loom-core-topology = { workspace = true }
+loom-defi-health-monitor = { workspace = true }
+loom-evm-db = { workspace = true }
+loom-execution-multicaller = { workspace = true }
+loom-metrics = { workspace = true }
+loom-strategy-backrun = { workspace = true }
+loom-strategy-merger = { workspace = true }
+loom-strategy-simple-arb = { workspace = true }
+loom-types-entities = { workspace = true }
+loom-types-events = { workspace = true }

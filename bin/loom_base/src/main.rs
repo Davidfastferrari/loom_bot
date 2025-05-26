@@ -13,7 +13,7 @@ use loom::strategy::backrun::{BackrunConfig, BackrunConfigSection, StateChangeAr
 use loom::strategy::merger::{ArbSwapPathMergerActor, DiffPathMergerActor, SamePathMergerActor};
 use loom::types::entities::strategy_config::load_from_file;
 use loom::types::events::MarketEvents;
-use loom_strategy_simple_arb::SimpleArbFinderActor;
+use loom::strategy::simple_arb::SimpleArbFinderActor;
 
 #[tokio::main]
 async fn main() -> Result<()> {
