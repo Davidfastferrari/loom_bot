@@ -24,35 +24,13 @@ COPY . .
 RUN cargo build --release --bin loom_exex && \
     cargo build --release -p nodebench && \
     cargo build --release -p gasbench && \
-    cargo build --release -p exex_grpc_node && \
+    cargo build --release -p exex-grpc-node && \
     cargo build --release -p exex_grpc_loom && \
-    cargo build --release -p loom_anvil && \
-    cargo build --release -p loom_backrun && \
-    cargo build --release -p loom_base && \
-    cargo build --release -p nodebench && \
-    cargo build --release -p replayer
-
-# Runtime stage
-FROM debian:bullseye-slim
-
-# Install runtime dependencies
-RUN apt-get update && apt-get install -y \
-    ca-certificates \
-    libssl1.1 \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
-# Create a non-root user to run the application
-RUN useradd -m loom
-
-WORKDIR /app
-
-# Copy the binaries from the builder stage
-COPY --from=builder /app/target/release/loom_exex /app/
-COPY --from=builder /app/target/release/nodebench /app/
 COPY --from=builder /app/target/release/gasbench /app/
-COPY --from=builder /app/target/release/exex_grpc_node /app/
+
+COPY --from=builder /app/target/release/exex-grpc-node /app/
 COPY --from=builder /app/target/release/exex_grpc_loom /app/
+
 COPY --from=builder /app/target/release/loom_anvil /app/
 COPY --from=builder /app/target/release/loom_backrun /app/
 COPY --from=builder /app/target/release/loom_base /app/
