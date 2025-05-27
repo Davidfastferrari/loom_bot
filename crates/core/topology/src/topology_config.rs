@@ -4,6 +4,8 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs;
 use strum_macros::Display;
+use std::marker::PhantomData;
+use alloy_provider::{Network, Provider};
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct BlockchainConfig {
@@ -40,7 +42,7 @@ pub struct InfluxDbConfig {
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
-pub struct ClientConfig {
+pub struct ClientConfig<P, N> {
     pub url: String,
     pub node: NodeType,
     pub transport: TransportType,
@@ -63,23 +65,23 @@ where
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(untagged)]
-pub enum ClientConfig {
+pub enum ClientConfigEnum {
     String(String),
     Params(ClientConfigParams),
 }
 
-impl ClientConfig {
+impl ClientConfigEnum {
     pub fn url(&self) -> String {
         match &self {
             Self::String(s) => s.clone(),
-            ClientConfig::Params(p) => p.url.clone(),
+            ClientConfigEnum::Params(p) => p.url.clone(),
         }
     }
 
     pub fn config_params(&self) -> ClientConfigParams {
         match self {
-            ClientConfig::String(s) => ClientConfigParams { url: s.clone(), ..ClientConfigParams::default() },
-            ClientConfig::Params(p) => p.clone(),
+            ClientConfigEnum::String(s) => ClientConfigParams { url: s.clone(), ..ClientConfigParams::default() },
+            ClientConfigEnum::Params(p) => p.clone(),
         }
     }
 }
