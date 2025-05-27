@@ -7,7 +7,7 @@ git clone git@github.com:dexloom/loom.git
 ```
 
 ## Setting up topology
-Copy `config-example.toml` to `config.toml` and configure according to your setup.
+Copy `config_base.toml` to `config.toml` and configure according to your setup.
 
 ## Updating private key encryption password
 Private key encryption password is individual secret key that is generated automatically but can be replaced

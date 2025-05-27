@@ -48,15 +48,15 @@ COPY --from=builder /app/target/release/replayer /app/
 # COPY --from=builder /app/target/release/loom /app/
 
 # Copy configuration files from builder stage
-COPY --from=builder /app/config-example.toml /app/config-example.toml
+COPY --from=builder /app/config_base.toml /app/config_base.toml
 COPY --from=builder /app/config_base.toml /app/config_base.toml
 
 # Create empty config files if they don't exist
-RUN if [ ! -f /app/config-example.toml ]; then touch /app/config-example.toml; fi && \
+RUN if [ ! -f /app/config_base.toml ]; then touch /app/config_base.toml; fi && \
     if [ ! -f /app/config_base.toml ]; then touch /app/config_base.toml; fi && \
     if [ ! -f /app/config.toml ]; then \
-      if [ -f /app/config-example.toml ] && [ -s /app/config-example.toml ]; then \
-        cp /app/config-example.toml /app/config.toml; \
+      if [ -f /app/config_base.toml ] && [ -s /app/config_base.toml ]; then \
+        cp /app/config_base.toml /app/config.toml; \
       elif [ -f /app/config_base.toml ] && [ -s /app/config_base.toml ]; then \
         cp /app/config_base.toml /app/config.toml; \
       else \

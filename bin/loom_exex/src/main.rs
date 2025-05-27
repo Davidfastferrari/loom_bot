@@ -33,9 +33,9 @@ fn main() -> eyre::Result<()> {
 
     // Create a default config file if it doesn't exist
     if !std::path::Path::new("config.toml").exists() {
-        if std::path::Path::new("config-example.toml").exists() {
-            std::fs::copy("config-example.toml", "config.toml")?;
-            info!("Created config.toml from config-example.toml");
+        if std::path::Path::new("config_base.toml").exists() {
+            std::fs::copy("config_base.toml", "config.toml")?;
+            info!("Created config.toml from config_base.toml");
         } else if std::path::Path::new("config_base.toml").exists() {
             std::fs::copy("config_base.toml", "config.toml")?;
             info!("Created config.toml from config_base.toml");

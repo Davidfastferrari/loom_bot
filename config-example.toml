@@ -15,12 +15,12 @@ url = "http://localhost:8086"
 
 # Nodes.
 [clients]
-local = { url = "PATH_TO_RETH_IPC_ENDPOINT", transport = "ipc", db_path = "PATH_TO_RETH_DATA_FOLDER/db", node = "reth" }
+local = { url = "", transport = "ipc", db_path = "PATH_TO_RETH_DATA_FOLDER/db", node = "reth" }
 #another way to connect to WS
-#local = { url = "PATH_TO_RETH_IPC_ENDPOINT", transport = "ipc", db_path = "PATH_TO_RETH_DATA_FOLDER/db", node = "reth" }
+#local = { url = "", transport = "ipc", db_path = "PATH_TO_RETH_DATA_FOLDER/db", node = "reth" }
 
 #remote node
-#remote = { url = "PATH_TO_RETH_IPC_ENDPOINT", transport = "ws",  node = "geth" }
+#remote = { url = "", transport = "ws",  node = "geth" }
 
 [blockchains]
 # Ethereum mainnet. chain id = 1
