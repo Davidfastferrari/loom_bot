@@ -46,12 +46,11 @@ pub struct ClientConfig {
     pub transport: TransportType,
     pub db_path: Option<String>,
     pub exex: Option<String>,
-    // #[serde(skip)]
-    // pub provider: Option<P>,
-    // _n: PhantomData<N>,
+    #[serde(skip)]
+    pub provider: Option<P>,
+    _n: PhantomData<N>,
 }
 
-/*
 impl<P, N> ClientConfig<P, N>
 where
     N: Network,
@@ -62,12 +61,10 @@ where
     }
 }
 
- */
-/*
 #[derive(Clone, Debug, Deserialize)]
 #[serde(untagged)]
 pub enum ClientConfig {
-    //String(String),
+    String(String),
     Params(ClientConfigParams),
 }
 
@@ -87,7 +84,7 @@ impl ClientConfig {
     }
 }
 
- */
+ 
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct EnvSingerConfig {
