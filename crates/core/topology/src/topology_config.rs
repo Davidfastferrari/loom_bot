@@ -52,12 +52,10 @@ pub struct ClientConfig<P, N> {
     #[serde(skip)]
     pub provider: Option<P>,
     #[serde(skip)]
-    #[serde(skip)]
-    }
-
+    _n: PhantomData<N>,
 }
 
-impl<P, N> Default for Default for ClientConfig<P, N> { {
+impl<P, N> Default for ClientConfig<P, N> {
     fn default() -> Self {
         ClientConfig {
             url: String::new(),
@@ -70,9 +68,6 @@ impl<P, N> Default for Default for ClientConfig<P, N> { {
         }
     }
 }
-    fn default() -> Self {
-        ClientConfig {
-            url: String::new(),
             node: NodeType::default(),
             transport: TransportType::default(),
             db_path: None,

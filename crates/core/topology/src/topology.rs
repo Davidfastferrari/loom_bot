@@ -668,7 +668,7 @@ impl<
         Ok(tasks)
     }
 
-    pub fn get_client(&self, name: Option<&String>) -> Result<RootProvider<Ethereum><Ethereum>> {
+    pub fn get_client(&self, name: Option<&String>) -> Result<RootProvider<Ethereum>> {
         match self.clients.get(name.unwrap_or(&"local".to_string())) {
             Some(a) => Ok(a.clone()),
             None => Err(eyre!("CLIENT_NOT_FOUND")),
