@@ -45,7 +45,7 @@ COPY --from=builder /app/target/release/loom_base /app/
 COPY --from=builder /app/target/release/loom_exex /app/
 COPY --from=builder /app/target/release/nodebench /app/
 COPY --from=builder /app/target/release/replayer /app/
-COPY --from=builder /app/target/release/loom /app/
+# COPY --from=builder /app/target/release/loom /app/
 
 # Copy configuration files from builder stage
 COPY --from=builder /app/config-example.toml /app/config-example.toml
