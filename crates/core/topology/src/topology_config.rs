@@ -35,14 +35,14 @@ pub enum TransportType {
     Ipc,
 }
 
-#[derive(Clone, Debug, Default, Default, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct InfluxDbConfig {
     pub url: String,
     pub database: String,
     pub tags: HashMap<String, String>,
 }
 
-#[derive(Clone, Debug, Default, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct ClientConfig<P, N> {
     pub url: String,
     pub node: NodeType,
@@ -51,12 +51,37 @@ pub struct ClientConfig<P, N> {
     pub exex: Option<String>,
     #[serde(skip)]
     pub provider: Option<P>,
-    _n: PhantomData<N>,
-_n: PhantomData<N>,
-impl<P, N> ClientConfig<P, N>
-where
-    N: Network,
-    P: Provider<N> + Send + Sync + Clone + 'static,
+    #[serde(skip)]
+    #[serde(skip)]
+    }
+
+}
+
+impl<P, N> Default for Default for ClientConfig<P, N> { {
+    fn default() -> Self {
+        ClientConfig {
+            url: String::new(),
+            node: NodeType::default(),
+            transport: TransportType::default(),
+            db_path: None,
+            exex: None,
+            provider: None,
+            _n: PhantomData,
+        }
+    }
+}
+    fn default() -> Self {
+        ClientConfig {
+            url: String::new(),
+            node: NodeType::default(),
+            transport: TransportType::default(),
+            db_path: None,
+            exex: None,
+            provider: None,
+            _n: PhantomData,
+        }
+    }
+}
 {
     pub fn client(&self) -> Option<&P> {
         self.provider.as_ref()
@@ -269,9 +294,6 @@ impl DeserializableClientConfig {
         }
     }
 }
-
-#[derive(Clone, Debug, Deserialize)]
-pub struct DeserializableClientConfig {
     pub url: String,
     pub node: NodeType,
     pub transport: TransportType,
@@ -311,22 +333,6 @@ impl TopologyConfig {
         let contents = fs::read_to_string(file_name)?;
         let config: TopologyConfig = toml::from_str(&contents)?;
         Ok(config)
-    }
-    
-    pub fn get_client_config<P, N>(&self, name: &str) -> Option<ClientConfig<P, N>> 
-    where 
-        P: Provider<N> + Send + Sync + Clone + 'static,
-        N: Network,
-    {
-        self.clients.get(name).map(|config| config.clone().into_client_config())
-    }
-    
-    pub fn get_client_config<P, N>(&self, name: &str) -> Option<ClientConfig<P, N>> 
-    where 
-        P: Provider<N> + Send + Sync + Clone + 'static,
-        N: Network,
-    {
-        self.clients.get(name).map(|config| config.clone().into_client_config())
     }
 }
 
