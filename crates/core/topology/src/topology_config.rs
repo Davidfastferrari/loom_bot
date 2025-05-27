@@ -67,17 +67,10 @@ impl<P, N> Default for ClientConfig<P, N> {
             _n: PhantomData,
         }
     }
+
 }
-            node: NodeType::default(),
-            transport: TransportType::default(),
-            db_path: None,
-            exex: None,
-            provider: None,
-            _n: PhantomData,
-        }
-    }
-}
-{
+
+impl<P, N> ClientConfig<P, N> {
     pub fn client(&self) -> Option<&P> {
         self.provider.as_ref()
     }
