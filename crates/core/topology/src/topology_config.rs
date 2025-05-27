@@ -35,7 +35,7 @@ pub enum TransportType {
     Ipc,
 }
 
-#[derive(Clone, Debug, Default, Deserialize)]
+#[derive(Clone, Debug, Default, Default, Deserialize)]
 pub struct InfluxDbConfig {
     pub url: String,
     pub database: String,
@@ -52,8 +52,7 @@ pub struct ClientConfig<P, N> {
     #[serde(skip)]
     pub provider: Option<P>,
     _n: PhantomData<N>,
-}
-
+_n: PhantomData<N>,
 impl<P, N> ClientConfig<P, N>
 where
     N: Network,
@@ -248,10 +247,56 @@ pub struct ActorConfig {
     pub estimator: Option<HashMap<String, EstimatorConfig>>,
 }
 
+#[derive(Clone, Debug, Deserialize)]
+pub struct DeserializableClientConfig {
+    pub url: String,
+    pub node: NodeType,
+    pub transport: TransportType,
+    pub db_path: Option<String>,
+    pub exex: Option<String>,
+}
+
+impl DeserializableClientConfig {
+    pub fn into_client_config<P, N>(self) -> ClientConfig<P, N> {
+        ClientConfig {
+            url: self.url,
+            node: self.node,
+            transport: self.transport,
+            db_path: self.db_path,
+            exex: self.exex,
+            provider: None,
+            _n: PhantomData,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct DeserializableClientConfig {
+    pub url: String,
+    pub node: NodeType,
+    pub transport: TransportType,
+    pub db_path: Option<String>,
+    pub exex: Option<String>,
+}
+
+impl DeserializableClientConfig {
+    pub fn into_client_config<P, N>(self) -> ClientConfig<P, N> {
+        ClientConfig {
+            url: self.url,
+            node: self.node,
+            transport: self.transport,
+            db_path: self.db_path,
+            exex: self.exex,
+            provider: None,
+            _n: PhantomData,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Deserialize)]
 pub struct TopologyConfig {
     pub influxdb: Option<InfluxDbConfig>,
-    pub clients: HashMap<String, ClientConfig<RootProvider<Ethereum>, Ethereum>>,
+    pub clients: HashMap<String, DeserializableClientConfig>,
     pub blockchains: HashMap<String, BlockchainConfig>,
     pub actors: ActorConfig,
     pub signers: HashMap<String, SignersConfig>,
@@ -266,6 +311,22 @@ impl TopologyConfig {
         let contents = fs::read_to_string(file_name)?;
         let config: TopologyConfig = toml::from_str(&contents)?;
         Ok(config)
+    }
+    
+    pub fn get_client_config<P, N>(&self, name: &str) -> Option<ClientConfig<P, N>> 
+    where 
+        P: Provider<N> + Send + Sync + Clone + 'static,
+        N: Network,
+    {
+        self.clients.get(name).map(|config| config.clone().into_client_config())
+    }
+    
+    pub fn get_client_config<P, N>(&self, name: &str) -> Option<ClientConfig<P, N>> 
+    where 
+        P: Provider<N> + Send + Sync + Clone + 'static,
+        N: Network,
+    {
+        self.clients.get(name).map(|config| config.clone().into_client_config())
     }
 }
 

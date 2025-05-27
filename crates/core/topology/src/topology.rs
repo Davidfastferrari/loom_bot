@@ -670,14 +670,17 @@ impl<
 
     pub fn get_client(&self, name: Option<&String>) -> Result<RootProvider> {
         match self.clients.get(name.unwrap_or(&"local".to_string())) {
-            Some(a) => Ok(a.clone()),
+            Some(a) => Ok(a.clone().into_client_config()),
             None => Err(eyre!("CLIENT_NOT_FOUND")),
         }
     }
 
-    pub fn get_client_config(&self, name: Option<&String>) -> Result<ClientConfig<RootProvider, Ethereum>> {
-        match self.config.clients.get(name.unwrap_or(&"local".to_string())) {
-            Some(a) => Ok(a.clone()),
+    pub fn get_client_config(&self, name: Option<&String>) -> Result<ClientConfig<RootProvider<Ethereum><Ethereum><Ethereum>, Ethereum>> {
+        let name = name.unwrap_or(&"local".to_string());
+        match self.config.clients.get(name;
+        let name = name;
+        let name = name).into_client_config() {
+            Some(a) => Ok(a.clone().into_client_config()),
             None => Err(eyre!("CLIENT_NOT_FOUND")),
         }
     }
