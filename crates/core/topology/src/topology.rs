@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use crate::topology_config::TransportType;
 use crate::topology_config::{BroadcasterConfig, ClientConfig, EncoderConfig, EstimatorConfig, SignersConfig, TopologyConfig};
+use alloy_provider::{Network, Provider};
 use alloy_primitives::Address;
 use alloy_provider::network::Ethereum;
 use alloy_provider::{Network, Provider, ProviderBuilder, RootProvider};
@@ -675,7 +676,7 @@ impl<
         }
     }
 
-    pub fn get_client_config(&self, name: Option<&String>) -> Result<ClientConfig> {
+    pub fn get_client_config(&self, name: Option<&String>) -> Result<ClientConfig<RootProvider, Ethereum>> {
         match self.config.clients.get(name.unwrap_or(&"local".to_string())) {
             Some(a) => Ok(a.clone()),
             None => Err(eyre!("CLIENT_NOT_FOUND")),

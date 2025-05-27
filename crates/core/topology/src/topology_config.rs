@@ -70,6 +70,19 @@ pub enum ClientConfigEnum {
     Params(ClientConfigParams),
 }
 
+#[derive(Clone, Debug, Default, Deserialize)]
+pub struct ClientConfigParams {
+    pub url: String,
+}
+
+impl Default for ClientConfigParams {
+    fn default() -> Self {
+        ClientConfigParams {
+            url: String::new(),
+        }
+    }
+}
+
 impl ClientConfigEnum {
     pub fn url(&self) -> String {
         match &self {
