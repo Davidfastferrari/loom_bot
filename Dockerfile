@@ -67,6 +67,10 @@ RUN if [ ! -f /app/config-example.toml ]; then touch /app/config-example.toml; f
 # Set ownership of the application directory
 RUN chown -R loom:loom /app
 
+# Copy startup script
+COPY start_looms.sh /app/start_looms.sh
+RUN chmod +x /app/start_looms.sh
+
 # Switch to the non-root user
 USER loom
 
@@ -77,8 +81,8 @@ ENV RUST_LOG=debug
 # Use shell form to pass all arguments correctly
 ENTRYPOINT ["/bin/sh", "-c"]
 
-# Update CMD to run the loom binary with DATA environment variable
-CMD /app/loom
+# Update CMD to run the startup script
+CMD /app/start_looms.sh
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
