@@ -282,26 +282,6 @@ impl DeserializableClientConfig {
         }
     }
 }
-    pub url: String,
-    pub node: NodeType,
-    pub transport: TransportType,
-    pub db_path: Option<String>,
-    pub exex: Option<String>,
-}
-
-impl DeserializableClientConfig {
-    pub fn into_client_config<P, N>(self) -> ClientConfig<P, N> {
-        ClientConfig {
-            url: self.url,
-            node: self.node,
-            transport: self.transport,
-            db_path: self.db_path,
-            exex: self.exex,
-            provider: None,
-            _n: PhantomData,
-        }
-    }
-}
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct TopologyConfig {
