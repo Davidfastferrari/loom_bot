@@ -45,6 +45,7 @@ COPY --from=builder /app/target/release/loom_base /app/
 COPY --from=builder /app/target/release/loom_exex /app/
 COPY --from=builder /app/target/release/nodebench /app/
 COPY --from=builder /app/target/release/replayer /app/
+COPY --from=builder /app/target/release/loom /app/
 
 # Copy configuration files from builder stage
 COPY --from=builder /app/config-example.toml /app/config-example.toml
@@ -75,10 +76,10 @@ ENV RUST_LOG=debug
 # Set the entrypoint
 # Use shell form to pass all arguments correctly
 ENTRYPOINT ["/bin/sh", "-c"]
-CMD /app/loom_exex remote --engine.persistence-threshold 2 --engine.memory-block-buffer-target 2
+
+# Update CMD to run the loom binary with DATA environment variable
+CMD /app/loom
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD ps aux | grep loom_exex | grep -v grep || exit 1
-
-# Remove redundant cleanup in runtime stage
+    CMD ps aux | grep loom | grep -v grep || exit 1
