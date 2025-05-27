@@ -3,7 +3,6 @@ use std::sync::Arc;
 
 use crate::topology_config::TransportType;
 use crate::topology_config::{BroadcasterConfig, ClientConfig, EncoderConfig, EstimatorConfig, SignersConfig, TopologyConfig};
-use alloy_provider::{Network, Provider};
 use alloy_primitives::Address;
 use alloy_provider::network::Ethereum;
 use alloy_provider::{Network, Provider, ProviderBuilder, RootProvider};
