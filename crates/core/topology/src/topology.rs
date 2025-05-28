@@ -148,7 +148,12 @@ impl<
                     let transport = IpcConnect::from(config_params.url);
                     ClientBuilder::default().ipc(transport).await
                 }
-                _ => {
+                TransportType::Http => {
+                    info!("Starting HTTP connection");
+                    let transport = alloy_rpc_client::http::HttpConnect::new(config_params.url.clone());
+                    ClientBuilder::default().http(transport).await
+                }
+                TransportType::Ws => {
                     info!("Starting WS connection");
                     let transport = WsConnect { url: config_params.url, auth: None, config: None };
                     ClientBuilder::default().ws(transport).await
