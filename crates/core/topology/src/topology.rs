@@ -150,8 +150,7 @@ impl<
                 }
                 TransportType::Http => {
                     info!("Starting HTTP connection");
-                    let transport = alloy_rpc_client::http::HttpConnect::new(config_params.url.clone());
-                    ClientBuilder::default().http(transport).await
+                    ClientBuilder::default().http(config_params.url.clone())
                 }
                 TransportType::Ws => {
                     info!("Starting WS connection");
