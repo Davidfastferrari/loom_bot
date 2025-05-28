@@ -669,14 +669,16 @@ impl<
     }
 
     pub fn get_client(&self, name: Option<&String>) -> Result<RootProvider<Ethereum>> {
-        match self.clients.get(name.unwrap_or(&"local".to_string())) {
+        let binding = "local".to_string();
+        match self.clients.get(name.unwrap_or(&binding)) {
             Some(a) => Ok(a.clone()),
             None => Err(eyre!("CLIENT_NOT_FOUND")),
         }
     }
 
     pub fn get_client_config(&self, name: Option<&String>) -> Result<ClientConfig<RootProvider, Ethereum>> {
-        let name = name.unwrap_or(&"local".to_string());
+        let binding = "local".to_string();
+        let name = name.unwrap_or(&binding);
         match self.config.clients.get(name) {
             Some(a) => Ok(a.clone().into_client_config::<RootProvider, Ethereum>()),
             None => Err(eyre!("CLIENT_NOT_FOUND")),
@@ -684,41 +686,47 @@ impl<
     }
 
     pub fn get_blockchain(&self, name: Option<&String>) -> Result<&Blockchain> {
-        match self.blockchains.get(name.unwrap_or(&self.default_blockchain_name.clone().unwrap())) {
+        let binding = self.default_blockchain_name.clone().unwrap();
+        match self.blockchains.get(name.unwrap_or(&binding)) {
             Some(a) => Ok(a),
             None => Err(eyre!("BLOCKCHAIN_NOT_FOUND")),
         }
     }
 
     pub fn get_blockchain_state(&self, name: Option<&String>) -> Result<&BlockchainState<DB>> {
-        match self.blockchain_states.get(name.unwrap_or(&self.default_blockchain_name.clone().unwrap())) {
+        let binding = self.default_blockchain_name.clone().unwrap();
+        match self.blockchain_states.get(name.unwrap_or(&binding)) {
             Some(a) => Ok(a),
             None => Err(eyre!("BLOCKCHAIN_NOT_FOUND")),
         }
     }
 
     pub fn get_strategy(&self, name: Option<&String>) -> Result<&Strategy<DB>> {
-        match self.strategies.get(name.unwrap_or(&self.default_blockchain_name.clone().unwrap())) {
+        let binding = self.default_blockchain_name.clone().unwrap();
+        match self.strategies.get(name.unwrap_or(&binding)) {
             Some(a) => Ok(a),
             None => Err(eyre!("BLOCKCHAIN_NOT_FOUND")),
         }
     }
 
     pub fn get_multicaller_address(&self, name: Option<&String>) -> Result<Address> {
-        match self.multicaller_encoders.get(name.unwrap_or(&self.default_multicaller_encoder_name.clone().unwrap())) {
+        let binding = self.default_multicaller_encoder_name.clone().unwrap();
+        match self.multicaller_encoders.get(name.unwrap_or(&binding)) {
             Some(multicaller_address) => Ok(*multicaller_address),
             None => Err(eyre!("ENCODER_NOT_FOUND")),
         }
     }
 
     pub fn get_signers(&self, name: Option<&String>) -> Result<SharedState<TxSigners>> {
-        match self.signers.get(name.unwrap_or(&self.default_multicaller_encoder_name.clone().unwrap())) {
+        let binding = self.default_multicaller_encoder_name.clone().unwrap();
+        match self.signers.get(name.unwrap_or(&binding)) {
             Some(a) => Ok(a.clone()),
             None => Err(eyre!("SIGNERS_NOT_FOUND")),
         }
     }
     pub fn get_blockchain_mut(&mut self, name: Option<&String>) -> Result<&mut Blockchain> {
-        match self.blockchains.get_mut(name.unwrap_or(&self.default_blockchain_name.clone().unwrap())) {
+        let binding = self.default_blockchain_name.clone().unwrap();
+        match self.blockchains.get_mut(name.unwrap_or(&binding)) {
             Some(a) => Ok(a),
             None => Err(eyre!("CLIENT_NOT_FOUND")),
         }
