@@ -46,14 +46,14 @@ base = { type = "flashbots", bc = "base", client = "local", smart = true }
 eoa = "0x0000000000000000000000000000000000000000"  # Replace with your EOA address
 smart = true
 chain_id = 8453
-base_config = { 
-  min_profit_wei = "1000000000000000", 
-  priority_fee = "100000000", 
-  max_gas_price = "30000000000",
-  max_capital_usd = "100000",
-  max_capital_wei = "41000000000000000000",  # ~$100,000 worth of ETH at $2,440/ETH
-  tips_percentage = 10  # 10% of profits as tips
-}
+
+[backrun_strategy.base_config]
+min_profit_wei = "1000000000000000"
+priority_fee = "100000000"
+max_gas_price = "30000000000"
+max_capital_usd = "100000"
+max_capital_wei = "41000000000000000000"  # ~$100,000 worth of ETH at $2,440/ETH
+tips_percentage = 10  # 10% of profits as tips
 
 # Base Network Tokens
 [tokens.base]
