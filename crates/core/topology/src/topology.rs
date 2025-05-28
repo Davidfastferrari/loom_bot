@@ -10,6 +10,7 @@ use alloy_rpc_client::ClientBuilder;
 use alloy_transport_ipc::IpcConnect;
 use alloy_transport_ws::WsConnect;
 use eyre::{eyre, ErrReport, Result};
+use url::Url;
 use loom_broadcast_accounts::{InitializeSignersOneShotBlockingActor, NonceAndBalanceMonitorActor, TxSignersActor};
 use loom_broadcast_broadcaster::FlashbotsBroadcastActor;
 use loom_broadcast_flashbots::Flashbots;
@@ -150,7 +151,8 @@ impl<
                 }
                 TransportType::Http => {
                     info!("Starting HTTP connection");
-                    ClientBuilder::default().http(config_params.url.clone())
+                    let url = Url::parse(&config_params.url)?;
+                    Ok(ClientBuilder::default().http(url))
                 }
                 TransportType::Ws => {
                     info!("Starting WS connection");
