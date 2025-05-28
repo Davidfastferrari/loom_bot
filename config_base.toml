@@ -52,10 +52,6 @@ base_config = {
   max_gas_price = "30000000000",
   max_capital_usd = "100000",
   max_capital_wei = "41000000000000000000",  # ~$100,000 worth of ETH at $2,440/ETH
-  tips_percentage = 10  # 10% of profits as tips,
-  max_capital_wei = "41000000000000000000",  # ~$100,000 worth of ETH at $2,440/ETH
-  tips_percentage = 10  # 10% of profits as tips,
-  max_capital_wei = "41000000000000000000",  # ~$100,000 worth of ETH at $2,440/ETH
   tips_percentage = 10  # 10% of profits as tips
 }
 
