@@ -678,7 +678,7 @@ impl<
     pub fn get_client_config(&self, name: Option<&String>) -> Result<ClientConfig<RootProvider, Ethereum>> {
         let name = name.unwrap_or(&"local".to_string());
         match self.config.clients.get(name) {
-            Some(a) => Ok(a.clone()),
+            Some(a) => Ok(a.clone().into_client_config::<RootProvider, Ethereum>()),
             None => Err(eyre!("CLIENT_NOT_FOUND")),
         }
     }
