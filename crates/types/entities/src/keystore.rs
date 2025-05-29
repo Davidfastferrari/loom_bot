@@ -89,6 +89,18 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_encrypt_once_data_too_short() {
+        let key_store = KeyStore::new_from_string(String::from("password"));
+        // Data length less than BLOCK_SIZE * n + 4 (e.g., 32 bytes only)
+        let data = vec![0u8; 32];
+
+        match key_store.encrypt_once(&data) {
+            Ok(_) => panic!("Expected an error, but didn't get one"),
+            Err(e) => assert_eq!(format!("{}", e), "DATA_TOO_SHORT"),
+        }
+    }
+
     // For this test, you'll need some valid encrypted data to pass and a correct password.
     #[test]
     fn test_encrypt_once_valid_data() {
