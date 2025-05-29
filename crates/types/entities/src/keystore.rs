@@ -33,7 +33,10 @@ impl KeyStore {
         hasher.update(self.pwd.clone());
         let pwd_hash = hasher.finalize();
 
-        let cipher = Aes128::new_from_slice(&pwd_hash[0..16]).unwrap();
+        let cipher = match Aes128::new_from_slice(&pwd_hash[0..16]) {
+            Ok(c) => c,
+            Err(e) => return Err(ErrReport::msg(format!("Cipher init error: {}", e))),
+        };
 
         //println!("{:?}", pwd_hash);
 
@@ -108,7 +111,10 @@ mod tests {
         let key_store = KeyStore::new_from_bytes(key);
         //let encrypted_data = vec![0u8;36]; // Provide valid encrypted data here
 
-        let encrypted_data = hex::decode("51d9dc302b02a02a94d3c7f3057549cd0c990f4c7cc822b61af584fb85afdf209084f48a").unwrap();
+        let encrypted_data = match hex::decode("51d9dc302b02a02a94d3c7f3057549cd0c990f4c7cc822b61af584fb85afdf209084f48a") {
+            Ok(data) => data,
+            Err(e) => panic!("Hex decode error in test: {}", e),
+        };
 
         match key_store.encrypt_once(&encrypted_data) {
             Ok(decrypted_data) => {

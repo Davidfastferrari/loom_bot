@@ -22,15 +22,26 @@ async fn sign_task<LDT: LoomDataTypes>(
         }
     };
 
-    let rlp_bundle: Vec<RlpState> = sign_request
-        .tx_bundle
-        .clone()
-        .unwrap()
+    let tx_bundle = match sign_request.tx_bundle.clone() {
+        Some(bundle) => bundle,
+        None => {
+            error!("No tx_bundle found in sign_request");
+            return Err(eyre!("NO_TX_BUNDLE"));
+        }
+    };
+
+    let rlp_bundle: Vec<RlpState> = tx_bundle
         .iter()
         .map(|tx_request| match &tx_request {
             TxState::Stuffing(t) => RlpState::Stuffing(t.encode().into()),
             TxState::SignatureRequired(t) => {
-                let tx = signer.sign_sync(t.clone()).unwrap();
+                let tx = match signer.sign_sync(t.clone()) {
+                    Ok(tx) => tx,
+                    Err(e) => {
+                        error!("Failed to sign tx: {}", e);
+                        return RlpState::None;
+                    }
+                };
                 let tx_hash = tx.tx_hash();
                 let signed_tx_bytes = Bytes::from(tx.encode());
 
@@ -113,8 +124,22 @@ impl<LDT: LoomDataTypes> TxSignersActor<LDT> {
 
 impl<LDT: LoomDataTypes> Actor for TxSignersActor<LDT> {
     fn start(&self) -> ActorResult {
-        let task =
-            tokio::task::spawn(request_listener_worker(self.compose_channel_rx.clone().unwrap(), self.compose_channel_tx.clone().unwrap()));
+        let compose_channel_rx = match self.compose_channel_rx.clone() {
+            Some(rx) => rx,
+            None => {
+                error!("compose_channel_rx is None");
+                return Err(eyre!("COMPOSE_CHANNEL_RX_NONE"));
+            }
+        };
+        let compose_channel_tx = match self.compose_channel_tx.clone() {
+            Some(tx) => tx,
+            None => {
+                error!("compose_channel_tx is None");
+                return Err(eyre!("COMPOSE_CHANNEL_TX_NONE"));
+            }
+        };
+
+        let task = tokio::task::spawn(request_listener_worker(compose_channel_rx, compose_channel_tx));
 
         Ok(vec![task])
     }
