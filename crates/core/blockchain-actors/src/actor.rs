@@ -660,7 +660,7 @@ where
     /// Initialize signers with encrypted private key
     pub fn initialize_signers_with_encrypted_key(&mut self, key: Vec<u8>) -> Result<&mut Self> {
         self.actor_manager.start_and_wait(
-            InitializeSignersOneShotBlockingActor::new_from_encrypted_key(key).with_signers(self.signers.clone()).on_bc(&self.bc),
+            InitializeSignersOneShotBlockingActor::new_from_encrypted_key(key)?.with_signers(self.signers.clone()).on_bc(&self.bc),
         )?;
         self.with_signers()?;
         Ok(self)
@@ -669,7 +669,7 @@ where
     /// Initializes signers with encrypted key form DATA env var
     pub fn initialize_signers_with_env(&mut self) -> Result<&mut Self> {
         self.actor_manager.start_and_wait(
-            InitializeSignersOneShotBlockingActor::new_from_encrypted_env().with_signers(self.signers.clone()).on_bc(&self.bc),
+            InitializeSignersOneShotBlockingActor::new_from_encrypted_env()?.with_signers(self.signers.clone()).on_bc(&self.bc),
         )?;
         self.with_signers()?;
         Ok(self)
