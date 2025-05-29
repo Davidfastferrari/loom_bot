@@ -184,6 +184,10 @@ impl KeyStore {
         sha.update(&ret);
         let crc = &sha.finalize()[0..4];
 
+        if data.len() < a + 4 {
+            return Err(ErrReport::msg("DATA_TOO_SHORT"));
+        }
+
         if &data[a..a + 4] != crc {
             return Err(ErrReport::msg("BAD_CHECKSUM"));
         }
