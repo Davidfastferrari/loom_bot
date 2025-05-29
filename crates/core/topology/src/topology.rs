@@ -315,7 +315,7 @@ impl<
                     let blockchain = self.get_blockchain(params.blockchain.as_ref())?;
 
                     let mut initialize_signers_actor = InitializeSignersOneShotBlockingActor::new_from_encrypted_env();
-                    match initialize_signers_actor.access(signers.clone()).access(blockchain.nonce_and_balance()).start_and_wait() {
+                    match initialize_signers_actor?.access(signers.clone()).access(blockchain.nonce_and_balance()).start_and_wait() {
                         Ok(_) => {
                             info!("Signers have been initialized")
                         }
