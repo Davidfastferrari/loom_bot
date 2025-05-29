@@ -1,7 +1,7 @@
 use aes::cipher::{Block, BlockDecrypt, KeyInit};
+use aes::cipher::generic_array::GenericArray;
 use aes::Aes128;
 use eyre::{ErrReport, Result};
-use generic_array::GenericArray;
 use sha2::{Digest, Sha512};
 use std::convert::TryInto;
 
@@ -43,7 +43,7 @@ impl KeyStore {
         //println!("{:?}", pwd_hash);
 
         let mut ret = Vec::new();
-        let mut block: Block<Aes128> = [0u8; BLOCK_SIZE].into();
+        let mut block: Block<Aes128> = Block::default();
 
         let mut a = 0;
         while a + BLOCK_SIZE <= data.len() {
