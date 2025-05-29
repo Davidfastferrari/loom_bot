@@ -61,6 +61,7 @@ members = [
     "crates/types/blockchain",
     "crates/types/entities",
     "crates/types/events",
+    "tools/encrypt_key"
 ]
 resolver = "2"
 

@@ -1,0 +1,10 @@
+[package]
+name = "encrypt_key"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+aes = "0.8"
+sha2 = "0.10"
+hex = "0.4"
+eyre = "0.6"
