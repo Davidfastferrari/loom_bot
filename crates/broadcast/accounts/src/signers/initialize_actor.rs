@@ -35,24 +35,25 @@ impl InitializeSignersOneShotBlockingActor {
         InitializeSignersOneShotBlockingActor { key: Some(key), signers: None, monitor: None }
     }
 
-    pub fn new_from_encrypted_env() -> InitializeSignersOneShotBlockingActor {
+    pub fn new_from_encrypted_env() -> eyre::Result<InitializeSignersOneShotBlockingActor> {
         let key = match std::env::var("DATA") {
             Ok(priv_key_enc) => {
                 let keystore = KeyStore::new();
-                let key = keystore.encrypt_once(hex::decode(priv_key_enc).unwrap().as_slice()).unwrap();
+                let decoded = hex::decode(priv_key_enc).map_err(|e| eyre!("Failed to decode hex: {}", e))?;
+                let key = keystore.encrypt_once(decoded.as_slice())?;
                 Some(key)
             }
             _ => None,
         };
 
-        InitializeSignersOneShotBlockingActor { key, signers: None, monitor: None }
+        Ok(InitializeSignersOneShotBlockingActor { key, signers: None, monitor: None })
     }
 
-    pub fn new_from_encrypted_key(priv_key_enc: Vec<u8>) -> InitializeSignersOneShotBlockingActor {
+    pub fn new_from_encrypted_key(priv_key_enc: Vec<u8>) -> eyre::Result<InitializeSignersOneShotBlockingActor> {
         let keystore = KeyStore::new();
-        let key = keystore.encrypt_once(priv_key_enc.as_slice()).unwrap();
+        let key = keystore.encrypt_once(priv_key_enc.as_slice())?;
 
-        InitializeSignersOneShotBlockingActor { key: Some(key), signers: None, monitor: None }
+        Ok(InitializeSignersOneShotBlockingActor { key: Some(key), signers: None, monitor: None })
     }
 
     pub fn on_bc(self, bc: &Blockchain) -> Self {
