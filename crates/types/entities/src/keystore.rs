@@ -3,6 +3,7 @@ use aes::Aes128;
 use eyre::{ErrReport, Result};
 use generic_array::GenericArray;
 use sha2::{Digest, Sha512};
+use std::convert::TryInto;
 
 use crate::private::KEY_ENCRYPTION_PWD;
 
@@ -35,7 +36,8 @@ impl KeyStore {
         let pwd_hash = hasher.finalize();
 
         // Create a GenericArray from the first 16 bytes of the hash
-        let key = GenericArray::clone_from_slice(&pwd_hash[0..16]);
+        let key_array: [u8; 16] = pwd_hash[0..16].try_into().expect("slice with incorrect length");
+        let key = GenericArray::from_array(key_array);
         let cipher = Aes128::new(&key);
 
         //println!("{:?}", pwd_hash);
