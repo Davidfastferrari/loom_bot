@@ -37,8 +37,8 @@ impl KeyStore {
 
         // Create a GenericArray from the first 16 bytes of the hash
         let key_array: [u8; 16] = pwd_hash[0..16].try_into().expect("slice with incorrect length");
-        let key = GenericArray::from(&key_array);
-        let cipher = Aes128::new(key);
+        let key = GenericArray::clone_from_slice(&key_array);
+        let cipher = Aes128::new(&key);
 
         //println!("{:?}", pwd_hash);
 
