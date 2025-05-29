@@ -1,6 +1,7 @@
 use aes::cipher::{Block, BlockDecrypt, KeyInit};
 use aes::Aes128;
 use eyre::{ErrReport, Result};
+use generic_array::GenericArray;
 use sha2::{Digest, Sha512};
 
 use crate::private::KEY_ENCRYPTION_PWD;
@@ -33,10 +34,10 @@ impl KeyStore {
         hasher.update(&self.pwd);
         let pwd_hash = hasher.finalize();
 
-        let cipher = match Aes128::new_from_slice(&pwd_hash[0..16]) {
-            Ok(c) => c,
-            Err(e) => return Err(ErrReport::msg(format!("Cipher init error: {}", e))),
-        };
+        // Create a GenericArray from the first 16 bytes of the hash
+        use generic_array::GenericArray;
+        let key = GenericArray::clone_from_slice(&pwd_hash[0..16]);
+        let cipher = Aes128::new(&key);
 
         //println!("{:?}", pwd_hash);
 
