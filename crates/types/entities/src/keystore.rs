@@ -30,7 +30,7 @@ impl KeyStore {
         }
 
         let mut hasher = Sha512::new();
-        hasher.update(self.pwd.clone());
+        hasher.update(&self.pwd);
         let pwd_hash = hasher.finalize();
 
         let cipher = match Aes128::new_from_slice(&pwd_hash[0..16]) {
