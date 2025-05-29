@@ -35,7 +35,6 @@ impl KeyStore {
         let pwd_hash = hasher.finalize();
 
         // Create a GenericArray from the first 16 bytes of the hash
-        use generic_array::GenericArray;
         let key = GenericArray::clone_from_slice(&pwd_hash[0..16]);
         let cipher = Aes128::new(&key);
 
