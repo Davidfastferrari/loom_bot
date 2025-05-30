@@ -52,7 +52,22 @@ async fn main() -> Result<()> {
     // Set Base network chain ID
     backrun_config = backrun_config.with_chain_id(8453);
 
-    let block_nr = client.get_block_number().await?;
+    // Retry logic with exponential backoff for get_block_number
+    let mut retries = 0;
+    let block_nr = loop {
+        match client.get_block_number().await {
+            Ok(block) => break block,
+            Err(e) => {
+                if retries >= 5 {
+                    return Err(e);
+                }
+                let backoff = 2u64.pow(retries) * 100;
+                info!("get_block_number failed, retrying in {} ms: {}", backoff, e);
+                tokio::time::sleep(std::time::Duration::from_millis(backoff)).await;
+                retries += 1;
+            }
+        }
+    };
     info!("Current block: {}", block_nr);
 
     // Start the backrun actor
