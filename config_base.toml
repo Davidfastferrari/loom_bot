@@ -1,6 +1,7 @@
 # Base Network Configuration
 
-# Disable InfluxDB since it's not available in the container
+# InfluxDB is completely disabled by not including the section
+# If you want to enable it later, uncomment and configure:
 # [influxdb]
 # url = "http://localhost:8086"
 # database = "loom_metrics"
