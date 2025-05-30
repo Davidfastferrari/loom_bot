@@ -31,8 +31,9 @@ address = "0x3dd35b4da6534230ff53048f7477f17f7f4e7a70"  # Use existing multicall
 [actors.node]
 base = { bc = "base", client = "local" }
 
-[actors.mempool]
-base = { bc = "base", client = "local" }
+# Disable mempool actor as it requires subscriptions
+# [actors.mempool]
+# base = { bc = "base", client = "local" }
 
 [actors.price]
 base = { bc = "base", client = "local" }
@@ -48,8 +49,8 @@ base = { bc = "base", client = "local" }
 base = { type = "evm", bc = "base", client = "local", encoder = "multicaller" }
 
 [actors.broadcaster]
-# Use regular broadcaster instead of flashbots to avoid subscription issues
-base = { type = "regular", bc = "base", client = "local", smart = true }
+# Use flashbots broadcaster with subscription disabled
+base = { type = "flashbots", bc = "base", client = "local", smart = true }
 
 [backrun_strategy]
 eoa = "0x0000000000000000000000000000000000000000"  # Replace with your EOA address
