@@ -38,15 +38,15 @@ async fn main() -> Result<()> {
     let mut worker_task_vec = topology.start_actors().await?;
 
     // Get blockchain and client for Base network
-    let client = topology.get_client(Some("local".to_string()).as_ref())?;
+    let client = topology.get_client(Some("local".to_string()).as_ref()).map_err(Into::into)?;
     let blockchain = topology.get_blockchain(Some("base".to_string()).as_ref())?;
     let blockchain_state = topology.get_blockchain_state(Some("base".to_string()).as_ref())?;
     let strategy = topology.get_strategy(Some("base".to_string()).as_ref())?;
 
-    let tx_signers = topology.get_signers(Some("env_signer".to_string()).as_ref())?;
+    let tx_signers = topology.get_signers(Some("env_signer".to_string()).as_ref()).map_err(Into::into)?;
 
     // Load backrun configuration
-    let backrun_config: BackrunConfigSection = load_from_file("./config.toml".to_string().into()).await?;
+    let backrun_config: BackrunConfigSection = load_from_file("./config.toml".to_string().into()).await.map_err(Into::into)?;
     let mut backrun_config: BackrunConfig = backrun_config.backrun_strategy;
     
     // Set Base network chain ID
@@ -113,7 +113,7 @@ async fn main() -> Result<()> {
         }
     }
 
-    let multicaller_address = topology.get_multicaller_address(None)?;
+    let multicaller_address = topology.get_multicaller_address(None).map_err(Into::into)?;
     info!("Starting swap path encoder actor with multicaller at: {}", multicaller_address);
 
     // Start the swap router actor
