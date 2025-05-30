@@ -55,7 +55,7 @@ base = { type = "evm", bc = "base", client = "local", encoder = "multicaller" }
 
 [actors.broadcaster]
 # Use flashbots broadcaster with subscription disabled
-base = { type = "regular", bc = "base", client = "local", smart = true }
+base = { type = "flashbots", bc = "base", client = "local", smart = true }
 
 [backrun_strategy]
 eoa = "0x0000000000000000000000000000000000000000"  # Replace with your EOA address
