@@ -26,22 +26,22 @@ async fn main() -> Result<()> {
     info!("Starting Loom Base - Combined Arbitrage and Backrunning Bot");
 
     // Load configuration
-    let topology_config = TopologyConfig::load_from_file("config.toml".to_string())?;
+    let topology_config = TopologyConfig::load_from_file("config.toml".to_string()).map_err(Into::into)?;
     let influxdb_config = topology_config.influxdb.clone();
 
     let encoder = MulticallerSwapEncoder::default();
 
     // Initialize topology
     let topology =
-        Topology::<LoomDBType>::from_config(topology_config).with_swap_encoder(encoder).build_blockchains().start_clients().await?;
+        Topology::<LoomDBType>::from_config(topology_config).with_swap_encoder(encoder).build_blockchains().start_clients().await.map_err(Into::into)?;
 
-    let mut worker_task_vec = topology.start_actors().await?;
+    let mut worker_task_vec = topology.start_actors().await.map_err(Into::into)?;
 
     // Get blockchain and client for Base network
     let client = topology.get_client(Some("local".to_string()).as_ref()).map_err(Into::into)?;
-    let blockchain = topology.get_blockchain(Some("base".to_string()).as_ref())?;
-    let blockchain_state = topology.get_blockchain_state(Some("base".to_string()).as_ref())?;
-    let strategy = topology.get_strategy(Some("base".to_string()).as_ref())?;
+    let blockchain = topology.get_blockchain(Some("base".to_string()).as_ref()).map_err(Into::into)?;
+    let blockchain_state = topology.get_blockchain_state(Some("base".to_string()).as_ref()).map_err(Into::into)?;
+    let strategy = topology.get_strategy(Some("base".to_string()).as_ref()).map_err(Into::into)?;
 
     let tx_signers = topology.get_signers(Some("env_signer".to_string()).as_ref()).map_err(Into::into)?;
 
@@ -68,6 +68,7 @@ async fn main() -> Result<()> {
             }
         }
     };
+    
     info!("Current block: {}", block_nr);
 
     // Start the backrun actor
