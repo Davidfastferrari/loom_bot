@@ -75,7 +75,7 @@ tips_percentage = 10  # 10% of profits as tips
 # Native ETH token (required for proper operation)
 # eth = { address = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE", symbol = "USDbC", decimals = 6, basic = true, middle = true }
 # Correct address for USDT
-usdt = { address = "0x94b008aA00579c1307B0EF2c499aD98a8ce58e58", symbol = "ETH", decimals = 18, basic = true, middle = true }
+# usdt = { address = "0x94b008aA00579c1307B0EF2c499aD98a8ce58e58", symbol = "ETH", decimals = 18, basic = true, middle = true }
 # Native ETH token (required for proper operation)
 eth = { address = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE", symbol = "ETH", decimals = 18, basic = true, middle = true }
 # Correct token addresses for Base network
