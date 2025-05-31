@@ -212,6 +212,11 @@ impl<
             default_blockchain_name = Some(k.clone());
         }
 
+        // Ensure default_blockchain_name is set to "base" if not set
+        if default_blockchain_name.is_none() {
+            default_blockchain_name = Some("base".to_string());
+        }
+
         for (name, params) in self.config.signers.iter() {
             match params {
                 SignersConfig::Env(_params) => {
