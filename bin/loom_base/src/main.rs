@@ -16,7 +16,7 @@ use loom::types::events::MarketEvents;
 use loom::strategy::simple_arb::SimpleArbFinderActor;
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn initialize_logging() {
     env_logger::Builder::from_env(
         env_logger::Env::default().default_filter_or("debug,tokio_tungstenite=off,tungstenite=off,alloy_rpc_client=off"),
     )
@@ -24,10 +24,42 @@ async fn main() -> Result<()> {
     .init();
 
     info!("Starting Loom Base - Combined Arbitrage and Backrunning Bot");
+}
 
-    // Load configuration
+/// Helper function to start an actor and handle its result consistently
+fn start_actor<T, E>(
+    actor_name: &str, 
+    result: std::result::Result<Vec<tokio::task::JoinHandle<Result<String, E>>>, T>
+) -> Vec<tokio::task::JoinHandle<Result<String, E>>> 
+where 
+    T: std::fmt::Display,
+    E: std::fmt::Display + std::error::Error + Send + Sync + 'static,
+{
+    match result {
+        Ok(handles) => {
+            info!("{} started successfully", actor_name);
+            handles
+        }
+        Err(e) => {
+            error!("{} failed to start: {}", actor_name, e);
+            // Instead of panicking, we return an empty vector
+            Vec::new()
+        }
+    }
+}
+
+async fn load_configuration() -> Result<(TopologyConfig, Option<InfluxDbConfig>)> {
     let topology_config = TopologyConfig::load_from_file("config.toml".to_string()).map_err(Into::into)?;
     let influxdb_config = topology_config.influxdb.clone();
+    
+    Ok((topology_config, influxdb_config))
+}
+
+async fn main() -> Result<()> {
+    initialize_logging().await;
+    
+    // Load configuration
+    let (topology_config, influxdb_config) = load_configuration().await?;
 
     let encoder = MulticallerSwapEncoder::default();
 
@@ -49,8 +81,10 @@ async fn main() -> Result<()> {
     let backrun_config: BackrunConfigSection = load_from_file("./config.toml".to_string().into()).await.map_err(Into::into)?;
     let mut backrun_config: BackrunConfig = backrun_config.backrun_strategy;
     
-    // Set Base network chain ID
-    backrun_config = backrun_config.with_chain_id(8453);
+    // Set Base network chain ID from topology config or use default
+    let chain_id = topology_config.chain_id.unwrap_or(8453);
+    info!("Using chain ID: {}", chain_id);
+    backrun_config = backrun_config.with_chain_id(chain_id);
 
     // Retry logic with exponential backoff for get_block_number
     let mut retries = 0;
@@ -118,23 +152,17 @@ async fn main() -> Result<()> {
     info!("Starting swap path encoder actor with multicaller at: {}", multicaller_address);
 
     // Start the swap router actor
+    info!("Starting swap path encoder actor");
     let mut swap_path_encoder_actor = SwapRouterActor::new();
-    match swap_path_encoder_actor
+    let result = swap_path_encoder_actor
         .access(tx_signers.clone())
         .access(blockchain.nonce_and_balance())
         .consume(strategy.swap_compose_channel())
         .produce(strategy.swap_compose_channel())
         .produce(blockchain.tx_compose_channel())
-        .start()
-    {
-        Ok(r) => {
-            worker_task_vec.extend(r);
-            info!("Swap path encoder actor started successfully")
-        }
-        Err(e) => {
-            panic!("ArbSwapPathEncoderActor {}", e)
-        }
-    }
+        .start();
+    
+    worker_task_vec.extend(start_actor("Swap path encoder actor", result));
 
     // Start the merger actors
     info!("Starting swap path merger actor");
@@ -277,18 +305,37 @@ async fn main() -> Result<()> {
 
     // Main event loop
     let mut s = blockchain.market_events_channel().subscribe();
+    
+    // Add a small delay to prevent CPU spinning if messages are processed very quickly
+    let throttle_delay = std::time::Duration::from_millis(10);
+    
     loop {
-        let msg = s.recv().await;
-        if let Ok(msg) = msg {
-            match msg {
-                MarketEvents::BlockTxUpdate { block_number, block_hash } => {
-                    info!("New block received {} {}", block_number, block_hash);
+        // Use tokio::select to handle both message reception and potential shutdown signals
+        tokio::select! {
+            msg = s.recv() => {
+                if let Ok(msg) = msg {
+                    match msg {
+                        MarketEvents::BlockTxUpdate { block_number, block_hash } => {
+                            info!("New block received {} {}", block_number, block_hash);
+                        }
+                        MarketEvents::BlockStateUpdate { block_hash } => {
+                            info!("New block state received {}", block_hash);
+                        }
+                        _ => {}
+                    }
+                } else {
+                    // Handle the error case - either break the loop or return with an error
+                    error!("Error receiving message from channel");
+                    break;
                 }
-                MarketEvents::BlockStateUpdate { block_hash } => {
-                    info!("New block state received {}", block_hash);
-                }
-                _ => {}
+            }
+            // Add a small delay to prevent CPU spinning
+            _ = tokio::time::sleep(throttle_delay) => {
+                // Just a throttle, do nothing
             }
         }
     }
+    
+    // Return Ok to satisfy the Result<()> return type
+    Ok(())
 }
