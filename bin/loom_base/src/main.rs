@@ -8,13 +8,12 @@ use loom::core::topology::{Topology, TopologyConfig};
 use loom::defi::health_monitor::{MetricsRecorderActor, StateHealthMonitorActor, StuffingTxMonitorActor};
 use loom::evm::db::LoomDBType;
 use loom::execution::multicaller::MulticallerSwapEncoder;
-use loom::metrics::InfluxDbWriterActor;
+use loom::metrics::{InfluxDbConfig, InfluxDbWriterActor};
 use loom::strategy::backrun::{BackrunConfig, BackrunConfigSection, StateChangeArbActor};
 use loom::strategy::merger::{ArbSwapPathMergerActor, DiffPathMergerActor, SamePathMergerActor};
 use loom::types::entities::strategy_config::load_from_file;
 use loom::types::events::MarketEvents;
 use loom::strategy::simple_arb::SimpleArbFinderActor;
-use loom_core_topology::InfluxDbConfig;
 
 fn initialize_logging() {
     env_logger::Builder::from_env(
