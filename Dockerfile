@@ -68,8 +68,8 @@ RUN if [ ! -f /app/config_base.toml ]; then touch /app/config_base.toml; fi && \
 RUN chown -R loom:loom /app
 
 # Copy startup script
-COPY start_looms.sh /app/start_looms.sh
-RUN chmod +x /app/start_looms.sh
+COPY start_loom.sh /app/start_loom.sh
+RUN chmod +x /app/start_loom.sh
 
 # Switch to the non-root user
 USER loom
@@ -82,7 +82,7 @@ ENV RUST_LOG=debug
 ENTRYPOINT ["/bin/sh", "-c"]
 
 # Update CMD to run the startup script
-CMD /app/start_looms.sh
+CMD /app/start_loom.sh
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
