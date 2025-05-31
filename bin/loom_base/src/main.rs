@@ -8,15 +8,14 @@ use loom::core::topology::{Topology, TopologyConfig};
 use loom::defi::health_monitor::{MetricsRecorderActor, StateHealthMonitorActor, StuffingTxMonitorActor};
 use loom::evm::db::LoomDBType;
 use loom::execution::multicaller::MulticallerSwapEncoder;
-use loom::metrics::InfluxDbWriterActor;
+use loom::metrics::{InfluxDbConfig, InfluxDbWriterActor};
 use loom::strategy::backrun::{BackrunConfig, BackrunConfigSection, StateChangeArbActor};
 use loom::strategy::merger::{ArbSwapPathMergerActor, DiffPathMergerActor, SamePathMergerActor};
 use loom::types::entities::strategy_config::load_from_file;
 use loom::types::events::MarketEvents;
 use loom::strategy::simple_arb::SimpleArbFinderActor;
 
-#[tokio::main]
-async fn initialize_logging() {
+fn initialize_logging() {
     env_logger::Builder::from_env(
         env_logger::Env::default().default_filter_or("debug,tokio_tungstenite=off,tungstenite=off,alloy_rpc_client=off"),
     )
@@ -27,13 +26,12 @@ async fn initialize_logging() {
 }
 
 /// Helper function to start an actor and handle its result consistently
-fn start_actor<T, E>(
+fn start_actor<T>(
     actor_name: &str, 
-    result: std::result::Result<Vec<tokio::task::JoinHandle<Result<String, E>>>, T>
-) -> Vec<tokio::task::JoinHandle<Result<String, E>>> 
+    result: std::result::Result<Vec<tokio::task::JoinHandle<Result<String, eyre::Report>>>, T>
+) -> Vec<tokio::task::JoinHandle<Result<String, eyre::Report>>> 
 where 
     T: std::fmt::Display,
-    E: std::fmt::Display + std::error::Error + Send + Sync + 'static,
 {
     match result {
         Ok(handles) => {
@@ -55,8 +53,9 @@ async fn load_configuration() -> Result<(TopologyConfig, Option<InfluxDbConfig>)
     Ok((topology_config, influxdb_config))
 }
 
+#[tokio::main]
 async fn main() -> Result<()> {
-    initialize_logging().await;
+    initialize_logging();
     
     // Load configuration
     let (topology_config, influxdb_config) = load_configuration().await?;
@@ -81,8 +80,8 @@ async fn main() -> Result<()> {
     let backrun_config: BackrunConfigSection = load_from_file("./config.toml".to_string().into()).await.map_err(Into::into)?;
     let mut backrun_config: BackrunConfig = backrun_config.backrun_strategy;
     
-    // Set Base network chain ID from topology config or use default
-    let chain_id = topology_config.chain_id.unwrap_or(8453);
+    // Set Base network chain ID (using default for Base network)
+    let chain_id = 8453; // Base network chain ID
     info!("Using chain ID: {}", chain_id);
     backrun_config = backrun_config.with_chain_id(chain_id);
 
@@ -93,7 +92,7 @@ async fn main() -> Result<()> {
             Ok(block) => break block,
             Err(e) => {
                 if retries >= 5 {
-                    return Err(e);
+                    return Err(e.into());
                 }
                 let backoff = 2u64.pow(retries) * 100;
                 info!("get_block_number failed, retrying in {} ms: {}", backoff, e);
@@ -108,7 +107,7 @@ async fn main() -> Result<()> {
     // Start the backrun actors
     info!("Starting state change arb actor");
     let mut state_change_arb_actor = StateChangeArbActor::new(client.clone(), true, true, backrun_config.clone());
-    match state_change_arb_actor
+    let result = state_change_arb_actor
         .access(blockchain.mempool())
         .access(blockchain.latest_block())
         .access(blockchain.market())
@@ -119,34 +118,20 @@ async fn main() -> Result<()> {
         .produce(strategy.swap_compose_channel())
         .produce(blockchain.health_monitor_channel())
         .produce(blockchain.influxdb_write_channel())
-        .start()
-    {
-        Err(e) => {
-            error!("{}", e)
-        }
-        Ok(r) => {
-            worker_task_vec.extend(r);
-            info!("State change arb actor started successfully")
-        }
-    }
+        .start();
+    
+    worker_task_vec.extend(start_actor("State change arb actor", result));
 
     // Start the simple arbitrage finder actor
     info!("Starting simple arbitrage finder actor");
     let mut simple_arb_finder_actor = SimpleArbFinderActor::new();
-    match simple_arb_finder_actor
+    let result = simple_arb_finder_actor
         .access(blockchain.market())
         .consume(blockchain.market_events_channel())
         .produce(strategy.swap_compose_channel())
-        .start()
-    {
-        Err(e) => {
-            error!("{}", e)
-        }
-        Ok(r) => {
-            worker_task_vec.extend(r);
-            info!("Simple arbitrage finder actor started successfully")
-        }
-    }
+        .start();
+    
+    worker_task_vec.extend(start_actor("Simple arbitrage finder actor", result));
 
     let multicaller_address = topology.get_multicaller_address(None).map_err(Into::into)?;
     info!("Starting swap path encoder actor with multicaller at: {}", multicaller_address);
@@ -167,119 +152,70 @@ async fn main() -> Result<()> {
     // Start the merger actors
     info!("Starting swap path merger actor");
     let mut swap_path_merger_actor = ArbSwapPathMergerActor::new(multicaller_address);
-    match swap_path_merger_actor
+    let result = swap_path_merger_actor
         .access(blockchain.latest_block())
         .consume(blockchain.market_events_channel())
         .consume(strategy.swap_compose_channel())
         .produce(strategy.swap_compose_channel())
-        .start()
-    {
-        Ok(r) => {
-            worker_task_vec.extend(r);
-            info!("Swap path merger actor started successfully")
-        }
-        Err(e) => {
-            panic!("{}", e)
-        }
-    }
+        .start();
+    
+    worker_task_vec.extend(start_actor("Swap path merger actor", result));
 
     let mut same_path_merger_actor = SamePathMergerActor::new(client.clone());
-    match same_path_merger_actor
+    let result = same_path_merger_actor
         .access(blockchain_state.market_state())
         .access(blockchain.latest_block())
         .consume(blockchain.market_events_channel())
         .consume(strategy.swap_compose_channel())
         .produce(strategy.swap_compose_channel())
-        .start()
-    {
-        Ok(r) => {
-            worker_task_vec.extend(r);
-            info!("Same path merger actor started successfully")
-        }
-        Err(e) => {
-            panic!("{}", e)
-        }
-    }
+        .start();
+    
+    worker_task_vec.extend(start_actor("Same path merger actor", result));
 
     let mut diff_path_merger_actor = DiffPathMergerActor::new();
-    match diff_path_merger_actor
+    let result = diff_path_merger_actor
         .consume(blockchain.market_events_channel())
         .consume(strategy.swap_compose_channel())
         .produce(strategy.swap_compose_channel())
-        .start()
-    {
-        Ok(r) => {
-            worker_task_vec.extend(r);
-            info!("Diff path merger actor started successfully")
-        }
-        Err(e) => {
-            panic!("{}", e)
-        }
-    }
+        .start();
+    
+    worker_task_vec.extend(start_actor("Diff path merger actor", result));
 
     // Start the health monitoring actors
     let mut state_health_monitor_actor = StateHealthMonitorActor::new(client.clone());
-    match state_health_monitor_actor
+    let result = state_health_monitor_actor
         .access(blockchain_state.market_state())
         .consume(blockchain.tx_compose_channel())
         .consume(blockchain.market_events_channel())
-        .start()
-    {
-        Err(e) => {
-            panic!("State health monitor actor failed: {}", e)
-        }
-        Ok(r) => {
-            worker_task_vec.extend(r);
-            info!("State health monitor actor started successfully")
-        }
-    }
+        .start();
+    
+    worker_task_vec.extend(start_actor("State health monitor actor", result));
 
     let mut stuffing_txs_monitor_actor = StuffingTxMonitorActor::new(client.clone());
-    match stuffing_txs_monitor_actor
+    let result = stuffing_txs_monitor_actor
         .access(blockchain.latest_block())
         .consume(blockchain.tx_compose_channel())
         .consume(blockchain.market_events_channel())
         .produce(blockchain.influxdb_write_channel())
-        .start()
-    {
-        Err(e) => {
-            panic!("Stuffing txs monitor actor failed: {}", e)
-        }
-        Ok(r) => {
-            worker_task_vec.extend(r);
-            info!("Stuffing txs monitor actor started successfully")
-        }
-    }
+        .start();
+    
+    worker_task_vec.extend(start_actor("Stuffing txs monitor actor", result));
 
     // Start InfluxDB metrics if configured
     if let Some(influxdb_config) = influxdb_config {
         let mut influxdb_writer_actor = InfluxDbWriterActor::new(influxdb_config.url, influxdb_config.database, influxdb_config.tags);
-        match influxdb_writer_actor.consume(blockchain.influxdb_write_channel()).start() {
-            Err(e) => {
-                panic!("InfluxDB writer actor failed: {}", e)
-            }
-            Ok(r) => {
-                worker_task_vec.extend(r);
-                info!("InfluxDB writer actor started successfully")
-            }
-        }
+        let result = influxdb_writer_actor.consume(blockchain.influxdb_write_channel()).start();
+        worker_task_vec.extend(start_actor("InfluxDB writer actor", result));
 
         let mut block_latency_recorder_actor = MetricsRecorderActor::new();
-        match block_latency_recorder_actor
+        let result = block_latency_recorder_actor
             .access(blockchain.market())
             .access(blockchain_state.market_state())
             .consume(blockchain.new_block_headers_channel())
             .produce(blockchain.influxdb_write_channel())
-            .start()
-        {
-            Err(e) => {
-                panic!("Block latency recorder actor failed: {}", e)
-            }
-            Ok(r) => {
-                worker_task_vec.extend(r);
-                info!("Block latency recorder actor started successfully")
-            }
-        }
+            .start();
+        
+        worker_task_vec.extend(start_actor("Block latency recorder actor", result));
     }
 
     // Monitor worker tasks
