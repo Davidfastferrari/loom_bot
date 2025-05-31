@@ -278,15 +278,17 @@ async fn main() -> Result<()> {
     // Main event loop
     let mut s = blockchain.market_events_channel().subscribe();
     loop {
-        let msg = s.recv().await.map_err(Into::into)?;
-        match msg {
-            MarketEvents::BlockTxUpdate { block_number, block_hash } => {
-                info!("New block received {} {}", block_number, block_hash);
+        let msg = s.recv().await;
+        if let Ok(msg) = msg {
+            match msg {
+                MarketEvents::BlockTxUpdate { block_number, block_hash } => {
+                    info!("New block received {} {}", block_number, block_hash);
+                }
+                MarketEvents::BlockStateUpdate { block_hash } => {
+                    info!("New block state received {}", block_hash);
+                }
+                _ => {}
             }
-            MarketEvents::BlockStateUpdate { block_hash } => {
-                info!("New block state received {}", block_hash);
-            }
-            _ => {}
         }
     }
 }
