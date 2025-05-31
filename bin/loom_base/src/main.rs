@@ -71,7 +71,7 @@ async fn main() -> Result<()> {
     
     info!("Current block: {}", block_nr);
 
-    // Start the backrun actor
+    // Start the backrun actors
     info!("Starting state change arb actor");
     let mut state_change_arb_actor = StateChangeArbActor::new(client.clone(), true, true, backrun_config.clone());
     match state_change_arb_actor
