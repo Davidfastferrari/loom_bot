@@ -8,7 +8,8 @@ use loom::core::topology::{Topology, TopologyConfig};
 use loom::defi::health_monitor::{MetricsRecorderActor, StateHealthMonitorActor, StuffingTxMonitorActor};
 use loom::evm::db::LoomDBType;
 use loom::execution::multicaller::MulticallerSwapEncoder;
-use loom::metrics::{InfluxDbConfig, InfluxDbWriterActor};
+use loom_core_topology::InfluxDbConfig;
+use loom::metrics::InfluxDbWriterActor;
 use loom::strategy::backrun::{BackrunConfig, BackrunConfigSection, StateChangeArbActor};
 use loom::strategy::merger::{ArbSwapPathMergerActor, DiffPathMergerActor, SamePathMergerActor};
 use loom::types::entities::strategy_config::load_from_file;
@@ -44,6 +45,9 @@ where
             Vec::new()
         }
     }
+
+    // Return Ok to satisfy the Result<()> return type
+    Ok(())
 }
 
 async fn load_configuration() -> Result<(TopologyConfig, Option<InfluxDbConfig>)> {
