@@ -18,7 +18,7 @@ use loom::strategy::simple_arb::SimpleArbFinderActor;
 
 fn initialize_logging() {
     env_logger::Builder::from_env(
-        env_logger::Env::default().default_filter_or("debug,tokio_tungstenite=off,tungstenite=off,alloy_rpc_client=off"),
+        env_logger::Env::default().default_filter_or("info,tokio_tungstenite=off,tungstenite=off,alloy_rpc_client=off"),
     )
     .format_timestamp_micros()
     .init();
