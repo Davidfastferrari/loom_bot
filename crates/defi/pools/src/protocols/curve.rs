@@ -93,36 +93,50 @@ where
 
     pub async fn coin128(client: P, address: Address, coin_id: u32) -> Result<Address> {
         let common_contract = ICurveCommonI128Instance::new(address, client);
-        match common_contract.coins(coin_id.into()).call_raw().await {
-            Ok(addr) => {
-                if addr.len() >= 32 {
-                    Ok(Address::from_slice(&addr[12..32]))
-                } else {
-                    Err(eyre!("CANNOT_GET_COIN_ADDRESS"))
+        let mut retries = 3;
+        while retries > 0 {
+            match common_contract.coins(coin_id.into()).call_raw().await {
+                Ok(addr) => {
+                    if addr.len() >= 32 {
+                        return Ok(Address::from_slice(&addr[12..32]));
+                    } else {
+                        return Err(eyre!("CANNOT_GET_COIN_ADDRESS"));
+                    }
+                }
+                Err(e) => {
+                    trace!("coin call error {}, retries left: {}", e, retries);
+                    retries -= 1;
+                    if retries == 0 {
+                        return Err(eyre!("CANNOT_GET_COIN_ADDRESS"));
+                    }
                 }
             }
-            Err(e) => {
-                trace!("coin call error {}", e);
-                Err(eyre!("CANNOT_GET_COIN_ADDRESS"))
-            }
         }
+        Err(eyre!("CANNOT_GET_COIN_ADDRESS"))
     }
 
     pub async fn coin(client: P, address: Address, coin_id: u32) -> Result<Address> {
         let common_contract = ICurveCommonInstance::new(address, client.clone());
-        match common_contract.coins(U256::from(coin_id)).call_raw().await {
-            Ok(addr) => {
-                if addr.len() >= 32 {
-                    Ok(Address::from_slice(&addr[12..32]))
-                } else {
-                    Self::coin128(client, address, coin_id).await
+        let mut retries = 3;
+        while retries > 0 {
+            match common_contract.coins(U256::from(coin_id)).call_raw().await {
+                Ok(addr) => {
+                    if addr.len() >= 32 {
+                        return Ok(Address::from_slice(&addr[12..32]));
+                    } else {
+                        return Self::coin128(client, address, coin_id).await;
+                    }
+                }
+                Err(e) => {
+                    trace!("{e}, retries left: {}", retries);
+                    retries -= 1;
+                    if retries == 0 {
+                        return Self::coin128(client, address, coin_id).await;
+                    }
                 }
             }
-            Err(e) => {
-                trace!("{e}");
-                Self::coin128(client, address, coin_id).await
-            }
         }
+        Self::coin128(client, address, coin_id).await
     }
 
     pub async fn balance128(client: P, address: Address, coin_id: u32) -> Result<U256> {
