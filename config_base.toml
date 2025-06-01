@@ -10,13 +10,12 @@
 
 [clients.local]
 # Use a more reliable RPC provider with higher rate limits
-url = "https://base-mainnet.g.alchemy.com/v2/TNqLsUr-1r20DnYhBhHqghjNlcZpQYNw"
+url = "https://base-mainnet.infura.io/v3/86b0b71ddfee42459d5925e4f51c5d05"
 transport = "http"
 node = "geth"
 # Add backup RPC URLs
 backup_urls = [
-  "https://base-mainnet.g.alchemy.com/v2/TNqLsUr-1r20DnYhBhHqghjNlcZpQYNw",
-  "https://base.llamarpc.com"
+  "https://base-mainnet.infura.io/v3/86b0b71ddfee42459d5925e4f51c5d05"
 ]
 
 [blockchains.base]
