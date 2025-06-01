@@ -74,8 +74,8 @@ RUN chmod +x /app/start_loom.sh
 # Switch to the non-root user
 USER loom
 
-# Set environment variable for debug logging
-ENV RUST_LOG=debug
+# Set environment variable for info logging
+ENV RUST_LOG=info
 
 # Set the entrypoint
 # Use shell form to pass all arguments correctly
