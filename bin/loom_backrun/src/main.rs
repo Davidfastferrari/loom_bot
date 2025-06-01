@@ -37,9 +37,9 @@ async fn main() -> Result<()> {
     //let (topology, mut worker_task_vec) = Topology::<LoomDBType>::from(topology_config, encoder).await?;
 
     let client = topology.get_client(Some("local".to_string()).as_ref())?;
-    let blockchain = topology.get_blockchain(Some("mainnet".to_string()).as_ref())?;
-    let blockchain_state = topology.get_blockchain_state(Some("mainnet".to_string()).as_ref())?;
-    let strategy = topology.get_strategy(Some("mainnet".to_string()).as_ref())?;
+    let blockchain = topology.get_blockchain(Some("base".to_string()).as_ref())?;
+    let blockchain_state = topology.get_blockchain_state(Some("base".to_string()).as_ref())?;
+    let strategy = topology.get_strategy(Some("base".to_string()).as_ref())?;
 
     let tx_signers = topology.get_signers(Some("env_signer".to_string()).as_ref())?;
 
