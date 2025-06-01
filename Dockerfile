@@ -78,11 +78,11 @@ USER loom
 ENV RUST_LOG=info
 
 # Set the entrypoint
-# Use shell form to pass all arguments correctly
-ENTRYPOINT ["/bin/sh", "-c"]
+# Use exec form to run the startup script directly
+ENTRYPOINT ["/app/start_loom.sh"]
 
-# Update CMD to run the startup script
-CMD /app/start_loom.sh
+# Remove CMD since ENTRYPOINT runs the script directly
+# CMD /app/start_loom.sh
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
