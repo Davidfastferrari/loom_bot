@@ -1,23 +1,25 @@
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::{Mutex, Semaphore};
-use alloy_provider::{Provider, ProviderError};
+use alloy_transport::{Transport, TransportResult};
+use alloy_rpc_client::{ClientBuilder, RpcClient};
 use futures::future::BoxFuture;
 use futures::FutureExt;
+use serde_json::Value;
 
-/// A wrapper around a Provider that enforces a rate limit on requests per second.
+/// A wrapper around a Transport that enforces a rate limit on requests per second.
 #[derive(Clone)]
-pub struct RateLimitedProvider<P> {
-    inner: P,
+pub struct RateLimitedProvider<T> {
+    inner: T,
     semaphore: Arc<Semaphore>,
     last_request_time: Arc<Mutex<Instant>>,
     min_interval: Duration,
 }
 
-impl<P> RateLimitedProvider<P> {
-    /// Create a new RateLimitedProvider wrapping the given provider.
+impl<T> RateLimitedProvider<T> {
+    /// Create a new RateLimitedProvider wrapping the given transport.
     /// rate_limit_rps: requests per second limit. If 0, no rate limiting is applied.
-    pub fn new(inner: P, rate_limit_rps: u32) -> Self {
+    pub fn new(inner: T, rate_limit_rps: u32) -> Self {
         let min_interval = if rate_limit_rps == 0 {
             Duration::from_secs(0)
         } else {
@@ -43,26 +45,18 @@ impl<P> RateLimitedProvider<P> {
     }
 }
 
-impl<P> Provider for RateLimitedProvider<P>
+impl<T> Transport for RateLimitedProvider<T>
 where
-    P: Provider + Clone + Send + Sync + 'static,
+    T: Transport + Clone + Send + Sync + 'static,
 {
-    type Error = P::Error;
-    type Future<T> = BoxFuture<'static, Result<T, Self::Error>>;
+    type Error = T::Error;
 
-    fn request<T>(&self, method: &str, params: serde_json::Value) -> Self::Future<T>
-    where
-        T: serde::de::DeserializeOwned + Send + 'static,
-    {
-        let inner = self.inner.clone();
-        let method = method.to_string();
-        let params = params.clone();
-        let this = self.clone();
+    fn prepare(&self, method: &str, params: &[Value]) -> TransportResult<(String, Value)> {
+        self.inner.prepare(method, params)
+    }
 
-        async move {
-            this.wait_for_rate_limit().await;
-            inner.request(&method, params).await
-        }
-        .boxed()
+    async fn request(&self, req: Value) -> Result<Value, Self::Error> {
+        self.wait_for_rate_limit().await;
+        self.inner.request(req).await
     }
 }

@@ -40,11 +40,13 @@ loom-types-events.workspace = true
 eyre.workspace = true
 revm.workspace = true
 serde.workspace = true
+serde_json.workspace = true
 strum.workspace = true
 strum_macros.workspace = true
 tokio.workspace = true
 toml.workspace = true
 tracing.workspace = true
+futures.workspace = true
 
 # alloy
 alloy-primitives.workspace = true

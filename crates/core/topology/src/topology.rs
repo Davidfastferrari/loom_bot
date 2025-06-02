@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::rate_limited_provider::RateLimitedProvider;
-use crate::rate_limited_provider::RateLimitedProvider;
 use crate::topology_config::TransportType;
 use crate::topology_config::{BroadcasterConfig, ClientConfig, EncoderConfig, EstimatorConfig, SignersConfig, TopologyConfig};
 use alloy_primitives::Address;
@@ -171,18 +170,18 @@ impl<
                 }
             };
 
-            let provider = ProviderBuilder::<_, _, Ethereum>::new().disable_recommended_fillers().on_client(client);
-
-            // Wrap provider with rate limiter if rate_limit_rps is set and > 0
-            let provider = if let Some(rate_limit) = config_params.rate_limit_rps {
+            // Wrap client with rate limiter if rate_limit_rps is set and > 0
+            let client = if let Some(rate_limit) = config_params.rate_limit_rps {
                 if rate_limit > 0 {
-                    ProviderBuilder::new().disable_recommended_fillers().on_client(RateLimitedProvider::new(provider, rate_limit))
+                    RateLimitedProvider::new(client, rate_limit)
                 } else {
-                    provider
+                    client
                 }
             } else {
-                provider
+                client
             };
+
+            let provider = ProviderBuilder::<_, _, Ethereum>::new().disable_recommended_fillers().on_client(client);
 
             clients.insert(name.clone(), provider);
         }
