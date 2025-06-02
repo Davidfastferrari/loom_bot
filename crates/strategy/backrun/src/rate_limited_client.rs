@@ -73,6 +73,10 @@ where
 
 use crate::rate_limited_client::RateLimitedClient;
 use loom_node_debug_provider::DebugProviderExt;
+use bytes::Bytes;
+use futures::executor::block_on;
+use reth_primitives::{tracing::TraceConfig, H256};
+use eyre::Result;
 
 impl<P, N> DebugProviderExt<N> for RateLimitedClient<P>
 where
@@ -83,26 +87,26 @@ where
         &self,
         from: Option<alloy_primitives::Address>,
         to: alloy_primitives::Address,
-        data: bytes::Bytes,
+        data: Bytes,
         block_number: Option<u64>,
-        trace_config: Option<reth_primitives::tracing::TraceConfig>,
-    ) -> eyre::Result<reth_primitives::tracing::GethExecTrace> {
-        futures::executor::block_on(self.inner.geth_debug_trace_call(from, to, data))
+        trace_config: Option<TraceConfig>,
+    ) -> Result<reth_primitives::tracing::GethExecTrace> {
+        block_on(self.inner.geth_debug_trace_call(from, to, data, block_number, trace_config))
     }
 
     fn geth_debug_trace_block_by_number(
         &self,
         block_number: u64,
-        trace_config: Option<reth_primitives::tracing::TraceConfig>,
-    ) -> eyre::Result<Vec<reth_primitives::tracing::GethExecTrace>> {
+        trace_config: Option<TraceConfig>,
+    ) -> Result<Vec<reth_primitives::tracing::GethExecTrace>> {
         self.inner.geth_debug_trace_block_by_number(block_number, trace_config)
     }
 
     fn geth_debug_trace_block_by_hash(
         &self,
-        block_hash: alloy_primitives::H256,
-        trace_config: Option<reth_primitives::tracing::TraceConfig>,
-    ) -> eyre::Result<Vec<reth_primitives::tracing::GethExecTrace>> {
+        block_hash: H256,
+        trace_config: Option<TraceConfig>,
+    ) -> Result<Vec<reth_primitives::tracing::GethExecTrace>> {
         self.inner.geth_debug_trace_block_by_hash(block_hash, trace_config)
     }
 }
