@@ -2,8 +2,8 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::{Mutex, Semaphore};
 use alloy_provider::Provider;
-use futures::future::BoxFuture;
-use futures::FutureExt;
+use futures_util::future::BoxFuture;
+use futures_util::FutureExt;
 use serde_json::Value;
 
 /// A wrapper around a Provider that enforces a rate limit on requests per second.
@@ -44,27 +44,31 @@ impl<P> RateLimitedClient<P> {
     }
 }
 
+use std::borrow::Cow;
+use alloy_provider::{Provider, RpcRecv, RpcSend, TransportResult, RootProvider};
+use futures_util::future::BoxFuture;
+use serde_json::Value;
+
 impl<P, N> Provider<N> for RateLimitedClient<P>
 where
     P: Provider<N> + Clone + Send + Sync + 'static,
     N: alloy_provider::Network,
 {
-    type Error = P::Error;
-    type Future<T> = BoxFuture<'static, Result<T, Self::Error>>;
+    fn root(&self) -> &RootProvider<N> {
+        self.inner.root()
+    }
 
-    fn request<T>(&self, method: &str, params: Value) -> Self::Future<T>
+    fn raw_request<P2, R>(&self, method: Cow<'static, str>, params: P2) -> TransportResult<R>
     where
-        T: serde::de::DeserializeOwned + Send + 'static,
+        P2: RpcSend,
+        R: RpcRecv,
     {
         let inner = self.inner.clone();
-        let method = method.to_string();
-        let params = params.clone();
         let this = self.clone();
 
         async move {
             this.wait_for_rate_limit().await;
-            inner.request(&method, params).await
+            inner.raw_request(method, params).await
         }
-        .boxed()
     }
 }

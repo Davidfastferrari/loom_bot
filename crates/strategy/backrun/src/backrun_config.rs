@@ -158,6 +158,7 @@ impl Default for BackrunConfig {
             dynamic_capital: Some(true),
             max_path_length: Some(4),
             private_tx_url: None,
+            rate_limit_rps: None,
         }
     }
 }
