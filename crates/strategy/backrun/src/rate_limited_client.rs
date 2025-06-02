@@ -1,31 +1,30 @@
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::{Mutex, Semaphore};
-use alloy_rpc_client::RpcClient;
-use alloy_transport::Transport;
+use alloy_provider::Provider;
+use futures::future::BoxFuture;
+use futures::FutureExt;
+use serde_json::Value;
 
-/// A wrapper around an RpcClient that enforces a rate limit on requests per second.
+/// A wrapper around a Provider that enforces a rate limit on requests per second.
 #[derive(Clone)]
-pub struct RateLimitedProvider<T> {
-    inner: RpcClient<T>,
+pub struct RateLimitedClient<P> {
+    inner: P,
     semaphore: Arc<Semaphore>,
     last_request_time: Arc<Mutex<Instant>>,
     min_interval: Duration,
 }
 
-impl<T> RateLimitedProvider<T>
-where
-    T: Transport + Clone,
-{
-    /// Create a new RateLimitedProvider wrapping the given RpcClient.
+impl<P> RateLimitedClient<P> {
+    /// Create a new RateLimitedClient wrapping the given Provider.
     /// rate_limit_rps: requests per second limit. If 0, no rate limiting is applied.
-    pub fn new(inner: RpcClient<T>, rate_limit_rps: u32) -> Self {
+    pub fn new(inner: P, rate_limit_rps: u32) -> Self {
         let min_interval = if rate_limit_rps == 0 {
             Duration::from_secs(0)
         } else {
             Duration::from_secs_f64(1.0 / rate_limit_rps as f64)
         };
-        RateLimitedProvider {
+        RateLimitedClient {
             inner,
             semaphore: Arc::new(Semaphore::new(1)),
             last_request_time: Arc::new(Mutex::new(Instant::now() - min_interval)),
@@ -43,23 +42,14 @@ where
         }
         *last_time = Instant::now();
     }
-
-    /// Get a reference to the inner RpcClient
-    pub fn inner(&self) -> &RpcClient<T> {
-        &self.inner
-    }
 }
 
-use alloy_rpc_client::Provider;
-use futures::future::BoxFuture;
-use futures::FutureExt;
-use serde_json::Value;
-
-impl<T> Provider for RateLimitedProvider<T>
+impl<P, N> Provider<N> for RateLimitedClient<P>
 where
-    T: Transport + Clone + Send + Sync + 'static,
+    P: Provider<N> + Clone + Send + Sync + 'static,
+    N: alloy_provider::Network,
 {
-    type Error = <RpcClient<T> as Provider>::Error;
+    type Error = P::Error;
     type Future<T> = BoxFuture<'static, Result<T, Self::Error>>;
 
     fn request<T>(&self, method: &str, params: Value) -> Self::Future<T>

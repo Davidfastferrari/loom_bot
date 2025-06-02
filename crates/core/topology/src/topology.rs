@@ -172,18 +172,7 @@ impl<
 
             let provider = ProviderBuilder::<_, _, Ethereum>::new().disable_recommended_fillers().on_client(client);
 
-          let provider = ProviderBuilder::<_, _, Ethereum>::new().disable_recommended_fillers().on_client(client);
-
-        // The Rate limiting is currently not implemented due to alloy Transport trait being sealed.  // Note: Rate limiting is currently not implemented due to alloy Transport trait being sealed.
-    let provider = ProviderBuilder::<_, _, Ethereum>::new().disable_recommended_fillers().on_client(client);
-
-        // The Rate limiting is currently not implemented due to alloy Transport trait being sealed.        // The RateLimitedProvider wrapper exists but cannot be used directly with ProviderBuilder.
-            // This would require a different approach, such as implementing rate limiting at the provider level
-            // or using a middleware pattern that alloy supports.
-
-            clients.insert(name.clone(), provider wrapper exists but cannot be used directly with ProviderBuilder.
-            // This would require a different approach, such as implementing rate limiting at the provider level
-            // or using a middleware pattern that alloy supports.);
+            clients.insert(name.clone(), provider);
         }
         Ok(Topology { clients, ..self })
     }
