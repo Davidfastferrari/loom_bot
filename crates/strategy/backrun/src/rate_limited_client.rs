@@ -55,10 +55,10 @@ where
         self.inner.root()
     }
 
-    fn raw_request<'a, P2, R>(&'a self, method: Cow<'a, str>, params: P2) -> std::pin::Pin<Box<dyn std::future::Future<Output = TransportResult<R>> + Send + 'a>>
+    fn raw_request<P2, R>(&self, method: Cow<'static, str>, params: P2) -> std::pin::Pin<Box<dyn std::future::Future<Output = TransportResult<R>> + Send + 'static>>
     where
-        P2: RpcSend + 'a,
-        R: RpcRecv + 'a,
+        P2: RpcSend + 'static,
+        R: RpcRecv + 'static,
     {
         let inner = self.inner.clone();
         let this = self.clone();
