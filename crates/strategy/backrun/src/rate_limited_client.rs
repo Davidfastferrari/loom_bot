@@ -55,7 +55,7 @@ where
         self.inner.root()
     }
 
-    fn raw_request<'a, P2, R>(&'a self, method: Cow<'a, str>, params: P2) -> BoxFuture<'a, TransportResult<R>>
+    fn raw_request<'a, P2, R>(&'a self, method: Cow<'a, str>, params: P2) -> std::pin::Pin<Box<dyn std::future::Future<Output = TransportResult<R>> + Send + 'a>>
     where
         P2: RpcSend + 'a,
         R: RpcRecv + 'a,
@@ -63,51 +63,57 @@ where
         let inner = self.inner.clone();
         let this = self.clone();
 
-        async move {
+        Box::pin(async move {
             this.wait_for_rate_limit().await;
             inner.raw_request(method, params).await
-        }
-        .boxed()
+        })
     }
 }
 
 use loom_node_debug_provider::DebugProviderExt;
 use bytes::Bytes;
 use futures::executor::block_on;
-use alloy_rpc_types_trace::geth::GethDebugTracingCallOptions;
+use alloy_rpc_types_trace::geth::{GethDebugTracingCallOptions, TraceConfig, GethExecTrace};
 use alloy_rpc_types::{BlockId, TransactionRequest};
-use alloy_primitives::H256;
+use reth_types::H256;
 use eyre::Result;
-use reth_tracing::config::TraceConfig;
-use reth_primitives::tracing::GethExecTrace;
 
 impl<P, N> DebugProviderExt<N> for RateLimitedClient<P>
 where
     P: DebugProviderExt<N> + Provider<N> + Clone + Send + Sync + 'static,
     N: alloy_provider::Network,
 {
-    fn geth_debug_trace_call<'a>(
-        &'a self,
+    fn geth_debug_trace_call<'life0, 'async_trait>(
+        &'life0 self,
         tx: TransactionRequest,
         block: BlockId,
         options: GethDebugTracingCallOptions,
-    ) -> Result<GethExecTrace> {
-        block_on(self.inner.geth_debug_trace_call(tx, block, options))
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<GethExecTrace>> + Send + 'async_trait>>
+    where
+        'life0: 'async_trait,
+    {
+        Box::pin(self.inner.geth_debug_trace_call(tx, block, options))
     }
 
-    fn geth_debug_trace_block_by_number<'a>(
-        &'a self,
+    fn geth_debug_trace_block_by_number<'life0, 'async_trait>(
+        &'life0 self,
         block_number: u64,
         trace_config: Option<TraceConfig>,
-    ) -> Result<Vec<reth_primitives::tracing::GethExecTrace>> {
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<Vec<GethExecTrace>>> + Send + 'async_trait>>
+    where
+        'life0: 'async_trait,
+    {
         self.inner.geth_debug_trace_block_by_number(block_number, trace_config)
     }
 
-    fn geth_debug_trace_block_by_hash<'a>(
-        &'a self,
+    fn geth_debug_trace_block_by_hash<'life0, 'async_trait>(
+        &'life0 self,
         block_hash: H256,
         trace_config: Option<TraceConfig>,
-    ) -> Result<Vec<reth_primitives::tracing::GethExecTrace>> {
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<Vec<GethExecTrace>>> + Send + 'async_trait>>
+    where
+        'life0: 'async_trait,
+    {
         self.inner.geth_debug_trace_block_by_hash(block_hash, trace_config)
     }
 }
