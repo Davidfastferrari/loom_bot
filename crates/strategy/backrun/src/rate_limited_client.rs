@@ -55,7 +55,7 @@ where
         self.inner.root()
     }
 
-fn raw_request<'async_trait, P2, R>(&'async_trait self, method: Cow<'static, str>, params: P2) -> std::pin::Pin<Box<dyn std::future::Future<Output = TransportResult<R>> + Send + 'async_trait>>
+    fn raw_request<P2, R>(&self, method: Cow<'static, str>, params: P2) -> std::pin::Pin<Box<dyn std::future::Future<Output = TransportResult<R>> + Send + '_>>
     where
         P2: RpcSend + 'static,
         R: RpcRecv + 'static,
@@ -71,7 +71,6 @@ fn raw_request<'async_trait, P2, R>(&'async_trait self, method: Cow<'static, str
 }
 
 use loom_node_debug_provider::DebugProviderExt;
-use bytes::Bytes;
 use alloy_rpc_types_trace::{TraceConfig, GethExecTrace};
 use alloy_rpc_types_trace::geth::GethDebugTracingCallOptions;
 use alloy_rpc_types::{BlockId, TransactionRequest};
