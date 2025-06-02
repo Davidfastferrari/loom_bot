@@ -171,6 +171,17 @@ impl<
 
             let provider = ProviderBuilder::<_, _, Ethereum>::new().disable_recommended_fillers().on_client(client);
 
+            // Wrap provider with rate limiter if rate_limit_rps is set and > 0
+            let provider = if let Some(rate_limit) = config_params.rate_limit_rps {
+                if rate_limit > 0 {
+                    ProviderBuilder::new().disable_recommended_fillers().on_client(RateLimitedProvider::new(provider, rate_limit))
+                } else {
+                    provider
+                }
+            } else {
+                provider
+            };
+
             clients.insert(name.clone(), provider);
         }
         Ok(Topology { clients, ..self })
