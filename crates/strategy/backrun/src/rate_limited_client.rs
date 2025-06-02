@@ -55,7 +55,7 @@ where
         self.inner.root()
     }
 
-    fn raw_request<'life0, P2, R>(&'life0 self, method: Cow<'static, str>, params: P2) -> std::pin::Pin<Box<dyn std::future::Future<Output = TransportResult<R>> + Send + 'life0>>
+fn raw_request<'async_trait, P2, R>(&'async_trait self, method: Cow<'static, str>, params: P2) -> std::pin::Pin<Box<dyn std::future::Future<Output = TransportResult<R>> + Send + 'async_trait>>
     where
         P2: RpcSend + 'static,
         R: RpcRecv + 'static,
