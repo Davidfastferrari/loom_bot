@@ -74,12 +74,11 @@ where
 use loom_node_debug_provider::DebugProviderExt;
 use bytes::Bytes;
 use futures::executor::block_on;
-use reth_tracing::config::TraceConfig;
-use reth_primitives::H256;
+use alloy_rpc_types_trace::geth::GethDebugTracingCallOptions;
+use alloy_rpc_types::{BlockId, TransactionRequest};
+use alloy_primitives::H256;
 use eyre::Result;
-use reth_primitives::TransactionRequest;
-use reth_primitives::BlockId;
-use reth_primitives::GethDebugTracingCallOptions;
+use reth_tracing::config::TraceConfig;
 use reth_primitives::tracing::GethExecTrace;
 
 impl<P, N> DebugProviderExt<N> for RateLimitedClient<P>
@@ -87,8 +86,8 @@ where
     P: DebugProviderExt<N> + Provider<N> + Clone + Send + Sync + 'static,
     N: alloy_provider::Network,
 {
-    fn geth_debug_trace_call(
-        &self,
+    fn geth_debug_trace_call<'a>(
+        &'a self,
         tx: TransactionRequest,
         block: BlockId,
         options: GethDebugTracingCallOptions,
@@ -96,16 +95,16 @@ where
         block_on(self.inner.geth_debug_trace_call(tx, block, options))
     }
 
-    fn geth_debug_trace_block_by_number(
-        &self,
+    fn geth_debug_trace_block_by_number<'a>(
+        &'a self,
         block_number: u64,
         trace_config: Option<TraceConfig>,
     ) -> Result<Vec<reth_primitives::tracing::GethExecTrace>> {
         self.inner.geth_debug_trace_block_by_number(block_number, trace_config)
     }
 
-    fn geth_debug_trace_block_by_hash(
-        &self,
+    fn geth_debug_trace_block_by_hash<'a>(
+        &'a self,
         block_hash: H256,
         trace_config: Option<TraceConfig>,
     ) -> Result<Vec<reth_primitives::tracing::GethExecTrace>> {
