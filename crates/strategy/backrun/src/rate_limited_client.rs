@@ -54,10 +54,10 @@ where
         self.inner.root()
     }
 
-    fn raw_request<P2, R>(&self, method: Cow<'_, str>, params: P2) -> BoxFuture<'_, TransportResult<R>>
+    fn raw_request<'a, P2, R>(&'a self, method: Cow<'a, str>, params: P2) -> BoxFuture<'a, TransportResult<R>>
     where
-        P2: RpcSend,
-        R: RpcRecv,
+        P2: RpcSend + 'a,
+        R: RpcRecv + 'a,
     {
         let inner = self.inner.clone();
         let this = self.clone();
@@ -67,5 +67,41 @@ where
             inner.raw_request(method, params).await
         }
         .boxed()
+    }
+}
+
+use crate::rate_limited_client::RateLimitedClient;
+use loom_node_debug_provider::DebugProviderExt;
+
+impl<P, N> DebugProviderExt<N> for RateLimitedClient<P>
+where
+    P: DebugProviderExt<N> + Provider<N> + Clone + Send + Sync + 'static,
+    N: alloy_provider::Network,
+{
+    fn geth_debug_trace_call(
+        &self,
+        from: Option<alloy_primitives::Address>,
+        to: alloy_primitives::Address,
+        data: bytes::Bytes,
+        block_number: Option<u64>,
+        trace_config: Option<reth_primitives::tracing::TraceConfig>,
+    ) -> eyre::Result<reth_primitives::tracing::GethExecTrace> {
+        futures::executor::block_on(self.inner.geth_debug_trace_call(from, to, data))
+    }
+
+    fn geth_debug_trace_block_by_number(
+        &self,
+        block_number: u64,
+        trace_config: Option<reth_primitives::tracing::TraceConfig>,
+    ) -> eyre::Result<Vec<reth_primitives::tracing::GethExecTrace>> {
+        self.inner.geth_debug_trace_block_by_number(block_number, trace_config)
+    }
+
+    fn geth_debug_trace_block_by_hash(
+        &self,
+        block_hash: alloy_primitives::H256,
+        trace_config: Option<reth_primitives::tracing::TraceConfig>,
+    ) -> eyre::Result<Vec<reth_primitives::tracing::GethExecTrace>> {
+        self.inner.geth_debug_trace_block_by_hash(block_hash, trace_config)
     }
 }
