@@ -58,7 +58,7 @@ where
         self.inner.root()
     }
 
-    fn raw_request<P2, R>(&self, method: Cow<'static, str>, params: P2) -> TransportResult<R>
+    fn raw_request<'a, P2, R>(&'a self, method: Cow<'a, str>, params: P2) -> TransportResult<R>
     where
         P2: RpcSend,
         R: RpcRecv,
