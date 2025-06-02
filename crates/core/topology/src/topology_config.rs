@@ -264,6 +264,7 @@ pub struct DeserializableClientConfig {
     pub transport: TransportType,
     pub db_path: Option<String>,
     pub exex: Option<String>,
+    pub rate_limit_rps: Option<u32>,
 }
 
 impl DeserializableClientConfig {
