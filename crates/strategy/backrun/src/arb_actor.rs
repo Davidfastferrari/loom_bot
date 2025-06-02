@@ -107,11 +107,7 @@ where
 
             if self.mempool_events_tx.is_some() && self.use_mempool {
                 let rate_limit_rps = self.backrun_config.rate_limit_rps.unwrap_or(0);
-                let client = if rate_limit_rps > 0 {
-                    RateLimitedClient::new(self.client.clone(), rate_limit_rps)
-                } else {
-                    self.client.clone()
-                };
+                let client = RateLimitedClient::new(self.client.clone(), rate_limit_rps);
                 let mut pending_tx_state_processor = PendingTxStateChangeProcessorActor::new(client);
                 match pending_tx_state_processor
                     .access(self.mempool.clone().unwrap())
