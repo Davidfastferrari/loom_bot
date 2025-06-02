@@ -5,7 +5,8 @@ use futures_util::future::BoxFuture;
 use futures_util::FutureExt;
 use std::borrow::Cow;
 use alloy_provider::{Provider, RootProvider};
-use alloy::rpc::json_rpc::{RpcRecv, RpcSend, TransportResult};
+use alloy::rpc::json_rpc::{RpcRecv, RpcSend};
+use alloy_transport::TransportResult;
 
 /// A wrapper around a Provider that enforces a rate limit on requests per second.
 #[derive(Clone)]
