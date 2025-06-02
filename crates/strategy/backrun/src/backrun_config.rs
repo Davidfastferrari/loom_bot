@@ -43,6 +43,7 @@ pub struct BackrunConfig {
     dynamic_capital: Option<bool>,
     max_path_length: Option<usize>,
     private_tx_url: Option<String>, // URL for private transaction service
+    pub rate_limit_rps: Option<u32>,
 }
 
 impl StrategyConfig for BackrunConfig {

@@ -19,3 +19,4 @@ mod affected_pools_state;
 mod arb_actor;
 mod backrun_config;
 mod swap_calculator;
+mod rate_limited_client;
