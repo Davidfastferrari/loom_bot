@@ -71,12 +71,16 @@ where
     }
 }
 
-use crate::rate_limited_client::RateLimitedClient;
 use loom_node_debug_provider::DebugProviderExt;
 use bytes::Bytes;
 use futures::executor::block_on;
-use reth_primitives::{tracing::TraceConfig, H256};
+use reth_tracing::config::TraceConfig;
+use reth_primitives::H256;
 use eyre::Result;
+use reth_primitives::TransactionRequest;
+use reth_primitives::BlockId;
+use reth_primitives::GethDebugTracingCallOptions;
+use reth_primitives::tracing::GethExecTrace;
 
 impl<P, N> DebugProviderExt<N> for RateLimitedClient<P>
 where
@@ -85,13 +89,11 @@ where
 {
     fn geth_debug_trace_call(
         &self,
-        from: Option<alloy_primitives::Address>,
-        to: alloy_primitives::Address,
-        data: Bytes,
-        block_number: Option<u64>,
-        trace_config: Option<TraceConfig>,
-    ) -> Result<reth_primitives::tracing::GethExecTrace> {
-        block_on(self.inner.geth_debug_trace_call(from, to, data, block_number, trace_config))
+        tx: TransactionRequest,
+        block: BlockId,
+        options: GethDebugTracingCallOptions,
+    ) -> Result<GethExecTrace> {
+        block_on(self.inner.geth_debug_trace_call(tx, block, options))
     }
 
     fn geth_debug_trace_block_by_number(
