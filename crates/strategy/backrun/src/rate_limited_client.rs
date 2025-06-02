@@ -73,7 +73,7 @@ where
 use loom_node_debug_provider::DebugProviderExt;
 use bytes::Bytes;
 use futures::executor::block_on;
-use alloy_rpc_types_trace::{TraceConfig, GethExecTrace};
+use alloy_rpc_types_trace::trace::{TraceConfig, GethExecTrace};
 use alloy_rpc_types_trace::geth::GethDebugTracingCallOptions;
 use alloy_rpc_types::{BlockId, TransactionRequest};
 use ethers_core::types::H256;
