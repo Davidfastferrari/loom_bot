@@ -55,7 +55,7 @@ where
         self.inner.root()
     }
 
-    fn raw_request<P2, R>(&self, method: Cow<'static, str>, params: P2) -> std::pin::Pin<Box<dyn std::future::Future<Output = TransportResult<R>> + Send + 'static>>
+fn raw_request<'life0, P2, R>(&'life0 self, method: Cow<'static, str>, params: P2) -> std::pin::Pin<Box<dyn std::future::Future<Output = TransportResult<R>> + Send + 'life0>>
     where
         P2: RpcSend + 'static,
         R: RpcRecv + 'static,
@@ -72,8 +72,7 @@ where
 
 use loom_node_debug_provider::DebugProviderExt;
 use bytes::Bytes;
-use futures::executor::block_on;
-use alloy_rpc_types_trace::trace::{TraceConfig, GethExecTrace};
+use alloy_rpc_types_trace::{TraceConfig, GethExecTrace};
 use alloy_rpc_types_trace::geth::GethDebugTracingCallOptions;
 use alloy_rpc_types::{BlockId, TransactionRequest};
 use ethers_core::types::H256;
