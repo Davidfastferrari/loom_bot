@@ -55,7 +55,7 @@ where
         self.inner.root()
     }
 
-    fn raw_request<'a, P2, R>(&'a self, method: Cow<'a, str>, params: P2) -> std::pin::Pin<Box<dyn std::future::Future<Output = TransportResult<R>> + Send + 'a>>
+    fn raw_request<'a, P2, R>(&'a self, method: Cow<'a, str>, params: P2) -> std::pin::Pin<Box<dyn std::future::Future<Output = TransportResult<R>> + Send + 'static>>
     where
         P2: RpcSend + 'a,
         R: RpcRecv + 'a,
