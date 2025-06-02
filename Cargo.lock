@@ -5660,6 +5660,7 @@ dependencies = [
  "chrono",
  "criterion",
  "eyre",
+ "futures-util",
  "influxdb",
  "lazy_static",
  "loom-core-actors",
@@ -5677,6 +5678,7 @@ dependencies = [
  "rayon",
  "revm",
  "serde",
+ "serde_json",
  "tokio",
  "tracing",
 ]
