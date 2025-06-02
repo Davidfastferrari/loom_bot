@@ -1,25 +1,25 @@
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::{Mutex, Semaphore};
-use alloy_transport::{Transport, TransportResult};
-use alloy_rpc_client::{ClientBuilder, RpcClient};
-use futures::future::BoxFuture;
-use futures::FutureExt;
-use serde_json::Value;
+use alloy_rpc_client::RpcClient;
+use alloy_transport::Transport;
 
-/// A wrapper around a Transport that enforces a rate limit on requests per second.
+/// A wrapper around an RpcClient that enforces a rate limit on requests per second.
 #[derive(Clone)]
 pub struct RateLimitedProvider<T> {
-    inner: T,
+    inner: RpcClient<T>,
     semaphore: Arc<Semaphore>,
     last_request_time: Arc<Mutex<Instant>>,
     min_interval: Duration,
 }
 
-impl<T> RateLimitedProvider<T> {
-    /// Create a new RateLimitedProvider wrapping the given transport.
+impl<T> RateLimitedProvider<T>
+where
+    T: Transport + Clone,
+{
+    /// Create a new RateLimitedProvider wrapping the given RpcClient.
     /// rate_limit_rps: requests per second limit. If 0, no rate limiting is applied.
-    pub fn new(inner: T, rate_limit_rps: u32) -> Self {
+    pub fn new(inner: RpcClient<T>, rate_limit_rps: u32) -> Self {
         let min_interval = if rate_limit_rps == 0 {
             Duration::from_secs(0)
         } else {
@@ -43,20 +43,9 @@ impl<T> RateLimitedProvider<T> {
         }
         *last_time = Instant::now();
     }
-}
 
-impl<T> Transport for RateLimitedProvider<T>
-where
-    T: Transport + Clone + Send + Sync + 'static,
-{
-    type Error = T::Error;
-
-    fn prepare(&self, method: &str, params: &[Value]) -> TransportResult<(String, Value)> {
-        self.inner.prepare(method, params)
-    }
-
-    async fn request(&self, req: Value) -> Result<Value, Self::Error> {
-        self.wait_for_rate_limit().await;
-        self.inner.request(req).await
+    /// Get a reference to the inner RpcClient
+    pub fn inner(&self) -> &RpcClient<T> {
+        &self.inner
     }
 }
