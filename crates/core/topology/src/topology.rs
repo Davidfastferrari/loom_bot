@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use crate::rate_limited_provider::RateLimitedProvider;
+use crate::rate_limited_provider::RateLimitedProvider;
 use crate::topology_config::TransportType;
 use crate::topology_config::{BroadcasterConfig, ClientConfig, EncoderConfig, EstimatorConfig, SignersConfig, TopologyConfig};
 use alloy_primitives::Address;
@@ -330,7 +332,7 @@ impl<
                     info!("Starting initialize env signers actor {name}");
                     let blockchain = self.get_blockchain(params.blockchain.as_ref())?;
 
-                    let mut initialize_signers_actor = InitializeSignersOneShotBlockingActor::new_from_encrypted_env();
+                    let initialize_signers_actor = InitializeSignersOneShotBlockingActor::new_from_encrypted_env();
                     match initialize_signers_actor?.access(signers.clone()).access(blockchain.nonce_and_balance()).start_and_wait() {
                         Ok(_) => {
                             info!("Signers have been initialized")
