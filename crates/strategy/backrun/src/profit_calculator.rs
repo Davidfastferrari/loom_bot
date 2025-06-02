@@ -68,7 +68,7 @@ impl ProfitCalculator {
     // Calculate profit in multiple currencies
     pub async fn calculate_multi_currency_profit<DB: DatabaseRef>(
         eth_profit: U256,
-        market_state: &DB,
+        _market_state: &DB,
         chain_id: Option<u64>,
     ) -> Result<MultiCurrencyProfit> {
         let mut profit = MultiCurrencyProfit::new(eth_profit);

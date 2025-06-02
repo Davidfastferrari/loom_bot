@@ -4,7 +4,8 @@ use tokio::sync::{Mutex, Semaphore};
 use futures_util::future::BoxFuture;
 use futures_util::FutureExt;
 use std::borrow::Cow;
-use alloy_provider::{Provider, RpcRecv, RpcSend, TransportResult, RootProvider};
+use alloy_provider::{Provider, RootProvider};
+use alloy::rpc::json_rpc::{RpcRecv, RpcSend, TransportResult};
 
 /// A wrapper around a Provider that enforces a rate limit on requests per second.
 #[derive(Clone)]
@@ -53,10 +54,10 @@ where
         self.inner.root()
     }
 
-    fn raw_request<'a, P2, R>(&'a self, method: Cow<'a, str>, params: P2) -> BoxFuture<'a, TransportResult<R>>
+    fn raw_request<P2, R>(&self, method: Cow<'_, str>, params: P2) -> BoxFuture<'_, TransportResult<R>>
     where
-        P2: RpcSend + 'a,
-        R: RpcRecv + 'a,
+        P2: RpcSend,
+        R: RpcRecv,
     {
         let inner = self.inner.clone();
         let this = self.clone();
