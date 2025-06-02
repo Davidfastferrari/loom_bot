@@ -47,6 +47,11 @@ alloy-sol-types.workspace = true
 futures-util = "0.3"
 serde_json = "1.0"
 
+# additional crates for debug provider
+futures = "0.3"
+bytes = "1.4"
+reth-primitives = { git = "https://github.com/paradigmxyz/reth", rev = "c6b757e" }
+
 [[bench]]
 harness = false
 name = "swap_calculation_bench"
