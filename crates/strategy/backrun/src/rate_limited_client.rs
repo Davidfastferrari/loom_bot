@@ -1,4 +1,4 @@
-use async_trait::async_trait;
+
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::{Mutex, Semaphore};
@@ -60,7 +60,7 @@ use alloy::rpc::types::trace::geth::{GethDebugTracingCallOptions, GethDebugTraci
 use alloy::rpc::types::{BlockNumberOrTag, TransactionRequest};
 use alloy::primitives::BlockHash;
 
-#[async_trait]
+#[async_trait::async_trait]
 impl<P, N> DebugProviderExt<N> for RateLimitedClient<P>
 where
     P: DebugProviderExt<N> + Provider<N> + Clone + Send + Sync + 'static,
