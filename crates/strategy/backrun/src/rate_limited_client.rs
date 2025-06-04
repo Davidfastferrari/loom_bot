@@ -67,8 +67,8 @@ where
     P: DebugProviderExt<N> + Provider<N> + Clone + Send + Sync + 'static,
     N: alloy_provider::Network,
 {
-    async fn geth_debug_trace_call<'a>(
-        &'a self,
+    async fn geth_debug_trace_call(
+        &self,
         tx: TransactionRequest,
         block: BlockId,
         trace_options: GethDebugTracingCallOptions,
@@ -77,8 +77,8 @@ where
         self.inner.geth_debug_trace_call(tx, block, trace_options).await
     }
 
-    async fn geth_debug_trace_block_by_number<'a>(
-        &'a self,
+    async fn geth_debug_trace_block_by_number(
+        &self,
         block: BlockNumberOrTag,
         trace_options: GethDebugTracingOptions,
     ) -> TransportResult<Vec<TraceResult>> {
@@ -86,8 +86,8 @@ where
         self.inner.geth_debug_trace_block_by_number(block, trace_options).await
     }
 
-    async fn geth_debug_trace_block_by_hash<'a>(
-        &'a self,
+    async fn geth_debug_trace_block_by_hash(
+        &self,
         block: BlockHash,
         trace_options: GethDebugTracingOptions,
     ) -> TransportResult<Vec<TraceResult>> {
