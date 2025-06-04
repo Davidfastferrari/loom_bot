@@ -54,13 +54,14 @@ where
     }
 }
 
+use async_trait::async_trait;
 use loom_node_debug_provider::DebugProviderExt;
 use alloy::eips::BlockId;
 use alloy::rpc::types::trace::geth::{GethDebugTracingCallOptions, GethDebugTracingOptions, GethTrace, TraceResult};
 use alloy::rpc::types::{BlockNumberOrTag, TransactionRequest};
 use alloy::primitives::BlockHash;
 
-#[async_trait::async_trait]
+#[async_trait]
 impl<P, N> DebugProviderExt<N> for RateLimitedClient<P>
 where
     P: DebugProviderExt<N> + Provider<N> + Clone + Send + Sync + 'static,
