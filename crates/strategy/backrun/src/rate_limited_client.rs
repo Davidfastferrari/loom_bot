@@ -2,8 +2,7 @@ use async_trait::async_trait;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::{Mutex, Semaphore};
-use futures_util::future::BoxFuture;
-use futures_util::FutureExt;
+
 use std::borrow::Cow;
 use alloy_provider::{Provider, RootProvider};
 use alloy::rpc::json_rpc::{RpcRecv, RpcSend};
@@ -47,7 +46,6 @@ impl<P> RateLimitedClient<P> {
     }
 }
 
-#[async_trait]
 impl<P, N> Provider<N> for RateLimitedClient<P>
 where
     P: Provider<N> + Clone + Send + Sync + 'static,
@@ -56,15 +54,6 @@ where
     fn root(&self) -> &RootProvider<N> {
         self.inner.root()
     }
-
-    async fn raw_request<P2, R>(&self, method: Cow<'static, str>, params: P2) -> TransportResult<R>
-    where
-        P2: RpcSend + Send + Sync + 'static,
-        R: RpcRecv + Send + Sync + 'static,
-    {
-        self.wait_for_rate_limit().await;
-        self.inner.raw_request(method, params).await
-    }
 }
 
 use loom_node_debug_provider::DebugProviderExt;
@@ -72,7 +61,6 @@ use alloy::eips::BlockId;
 use alloy::rpc::types::trace::geth::{GethDebugTracingCallOptions, GethDebugTracingOptions, GethTrace, TraceResult};
 use alloy::rpc::types::{BlockNumberOrTag, TransactionRequest};
 use alloy::primitives::BlockHash;
-use alloy_transport::TransportResult;
 
 #[async_trait]
 impl<P, N> DebugProviderExt<N> for RateLimitedClient<P>
