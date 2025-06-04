@@ -61,36 +61,22 @@ use alloy::rpc::types::trace::geth::{GethDebugTracingCallOptions, GethDebugTraci
 use alloy::rpc::types::{BlockNumberOrTag, TransactionRequest};
 use alloy::primitives::BlockHash;
 
-#[async_trait]
-pub trait DebugProviderExtWithLifetime<'a, N = alloy_provider::Ethereum> {
-    async fn geth_debug_trace_call(
-        &'a self,
-        tx: TransactionRequest,
-        block: BlockId,
-        trace_options: GethDebugTracingCallOptions,
-    ) -> TransportResult<GethTrace>;
+use async_trait::async_trait;
+use loom_node_debug_provider::DebugProviderExt;
+use alloy::eips::BlockId;
+use alloy::rpc::types::trace::geth::{GethDebugTracingCallOptions, GethDebugTracingOptions, GethTrace, TraceResult};
+use alloy::rpc::types::{BlockNumberOrTag, TransactionRequest};
+use alloy::primitives::BlockHash;
 
-    async fn geth_debug_trace_block_by_number(
-        &'a self,
-        block: BlockNumberOrTag,
-        trace_options: GethDebugTracingOptions,
-    ) -> TransportResult<Vec<TraceResult>>;
-
-    async fn geth_debug_trace_block_by_hash(
-        &'a self,
-        block: BlockHash,
-        trace_options: GethDebugTracingOptions,
-    ) -> TransportResult<Vec<TraceResult>>;
-}
 
 #[async_trait]
-impl<'a, P, N> DebugProviderExtWithLifetime<'a, N> for RateLimitedClient<P>
+impl<P, N> DebugProviderExt<N> for RateLimitedClient<P>
 where
     P: DebugProviderExt<N> + Provider<N> + Clone + Send + Sync + 'static,
     N: alloy_provider::Network,
 {
     async fn geth_debug_trace_call(
-        &'a self,
+        &self,
         tx: TransactionRequest,
         block: BlockId,
         trace_options: GethDebugTracingCallOptions,
@@ -100,7 +86,7 @@ where
     }
 
     async fn geth_debug_trace_block_by_number(
-        &'a self,
+        &self,
         block: BlockNumberOrTag,
         trace_options: GethDebugTracingOptions,
     ) -> TransportResult<Vec<TraceResult>> {
@@ -109,7 +95,7 @@ where
     }
 
     async fn geth_debug_trace_block_by_hash(
-        &'a self,
+        &self,
         block: BlockHash,
         trace_options: GethDebugTracingOptions,
     ) -> TransportResult<Vec<TraceResult>> {
