@@ -3,9 +3,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::{Mutex, Semaphore};
 
-use std::borrow::Cow;
 use alloy_provider::{Provider, RootProvider};
-use alloy::rpc::json_rpc::{RpcRecv, RpcSend};
 use alloy_transport::TransportResult;
 
 /// A wrapper around a Provider that enforces a rate limit on requests per second.
@@ -56,43 +54,4 @@ where
     }
 }
 
-use loom_node_debug_provider::DebugProviderExt;
-use alloy::eips::BlockId;
-use alloy::rpc::types::trace::geth::{GethDebugTracingCallOptions, GethDebugTracingOptions, GethTrace, TraceResult};
-use alloy::rpc::types::{BlockNumberOrTag, TransactionRequest};
-use alloy::primitives::BlockHash;
 
-#[async_trait]
-impl<P, N> DebugProviderExt<N> for RateLimitedClient<P>
-where
-    P: DebugProviderExt<N> + Provider<N> + Clone + Send + Sync + 'static,
-    N: alloy_provider::Network,
-{
-    async fn geth_debug_trace_call(
-        &self,
-        tx: TransactionRequest,
-        block: BlockId,
-        trace_options: GethDebugTracingCallOptions,
-    ) -> TransportResult<GethTrace> {
-        self.wait_for_rate_limit().await;
-        self.inner.geth_debug_trace_call(tx, block, trace_options).await
-    }
-
-    async fn geth_debug_trace_block_by_number(
-        &self,
-        block: BlockNumberOrTag,
-        trace_options: GethDebugTracingOptions,
-    ) -> TransportResult<Vec<TraceResult>> {
-        self.wait_for_rate_limit().await;
-        self.inner.geth_debug_trace_block_by_number(block, trace_options).await
-    }
-
-    async fn geth_debug_trace_block_by_hash(
-        &self,
-        block: BlockHash,
-        trace_options: GethDebugTracingOptions,
-    ) -> TransportResult<Vec<TraceResult>> {
-        self.wait_for_rate_limit().await;
-        self.inner.geth_debug_trace_block_by_hash(block, trace_options).await
-    }
-}
