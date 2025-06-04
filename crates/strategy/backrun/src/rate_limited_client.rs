@@ -62,13 +62,35 @@ use alloy::rpc::types::{BlockNumberOrTag, TransactionRequest};
 use alloy::primitives::BlockHash;
 
 #[async_trait]
-impl<P, N> DebugProviderExt<N> for RateLimitedClient<P>
+pub trait DebugProviderExtWithLifetime<'a, N = alloy_provider::Ethereum> {
+    async fn geth_debug_trace_call(
+        &'a self,
+        tx: TransactionRequest,
+        block: BlockId,
+        trace_options: GethDebugTracingCallOptions,
+    ) -> TransportResult<GethTrace>;
+
+    async fn geth_debug_trace_block_by_number(
+        &'a self,
+        block: BlockNumberOrTag,
+        trace_options: GethDebugTracingOptions,
+    ) -> TransportResult<Vec<TraceResult>>;
+
+    async fn geth_debug_trace_block_by_hash(
+        &'a self,
+        block: BlockHash,
+        trace_options: GethDebugTracingOptions,
+    ) -> TransportResult<Vec<TraceResult>>;
+}
+
+#[async_trait]
+impl<'a, P, N> DebugProviderExtWithLifetime<'a, N> for RateLimitedClient<P>
 where
     P: DebugProviderExt<N> + Provider<N> + Clone + Send + Sync + 'static,
     N: alloy_provider::Network,
 {
     async fn geth_debug_trace_call(
-        &self,
+        &'a self,
         tx: TransactionRequest,
         block: BlockId,
         trace_options: GethDebugTracingCallOptions,
@@ -78,7 +100,7 @@ where
     }
 
     async fn geth_debug_trace_block_by_number(
-        &self,
+        &'a self,
         block: BlockNumberOrTag,
         trace_options: GethDebugTracingOptions,
     ) -> TransportResult<Vec<TraceResult>> {
@@ -87,7 +109,7 @@ where
     }
 
     async fn geth_debug_trace_block_by_hash(
-        &self,
+        &'a self,
         block: BlockHash,
         trace_options: GethDebugTracingOptions,
     ) -> TransportResult<Vec<TraceResult>> {
