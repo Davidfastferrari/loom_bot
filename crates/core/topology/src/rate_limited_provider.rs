@@ -55,8 +55,7 @@ use serde_json::Value;
 
 impl Provider for RateLimitedProvider
 {
-    type Error = <RpcClient as Provider>::Error;
-    type Future<R> = BoxFuture<'static, Result<R, Self::Error>>;
+    type Future<R> = BoxFuture<'static, Result<R, anyhow::Error>>;
 
     fn request<R>(&self, method: &str, params: Value) -> Self::Future<R>
     where
@@ -69,7 +68,7 @@ impl Provider for RateLimitedProvider
 
         async move {
             this.wait_for_rate_limit().await;
-            inner.request(&method, params).await
+            inner.request(&method, params).await.map_err(|e| anyhow::anyhow!(e))
         }
         .boxed()
     }
