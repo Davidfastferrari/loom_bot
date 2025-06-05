@@ -8,7 +8,7 @@ use alloy_provider::{Provider, RootProvider};
 
 /// A wrapper around a RootProvider that enforces a rate limit on requests per second.
 #[derive(Clone)]
-pub struct RateLimitedProvider<N> {
+pub struct RateLimitedProvider<N: alloy_provider::Network> {
     inner: RootProvider<N>,
     semaphore: Arc<Semaphore>,
     last_request_time: Arc<Mutex<Instant>>,
@@ -16,7 +16,7 @@ pub struct RateLimitedProvider<N> {
     _network: std::marker::PhantomData<N>,
 }
 
-impl<N> RateLimitedProvider<N> {
+impl<N: alloy_provider::Network> RateLimitedProvider<N> {
     /// Create a new RateLimitedProvider wrapping the given RootProvider.
     /// rate_limit_rps: requests per second limit. If 0, no rate limiting is applied.
     pub fn new(inner: RootProvider<N>, rate_limit_rps: u32) -> Self {
