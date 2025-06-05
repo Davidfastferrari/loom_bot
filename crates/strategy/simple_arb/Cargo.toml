@@ -8,7 +8,7 @@ alloy-primitives = { workspace = true }
 eyre = { workspace = true }
 revm = { workspace = true }
 tokio = { workspace = true }
-tracing = { workspace = true, features = ["macros"] }
+tracing = { workspace = true }
 
 loom-core-actors = { path = "../../core/actors" }
 loom-core-actors-macros = { path = "../../core/actors-macros" }

@@ -5,7 +5,8 @@ use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::pin::Pin;
 use tokio::sync::broadcast::error::RecvError;
-use tracing::error;
+#[macro_use]
+extern crate tracing;
 
 use loom_core_actors::{subscribe, Accessor, Actor, ActorResult, Broadcaster, Consumer, Producer, SharedState, WorkerResult};
 use loom_core_actors_macros::{Accessor, Consumer, Producer};
