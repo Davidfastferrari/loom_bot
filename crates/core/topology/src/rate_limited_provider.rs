@@ -1,9 +1,6 @@
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::{Mutex, Semaphore};
-use std::sync::Arc;
-use std::time::{Duration, Instant};
-use tokio::sync::{Mutex, Semaphore};
 use alloy_provider::{Provider, RootProvider};
 
 /// A wrapper around a RootProvider that enforces a rate limit on requests per second.
