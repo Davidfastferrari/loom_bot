@@ -6,20 +6,18 @@ use alloy_transport::Transport;
 
 /// A wrapper around an RpcClient that enforces a rate limit on requests per second.
 #[derive(Clone)]
-pub struct RateLimitedProvider<T> {
-    inner: RpcClient<T>,
+pub struct RateLimitedProvider {
+    inner: RpcClient,
     semaphore: Arc<Semaphore>,
     last_request_time: Arc<Mutex<Instant>>,
     min_interval: Duration,
 }
 
-impl<T> RateLimitedProvider<T>
-where
-    T: Transport + Clone,
+impl RateLimitedProvider
 {
     /// Create a new RateLimitedProvider wrapping the given RpcClient.
     /// rate_limit_rps: requests per second limit. If 0, no rate limiting is applied.
-    pub fn new(inner: RpcClient<T>, rate_limit_rps: u32) -> Self {
+    pub fn new(inner: RpcClient, rate_limit_rps: u32) -> Self {
         let min_interval = if rate_limit_rps == 0 {
             Duration::from_secs(0)
         } else {
@@ -45,26 +43,24 @@ where
     }
 
     /// Get a reference to the inner RpcClient
-    pub fn inner(&self) -> &RpcClient<T> {
+    pub fn inner(&self) -> &RpcClient {
         &self.inner
     }
 }
 
-use alloy_rpc_client::Provider;
+use alloy_provider::Provider;
 use futures::future::BoxFuture;
 use futures::FutureExt;
 use serde_json::Value;
 
-impl<T> Provider for RateLimitedProvider<T>
-where
-    T: Transport + Clone + Send + Sync + 'static,
+impl Provider for RateLimitedProvider
 {
-    type Error = <RpcClient<T> as Provider>::Error;
-    type Future<T> = BoxFuture<'static, Result<T, Self::Error>>;
+    type Error = <RpcClient as Provider>::Error;
+    type Future<R> = BoxFuture<'static, Result<R, Self::Error>>;
 
-    fn request<T>(&self, method: &str, params: Value) -> Self::Future<T>
+    fn request<R>(&self, method: &str, params: Value) -> Self::Future<R>
     where
-        T: serde::de::DeserializeOwned + Send + 'static,
+        R: serde::de::DeserializeOwned + Send + 'static,
     {
         let inner = self.inner.clone();
         let method = method.to_string();
