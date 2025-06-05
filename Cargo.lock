@@ -5751,6 +5751,7 @@ dependencies = [
  "alloy-rpc-types-trace",
  "alloy-sol-types",
  "alloy-transport",
+ "async-trait",
  "bytes",
  "chrono",
  "criterion",

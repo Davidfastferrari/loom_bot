@@ -31,6 +31,7 @@ revm.workspace = true
 serde.workspace = true
 tokio.workspace = true
 tracing.workspace = true
+async-trait = "0.1"
 
 # alloy
 alloy = { version = "0.11.1", features = ["json-rpc"], workspace = true }
