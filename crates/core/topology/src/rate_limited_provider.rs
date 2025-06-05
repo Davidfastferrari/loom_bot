@@ -1,13 +1,15 @@
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::{Mutex, Semaphore};
-use alloy_rpc_client::RpcClient;
-use alloy_transport::Transport;
+use std::sync::Arc;
+use std::time::{Duration, Instant};
+use tokio::sync::{Mutex, Semaphore};
+use alloy_provider::{Provider, RootProvider};
 
-/// A wrapper around an RpcClient that enforces a rate limit on requests per second.
+/// A wrapper around a RootProvider that enforces a rate limit on requests per second.
 #[derive(Clone)]
 pub struct RateLimitedProvider<N> {
-    inner: RpcClient,
+    inner: RootProvider<N>,
     semaphore: Arc<Semaphore>,
     last_request_time: Arc<Mutex<Instant>>,
     min_interval: Duration,
@@ -15,9 +17,9 @@ pub struct RateLimitedProvider<N> {
 }
 
 impl<N> RateLimitedProvider<N> {
-    /// Create a new RateLimitedProvider wrapping the given RpcClient.
+    /// Create a new RateLimitedProvider wrapping the given RootProvider.
     /// rate_limit_rps: requests per second limit. If 0, no rate limiting is applied.
-    pub fn new(inner: RpcClient, rate_limit_rps: u32) -> Self {
+    pub fn new(inner: RootProvider<N>, rate_limit_rps: u32) -> Self {
         let min_interval = if rate_limit_rps == 0 {
             Duration::from_secs(0)
         } else {
@@ -43,19 +45,17 @@ impl<N> RateLimitedProvider<N> {
         *last_time = Instant::now();
     }
 
-    /// Get a reference to the inner RpcClient
-    pub fn inner(&self) -> &RpcClient {
+    /// Get a reference to the inner RootProvider
+    pub fn inner(&self) -> &RootProvider<N> {
         &self.inner
     }
 }
-
-use alloy_provider::{Provider, RootProvider};
 
 impl<N> Provider<N> for RateLimitedProvider<N>
 where
     N: alloy_provider::Network,
 {
     fn root(&self) -> &RootProvider<N> {
-        self.inner.root()
+        &self.inner
     }
 }
