@@ -157,18 +157,19 @@ impl<
             
             // Try WebSocket first if available
             let mut client_result = None;
-            if let Some(ws_url) = ws_url {
-                info!("Attempting WebSocket connection to {name} at {ws_url}");
-                // Remove ws_config as WsConfig is not found in alloy_transport_ws
-                let transport = WsConnect { url: ws_url, auth: None, config: None };
+if let Some(ws_url) = ws_url {
+    info!("Attempting WebSocket connection to {name} at {ws_url}");
+    // Remove ws_config as WsConfig is not found in alloy_transport_ws
+    let transport = WsConnect { url: ws_url, auth: None, config: None };
 
-                if let Ok(client) = ws_client {
-                    info!("Successfully connected to {name} via WebSocket (subscriptions supported)");
-                    client_result = Some(Ok(client));
-                } else {
-                    info!("WebSocket connection failed, falling back to configured transport");
-                }
-            }
+    let ws_client = ClientBuilder::default().ws(transport).await;
+    if let Ok(client) = ws_client {
+        info!("Successfully connected to {name} via WebSocket (subscriptions supported)");
+        client_result = Some(Ok(client));
+    } else {
+        info!("WebSocket connection failed, falling back to configured transport");
+    }
+}
 
             // If WebSocket failed or wasn't attempted, use the configured transport
             if client_result.is_none() {
