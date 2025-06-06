@@ -42,5 +42,5 @@ alloy-rpc-client.workspace = true
 alloy-transport.workspace = true
 env_logger.workspace = true
 rand.workspace = true
-tokio.workspace = true
+tokio = { workspace = true }
 url.workspace = true
