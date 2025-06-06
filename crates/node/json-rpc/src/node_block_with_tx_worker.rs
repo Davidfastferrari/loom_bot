@@ -13,6 +13,7 @@ pub async fn new_block_with_tx_worker<P>(
 where
     P: Provider<Ethereum> + Send + Sync + 'static,
 {
+    use alloy_rpc_types::{BlockTransactionsKind, BlockTransactions};
     subscribe!(block_header_receiver);
 
     loop {
@@ -23,19 +24,35 @@ where
             let mut err_counter = 0;
 
             while err_counter < 3 {
-                match client.get_block_by_hash(block_header.hash(), BlockTransactionsKind::Full).await {
-                    Ok(block_with_tx) => {
-                        if let Some(block_with_txes) = block_with_tx {
-                            if let Err(e) = sender.send(Message::new_with_time(BlockUpdate { block: block_with_txes })) {
-                                error!("Broadcaster error {}", e);
+                // First fetch block with hashes only to reduce message size
+                match client.get_block_by_hash(block_header.hash(), BlockTransactionsKind::Hashes).await {
+                    Ok(Some(block_with_hashes)) => {
+                        // Optionally fetch full block data if needed
+                        match client.get_block_by_hash(block_header.hash(), BlockTransactionsKind::Full).await {
+                            Ok(Some(mut full_block)) => {
+                                // Merge or filter transactions if needed here
+                                // For now, just send the full block
+                                if let Err(e) = sender.send(Message::new_with_time(BlockUpdate { block: full_block })) {
+                                    error!("Broadcaster error {}", e);
+                                }
                             }
-                        } else {
-                            error!("BlockWithTx is empty");
+                            Ok(None) => {
+                                error!("Full block data is empty");
+                            }
+                            Err(e) => {
+                                error!("Error fetching full block data: {}", e);
+                                err_counter += 1;
+                                continue;
+                            }
                         }
                         break;
                     }
+                    Ok(None) => {
+                        error!("Block with hashes is empty");
+                        break;
+                    }
                     Err(e) => {
-                        error!("client.get_block_by_hash {e}");
+                        error!("Error fetching block with hashes: {}", e);
                         err_counter += 1;
                     }
                 }
