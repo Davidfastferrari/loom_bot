@@ -328,8 +328,10 @@ pub async fn state_change_arb_searcher_worker<
 ) -> WorkerResult {
     subscribe!(search_request_rx);
 
+    // Use all available CPUs for better performance with arbitrage opportunities
     let cpus = num_cpus::get();
-    let tasks = (cpus * 5) / 10;
+    // Use at least 2 threads, or more based on available CPUs
+    let tasks = std::cmp::max(2, cpus);
     info!("Starting state arb searcher cpus={cpus}, tasks={tasks}");
     let thread_pool = Arc::new(ThreadPoolBuilder::new().num_threads(tasks).build()?);
 

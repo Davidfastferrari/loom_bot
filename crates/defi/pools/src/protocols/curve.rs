@@ -93,26 +93,42 @@ where
 
     pub async fn coin128(client: P, address: Address, coin_id: u32) -> Result<Address> {
         let common_contract = ICurveCommonI128Instance::new(address, client);
-        let mut retries = 3;
+        let mut retries = 5; // Increased retries from 3 to 5
+        let mut last_error = None;
+        
         while retries > 0 {
             match common_contract.coins(coin_id.into()).call_raw().await {
                 Ok(addr) => {
                     if addr.len() >= 32 {
                         return Ok(Address::from_slice(&addr[12..32]));
                     } else {
-                        return Err(eyre!("CANNOT_GET_COIN_ADDRESS"));
+                        // Try with a different approach if the address format is unexpected
+                        if addr.len() > 0 {
+                            // If we have some data, try to interpret it as an address
+                            if addr.len() >= 20 {
+                                return Ok(Address::from_slice(&addr[addr.len() - 20..]));
+                            }
+                        }
+                        trace!("Invalid address format received, length: {}", addr.len());
+                        last_error = Some("Invalid address format".to_string());
                     }
                 }
                 Err(e) => {
                     trace!("coin call error {}, retries left: {}", e, retries);
-                    retries -= 1;
-                    if retries == 0 {
-                        return Err(eyre!("CANNOT_GET_COIN_ADDRESS"));
-                    }
+                    last_error = Some(format!("{}", e));
                 }
             }
+            
+            // Add exponential backoff between retries
+            if retries > 1 {
+                let backoff_ms = 100 * (5 - retries + 1);
+                tokio::time::sleep(std::time::Duration::from_millis(backoff_ms)).await;
+            }
+            
+            retries -= 1;
         }
-        Err(eyre!("CANNOT_GET_COIN_ADDRESS"))
+        
+        Err(eyre!("CANNOT_GET_COIN_ADDRESS: {}", last_error.unwrap_or_else(|| "Unknown error".to_string())))
     }
 
     pub async fn coin(client: P, address: Address, coin_id: u32) -> Result<Address> {

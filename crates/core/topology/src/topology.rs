@@ -142,27 +142,85 @@ impl<
             let config_params = v.clone();
 
             info!("Connecting to {name} : {v:?}");
-
-            let client = match config_params.transport {
-                TransportType::Ipc => {
-                    info!("Starting IPC connection");
-
-                    let transport = IpcConnect::from(config_params.url);
-                    ClientBuilder::default().ipc(transport).await
-                }
-                TransportType::Http => {
-                    info!("Starting HTTP connection");
-                    let url = Url::parse(&config_params.url)?;
-                    Ok(ClientBuilder::default().http(url))
-                }
-                TransportType::Ws => {
-                    info!("Starting WS connection");
-                    let transport = WsConnect { url: config_params.url, auth: None, config: None };
-                    ClientBuilder::default().ws(transport).await
-                }
+            
+            // First try to connect with WebSocket for better subscription support
+            // If the URL is HTTP, try to convert it to WebSocket
+            let ws_url = if config_params.transport == TransportType::Http && config_params.url.starts_with("http") {
+                // Convert HTTP to WS
+                let ws_url = config_params.url.replace("http://", "ws://").replace("https://", "wss://");
+                Some(ws_url)
+            } else if config_params.transport == TransportType::Ws {
+                Some(config_params.url.clone())
+            } else {
+                None
             };
+            
+            // Try WebSocket first if available
+            let mut client_result = None;
+            if let Some(ws_url) = ws_url {
+                info!("Attempting WebSocket connection to {name} at {ws_url}");
+                let transport = WsConnect { url: ws_url, auth: None, config: None };
+                let ws_client = ClientBuilder::default().ws(transport).await;
+                
+                if let Ok(client) = ws_client {
+                    info!("Successfully connected to {name} via WebSocket (subscriptions supported)");
+                    client_result = Some(Ok(client));
+                } else {
+                    info!("WebSocket connection failed, falling back to configured transport");
+                }
+            }
+            
+            // If WebSocket failed or wasn't attempted, use the configured transport
+                if client_result.is_none() {
+                cl    ient_result = Some(          // First try to connect with WebSocket for better subscription support
+            // If the URL is HTTP, try to convert it to WebSocket                let ws_url = if config_params.transport == TransportType::Http && config_params.url.starts_with("http") {
+                        // Convert HTTP to (subscriptions not supported) WS
+                            let ws_url = config_params.url.replace("http://", "ws://").replace("https://", "wss://");
+                Some(ws_url)
+                } else if config_params.transport == TransportType::Ws {
+                     Some(config_params.url.clone())
+            } else {
+                        }
+                   });
+            }
+            
+            // Try WebSocket first if available
+            let mut client_result = None;
+            if let Some(ws_url) = ws_url {
+                info!("Attempting WebSocket connection to {name} at {ws_url}");
+                    let transport = WsConnect { url: ws_url, auth: None, config: None };
+                let ws_client =     ClientBuilder::default().ws(transport).await;
+                
+                if let Ok(client) = ws_client_result.unwrap() {
+                    info!("Successfully connected to {name} via WebSocket (subscriptions supported)");
+                    client_result = Some(Ok(client));
+                } else {
+                    info!("WebSocket connection failed, falling back to configured transport");
+                }
+            }
+            
+            // If WebSocket failed or wasn't attempted, use the configured transport
+            if client_result.is_none() {
+                client_result = Some(match config_params.transport {
+                    TransportType::Ipc => {
+                        info!("Starting IPC connection");
+                        let transport = IpcConnect::from(config_params.url);
+                        ClientBuilder::default().ipc(transport).await
+                    }
+                    TransportType::Http => {
+                        info!("Starting HTTP connection (subscriptions not supported)");
+                        let url = Url::parse(&config_params.url)?;
+                        Ok(ClientBuilder::default().http(url))
+                    }
+                    TransportType::Ws => {
+                        info!("Starting WS connection");
+                        let transport = WsConnect { url: config_params.url, auth: None, config: None };
+                        ClientBuilder::default().ws(transport).await
+                    }
+                });
+            }
 
-            let client = match client {
+            let client = match client_result.unwrap() {
                 Ok(client) => client,
                 Err(e) => {
                     error!("Error connecting to {name} error : {}", e);
@@ -365,7 +423,35 @@ impl<
                 }
             }
         } else {
-            warn!("No preloader in config")
+            info!("No preloader in config, creating default preloader");
+            
+            // Create a default preloader for each blockchain
+            for (blockchain_name, _) in self.config.blockchains.iter() {
+                let blockchain = self.get_blockchain(Some(blockchain_name))?;
+                let blockchain_state = self.get_blockchain_state(Some(blockchain_name))?;
+                let client = self.get_client(None)?;
+                
+                info!("Creating default preloader for blockchain {}", blockchain_name);
+                let mut market_state_preload_actor = MarketStatePreloadedOneShotActor::new(client.clone());
+                
+                // Try to get a multicaller address, but don't fail if not available
+                if let Ok(multicaller_address) = self.get_multicaller_address(None) {
+                    market_state_preload_actor = market_state_preload_actor.with_copied_account(multicaller_address);
+                }
+                
+                match market_state_preload_actor
+                    .access(blockchain_state.market_state())
+                    .start_and_wait()
+                {
+                    Ok(_) => {
+                        info!("Default preloader for {} completed successfully", blockchain_name);
+                    }
+                    Err(e) => {
+                        warn!("Default preloader for {} failed: {}", blockchain_name, e);
+                        // Don't panic, just warn and continue
+                    }
+                }
+            }
         }
 
         if let Some(node_exex_actors) = &self.config.actors.node_exex {
