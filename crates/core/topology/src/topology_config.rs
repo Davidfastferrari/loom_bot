@@ -21,7 +21,7 @@ pub enum NodeType {
     Reth,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Display)]
+#[derive(Clone, Debug, Default, Deserialize, Display, PartialEq)]
 #[strum(ascii_case_insensitive, serialize_all = "lowercase")]
 #[serde(rename_all = "lowercase")]
 pub enum TransportType {

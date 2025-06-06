@@ -161,7 +161,7 @@ impl<
                 info!("Attempting WebSocket connection to {name} at {ws_url}");
                 let transport = WsConnect { url: ws_url, auth: None, config: None };
                 let ws_client = ClientBuilder::default().ws(transport).await;
-                
+
                 if let Ok(client) = ws_client {
                     info!("Successfully connected to {name} via WebSocket (subscriptions supported)");
                     client_result = Some(Ok(client));
@@ -169,42 +169,7 @@ impl<
                     info!("WebSocket connection failed, falling back to configured transport");
                 }
             }
-            
-            // If WebSocket failed or wasn't attempted, use the configured transport
-            if client_result.is_none() {
-                let ws_url = if config_params.transport == TransportType::Http && config_params.url.starts_with("http") {
-                    // Convert HTTP to (subscriptions not supported) WS
-                    let ws_url = config_params.url.replace("http://", "ws://").replace("https://", "wss://");
-                    Some(ws_url)
-                } else if config_params.transport == TransportType::Ws {
-                    Some(config_params.url.clone())
-                } else {
-                    None
-                };
-                client_result = Some(match ws_url {
-                    Some(ws_url) => {
-                        let transport = WsConnect { url: ws_url, auth: None, config: None };
-                        ClientBuilder::default().ws(transport).await
-                    }
-                    None => Err(eyre!("NO_TRANSPORT_CONFIGURED")),
-                });
-            }
-            
-            // Try WebSocket first if available
-            let mut client_result = None;
-            if let Some(ws_url) = ws_url {
-                info!("Attempting WebSocket connection to {name} at {ws_url}");
-                    let transport = WsConnect { url: ws_url, auth: None, config: None };
-                let ws_client =     ClientBuilder::default().ws(transport).await;
-                
-                if let Ok(client) = ws_client_result.unwrap() {
-                    info!("Successfully connected to {name} via WebSocket (subscriptions supported)");
-                    client_result = Some(Ok(client));
-                } else {
-                    info!("WebSocket connection failed, falling back to configured transport");
-                }
-            }
-            
+
             // If WebSocket failed or wasn't attempted, use the configured transport
             if client_result.is_none() {
                 client_result = Some(match config_params.transport {
