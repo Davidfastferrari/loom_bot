@@ -172,7 +172,7 @@ impl<
             
             // If WebSocket failed or wasn't attempted, use the configured transport
                 if client_result.is_none() {
-                cl    ient_result = Some(          // First try to connect with WebSocket for better subscription support
+                client_result = Some(          // First try to connect with WebSocket for better subscription support
             // If the URL is HTTP, try to convert it to WebSocket                let ws_url = if config_params.transport == TransportType::Http && config_params.url.starts_with("http") {
                         // Convert HTTP to (subscriptions not supported) WS
                             let ws_url = config_params.url.replace("http://", "ws://").replace("https://", "wss://");
