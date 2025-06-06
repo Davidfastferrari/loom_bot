@@ -159,7 +159,12 @@ impl<
             let mut client_result = None;
             if let Some(ws_url) = ws_url {
                 info!("Attempting WebSocket connection to {name} at {ws_url}");
-                let transport = WsConnect { url: ws_url, auth: None, config: None };
+                // Increase WS message size limit in config
+                let ws_config = Some(alloy_transport_ws::WsConfig {
+                    max_message_size: Some(64 * 1024 * 1024), // 64 MB
+                    ..Default::default()
+                });
+                let transport = WsConnect { url: ws_url, auth: None, config: ws_config };
                 let ws_client = ClientBuilder::default().ws(transport).await;
 
                 if let Ok(client) = ws_client {
