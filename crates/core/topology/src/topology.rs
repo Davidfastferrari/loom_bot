@@ -171,17 +171,23 @@ impl<
             }
             
             // If WebSocket failed or wasn't attempted, use the configured transport
-                if client_result.is_none() {
-                client_result = Some(          // First try to connect with WebSocket for better subscription support
-            // If the URL is HTTP, try to convert it to WebSocket                let ws_url = if config_params.transport == TransportType::Http && config_params.url.starts_with("http") {
-                        // Convert HTTP to (subscriptions not supported) WS
-                            let ws_url = config_params.url.replace("http://", "ws://").replace("https://", "wss://");
-                Some(ws_url)
+            if client_result.is_none() {
+                let ws_url = if config_params.transport == TransportType::Http && config_params.url.starts_with("http") {
+                    // Convert HTTP to (subscriptions not supported) WS
+                    let ws_url = config_params.url.replace("http://", "ws://").replace("https://", "wss://");
+                    Some(ws_url)
                 } else if config_params.transport == TransportType::Ws {
-                     Some(config_params.url.clone())
-            } else {
-                        }
-                   });
+                    Some(config_params.url.clone())
+                } else {
+                    None
+                };
+                client_result = Some(match ws_url {
+                    Some(ws_url) => {
+                        let transport = WsConnect { url: ws_url, auth: None, config: None };
+                        ClientBuilder::default().ws(transport).await
+                    }
+                    None => Err(eyre!("NO_TRANSPORT_CONFIGURED")),
+                });
             }
             
             // Try WebSocket first if available
