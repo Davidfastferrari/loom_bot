@@ -1,7 +1,9 @@
-use alloy_network::Network;
 use alloy_primitives::TxHash;
 use alloy_provider::Provider;
+use alloy_provider::ext::DebugApi;
 use alloy_rpc_types::{BlockId, BlockTransactionsKind, Header};
+use alloy_rpc_types_trace::common::TraceResult;
+use alloy_rpc_types_trace::geth::GethDebugTracingOptions;
 use eyre::{eyre, Result};
 use tracing::{debug, error, info, warn};
 
@@ -12,7 +14,7 @@ pub async fn fetch_block_with_transactions_chunked<P>(
     max_tx_per_request: usize,
 ) -> Result<(Header, Vec<alloy_rpc_types::Transaction>)>
 where
-    P: Provider<alloy_network::Ethereum> + Clone,
+    P: Provider + Clone,
 {
     // First get the block header and transaction hashes
     let block = match block_id {
@@ -65,9 +67,9 @@ pub async fn fetch_block_trace_chunked<P>(
     provider: P,
     block_id: BlockId,
     chunk_size: usize,
-) -> Result<Vec<alloy_rpc_types_trace::common::TraceResult>>
+) -> Result<Vec<TraceResult<alloy_rpc_types_trace::geth::GethTrace, String>>>
 where
-    P: Provider<alloy_network::Ethereum> + Clone + loom_node_debug_provider::DebugProviderExt<alloy_network::Ethereum>,
+    P: Provider + Clone + DebugApi,
 {
     // First get the block to determine transaction count
     let block = match block_id {
@@ -85,11 +87,11 @@ where
         return match block_id {
             BlockId::Number(block_number) => provider.geth_debug_trace_block_by_number(
                 block_number,
-                alloy_rpc_types_trace::geth::GethDebugTracingOptions::default(),
+                GethDebugTracingOptions::default(),
             ).await.map_err(|e| eyre!("Failed to trace block: {}", e)),
             BlockId::Hash(hash) => provider.geth_debug_trace_block_by_hash(
                 hash.block_hash,
-                alloy_rpc_types_trace::geth::GethDebugTracingOptions::default(),
+                GethDebugTracingOptions::default(),
             ).await.map_err(|e| eyre!("Failed to trace block: {}", e)),
         };
     }
@@ -105,23 +107,17 @@ where
         debug!("Tracing transaction chunk {}/{}", i + 1, total_chunks);
         
         for tx_hash in chunk {
-            match provider.debug_trace_transaction(
+            match provider.debug_trace_transaction_as(
                 *tx_hash,
-                alloy_rpc_types_trace::geth::GethDebugTracingOptions::default(),
+                GethDebugTracingOptions::default(),
             ).await {
                 Ok(trace) => {
-                    all_traces.push(alloy_rpc_types_trace::common::TraceResult::Success {
-                        transaction_hash: Some(*tx_hash),
-                        result: trace,
-                    });
+                    all_traces.push(TraceResult::Success(trace));
                 }
                 Err(e) => {
                     warn!("Failed to trace transaction {}: {}", tx_hash, e);
                     // Add a placeholder to maintain index consistency
-                    all_traces.push(alloy_rpc_types_trace::common::TraceResult::Error {
-                        transaction_hash: Some(*tx_hash),
-                        error: format!("Trace failed: {}", e),
-                    });
+                    all_traces.push(TraceResult::Error(format!("Trace failed: {}", e)));
                 }
             }
         }
