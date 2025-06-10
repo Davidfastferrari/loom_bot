@@ -63,13 +63,14 @@ where
 }
 
 /// Fetches block trace data in smaller chunks to avoid WebSocket message size limitations
-pub async fn fetch_block_trace_chunked<P>(
+pub async fn fetch_block_trace_chunked<P, N>(
     provider: P,
     block_id: BlockId,
     chunk_size: usize,
 ) -> Result<Vec<TraceResult<alloy_rpc_types_trace::geth::GethTrace, String>>>
 where
-    P: Provider + Clone + DebugApi,
+    P: Provider + Clone + DebugApi<N>,
+    N: Copy + Send + Sync + 'static,
 {
     // First get the block to determine transaction count
     let block = match block_id {
@@ -85,11 +86,11 @@ where
     if tx_hashes.is_empty() {
         // If no transactions, just trace the whole block
         return match block_id {
-            BlockId::Number(block_number) => provider.geth_debug_trace_block_by_number(
+            BlockId::Number(block_number) => provider.debug_trace_block_by_number(
                 block_number,
                 GethDebugTracingOptions::default(),
             ).await.map_err(|e| eyre!("Failed to trace block: {}", e)),
-            BlockId::Hash(hash) => provider.geth_debug_trace_block_by_hash(
+            BlockId::Hash(hash) => provider.debug_trace_block_by_hash(
                 hash.block_hash,
                 GethDebugTracingOptions::default(),
             ).await.map_err(|e| eyre!("Failed to trace block: {}", e)),
@@ -112,12 +113,12 @@ where
                 GethDebugTracingOptions::default(),
             ).await {
                 Ok(trace) => {
-                    all_traces.push(TraceResult::Success(trace));
+                    all_traces.push(TraceResult::Success { result: trace, tx_hash: *tx_hash });
                 }
                 Err(e) => {
                     warn!("Failed to trace transaction {}: {}", tx_hash, e);
                     // Add a placeholder to maintain index consistency
-                    all_traces.push(TraceResult::Error(format!("Trace failed: {}", e)));
+                    all_traces.push(TraceResult::Error { error: format!("Trace failed: {}", e), tx_hash: *tx_hash });
                 }
             }
         }
