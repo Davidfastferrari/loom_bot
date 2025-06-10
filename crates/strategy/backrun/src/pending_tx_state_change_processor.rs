@@ -161,10 +161,11 @@ where
 
     affecting_tx.write().await.insert(tx_hash, !affected_pools.is_empty());
 
-    //TODO : Fix Latest header is empty
-    if let Some(latest_header) = latest_block.read().await.block_header.clone() {
-        let next_block_number = latest_header.number.as_u64() + 1;
-        let next_block_timestamp = latest_header.timestamp.as_u64() + 12;
+    // Improved handling for Latest header possibly being empty
+    let latest_header_opt = latest_block.read().await.block_header.clone();
+    if let Some(latest_header) = latest_header_opt {
+        let next_block_number = latest_header.number.as_u64().saturating_add(1);
+        let next_block_timestamp = latest_header.timestamp.as_u64().saturating_add(12);
 
         if !affected_pools.is_empty() {
             let cur_state_db = market_state.read().await.state_db.clone();
@@ -186,7 +187,8 @@ where
             }
         }
     } else {
-        error!("Latest header is empty")
+        warn!("Latest header is empty, skipping state update broadcast");
+        // Optionally, could trigger a refresh or wait for latest block update here
     }
 
     if is_pool_code(&merged_state_update_vec) {
