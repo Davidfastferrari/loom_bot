@@ -47,27 +47,10 @@ where
             match provider.get_transaction_by_hash(*tx_hash).await? {
                 Some(tx) => chunk_transactions.push(tx),
                 None => {
-                    warn!("Transaction {} not found", tx_hash);
-                    // Create a placeholder transaction to maintain index consistency
-                    // This is better than failing the entire block fetch
-                    // Create a placeholder transaction manually instead of using default()
-                    // Instead of Default::default(), create a minimal placeholder transaction
-                    // to avoid compilation errors and reduce message size.
-                    // This requires constructing a Transaction with minimal valid data.
-                    // Since Transaction does not implement Default, create a minimal inner TxEnvelope manually.
-                    // For now, push a minimal placeholder transaction with empty or zeroed fields.
-                    // TODO: Replace with actual minimal transaction construction when available.
-
-                    // Placeholder transaction creation logic:
-                    // let placeholder_tx = alloy_rpc_types::Transaction::from_minimal_fields();
-                    // chunk_transactions.push(placeholder_tx);
-
-                    // As a temporary workaround, skip adding a placeholder transaction to avoid message size issues.
+                    warn!("Transaction {} not found, skipping", tx_hash);
+                    // Skip adding a placeholder transaction to avoid compilation errors and message size issues.
                     // This means missing transactions will be omitted from the result.
                     // This may affect index consistency but prevents runtime errors.
-
-                    // Commented out to avoid compilation error:
-                    // chunk_transactions.push(Default::default());
                 }
             }
         }

@@ -23,3 +23,10 @@ eyre.workspace = true
 influxdb.workspace = true
 revm.workspace = true
 tracing.workspace = true
+
+tokio.workspace = true
+url.workspace = true
+alloy-rpc-client.workspace = true
+alloy-provider.workspace = true
+alloy-network.workspace = true
+loom-core-topology.workspace = true
