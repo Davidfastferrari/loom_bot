@@ -1,5 +1,6 @@
 pub use accountnoncetx::AccountNonceAndTransactions;
 pub use chain_parameters::ChainParameters;
+pub use chunked_fetcher::{fetch_block_with_transactions_chunked, fetch_block_trace_chunked};
 pub use fetchstate::FetchState;
 pub use loom_data_types::{LoomBlock, LoomDataTypes, LoomHeader, LoomTx};
 pub use loom_data_types_ethereum::LoomDataTypesEthereum;
@@ -12,6 +13,7 @@ pub use state_update::{
 };
 mod accountnoncetx;
 mod chain_parameters;
+mod chunked_fetcher;
 mod fetchstate;
 mod loom_data_types;
 mod loom_data_types_ethereum;
