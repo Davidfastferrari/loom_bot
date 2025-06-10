@@ -51,24 +51,7 @@ where
                     // Create a placeholder transaction to maintain index consistency
                     // This is better than failing the entire block fetch
                     // Create a placeholder transaction manually instead of using default()
-                    chunk_transactions.push(alloy_rpc_types::Transaction {
-                        // Fill with minimal or empty values as needed
-                        // Assuming fields: hash, nonce, block_hash, block_number, transaction_index, from, to, value, gas_price, gas, input, v, r, s
-                        hash: Default::default(),
-                        nonce: Default::default(),
-                        block_hash: None,
-                        block_number: None,
-                        transaction_index: None,
-                        from: Default::default(),
-                        to: None,
-                        value: Default::default(),
-                        gas_price: None,
-                        gas: Default::default(),
-                        input: Default::default(),
-                        v: Default::default(),
-                        r: Default::default(),
-                        s: Default::default(),
-                    });
+                    chunk_transactions.push(Default::default());
                 }
             }
         }
