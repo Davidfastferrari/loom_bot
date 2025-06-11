@@ -34,3 +34,6 @@ alloy-transport.workspace = true
 
 #revm
 revm.workspace = true
+
+[features]
+blockchain = ["dep:loom-core-blockchain"]

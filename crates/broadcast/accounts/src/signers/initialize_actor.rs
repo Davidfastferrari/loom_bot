@@ -4,6 +4,7 @@ use tracing::{error, info};
 
 use loom_core_actors::{Accessor, Actor, ActorResult, SharedState, WorkerResult};
 use loom_core_actors_macros::Accessor;
+#[cfg(feature = "blockchain")]
 use loom_core_blockchain::Blockchain;
 use loom_types_entities::{AccountNonceAndBalanceState, KeyStore, LoomTxSigner, TxSigners};
 
@@ -56,6 +57,7 @@ impl InitializeSignersOneShotBlockingActor {
         Ok(InitializeSignersOneShotBlockingActor { key: Some(key), signers: None, monitor: None })
     }
 
+    #[cfg(feature = "blockchain")]
     pub fn on_bc(self, bc: &Blockchain) -> Self {
         Self { monitor: Some(bc.nonce_and_balance()), ..self }
     }

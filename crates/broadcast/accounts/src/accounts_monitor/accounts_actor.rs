@@ -7,6 +7,7 @@ use alloy_rpc_types::BlockTransactions;
 use alloy_sol_types::SolEventInterface;
 use loom_core_actors::{Accessor, Actor, ActorResult, Broadcaster, Consumer, SharedState, WorkerResult};
 use loom_core_actors_macros::{Accessor, Consumer};
+#[cfg(feature = "blockchain")]
 use loom_core_blockchain::Blockchain;
 use loom_defi_abi::IERC20::IERC20Events;
 use loom_types_entities::{AccountNonceAndBalanceState, LatestBlock};
@@ -175,6 +176,7 @@ where
         Self { with_fetcher: false, ..self }
     }
 
+    #[cfg(feature = "blockchain")]
     pub fn on_bc(self, bc: &Blockchain) -> NonceAndBalanceMonitorActor<P, N> {
         NonceAndBalanceMonitorActor {
             accounts_nonce_and_balance: Some(bc.nonce_and_balance()),
