@@ -60,6 +60,7 @@ alloy-transport-ws.workspace = true
 url.workspace = true
 
 [features]
+default = []
 db-access = ["dep:loom-node-db-access"]
 loom-broadcast-accounts = ["dep:loom-broadcast-accounts"]
 loom-core-block-history-actor = ["dep:loom-core-block-history-actor"]

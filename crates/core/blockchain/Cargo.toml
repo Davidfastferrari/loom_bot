@@ -33,5 +33,6 @@ alloy-network.workspace = true
 loom-core-topology = { workspace = true, optional = true }
 
 [features]
+default = []
 with-topology = ["loom-core-topology"]
 
