@@ -24,7 +24,8 @@ COPY . .
 RUN cargo fetch
 
 # Build all required binaries in one command with increased jobs
-RUN cargo build --release --all --bins --jobs $(nproc)
+# Updated to build with no default features and enable with-topology feature to avoid cyclic dependency
+RUN cargo build --release --all --bins --jobs $(nproc) --no-default-features --features "with-topology"
 
 # Second stage for runtime image
 FROM rust:1.84-slim-bullseye
