@@ -10,7 +10,7 @@ use tracing::error;
 use loom_broadcast_flashbots::Flashbots;
 use loom_core_actors::{subscribe, Actor, ActorResult, Broadcaster, Consumer, WorkerResult};
 use loom_core_actors_macros::{Accessor, Consumer};
-use loom_core_blockchain::Blockchain;
+
 use loom_types_events::{MessageTxCompose, RlpState, TxComposeData, TxComposeMessageType};
 
 async fn broadcast_task<P>(broadcast_request: TxComposeData, client: Arc<Flashbots<P>>) -> Result<()>
@@ -125,8 +125,8 @@ where
         FlashbotsBroadcastActor { client: Arc::new(client), tx_compose_channel_rx: None, allow_broadcast }
     }
 
-    pub fn on_bc(self, bc: &Blockchain) -> Self {
-        Self { tx_compose_channel_rx: Some(bc.tx_compose_channel()), ..self }
+    pub fn with_compose_channel(self, tx_compose_channel_rx: Broadcaster<MessageTxCompose>) -> Self {
+        Self { tx_compose_channel_rx: Some(tx_compose_channel_rx), ..self }
     }
 }
 

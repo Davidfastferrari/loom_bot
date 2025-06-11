@@ -10,7 +10,7 @@ use tracing::{error, info};
 
 use loom_core_actors::{Actor, ActorResult, Broadcaster, Consumer, WorkerResult};
 use loom_core_actors_macros::{Accessor, Consumer};
-use loom_core_blockchain::Blockchain;
+
 use loom_node_debug_provider::AnvilProviderExt;
 use loom_types_blockchain::{LoomDataTypes, LoomDataTypesEthereum};
 use loom_types_events::{MessageTxCompose, TxComposeData, TxComposeMessageType};
@@ -97,8 +97,8 @@ where
         Self { client, tx_compose_rx: None }
     }
 
-    pub fn on_bc(self, bc: &Blockchain<LoomDataTypesEthereum>) -> Self {
-        Self { tx_compose_rx: Some(bc.tx_compose_channel()), ..self }
+    pub fn with_compose_channel(self, tx_compose_rx: Broadcaster<MessageTxCompose<LoomDataTypesEthereum>>) -> Self {
+        Self { tx_compose_rx: Some(tx_compose_rx), ..self }
     }
 }
 
