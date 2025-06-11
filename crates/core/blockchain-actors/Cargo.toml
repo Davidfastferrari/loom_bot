@@ -13,8 +13,8 @@ loom-broadcast-accounts.workspace = true
 loom-broadcast-broadcaster.workspace = true
 loom-broadcast-flashbots.workspace = true
 loom-core-actors.workspace = true
-loom-core-block-history-actor.workspace = true
-loom-core-blockchain.workspace = true
+loom-core-block-history-actor = { workspace = true, optional = true }
+loom-core-blockchain = { workspace = true, optional = true }
 loom-core-mempool.workspace = true
 loom-core-router.workspace = true
 loom-defi-address-book.workspace = true
@@ -55,3 +55,6 @@ revm.workspace = true
 
 [features]
 db-access = ["dep:loom-node-db-access"]
+default = []
+with-block-history-actor = ["loom-core-block-history-actor"]
+with-blockchain = ["loom-core-blockchain"]
