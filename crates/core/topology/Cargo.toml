@@ -12,6 +12,7 @@ loom-broadcast-accounts = { workspace = true, optional = true }
 loom-broadcast-broadcaster.workspace = true
 loom-broadcast-flashbots.workspace = true
 loom-core-actors.workspace = true
+# Changed to optional to break cycle
 loom-core-block-history-actor = { workspace = true, optional = true }
 loom-core-blockchain.workspace = true
 loom-core-mempool.workspace = true

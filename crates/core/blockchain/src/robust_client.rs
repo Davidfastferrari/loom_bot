@@ -18,7 +18,7 @@ where
     RootProvider: Provider<N>,
 {
     let mut retry_count = 0;
-    let max_retry_delay = Duration::from_secs(30);
+    let max_retry_delay = Duration::from_secs(10);
 
     loop {
         if retry_count >= max_retries {
