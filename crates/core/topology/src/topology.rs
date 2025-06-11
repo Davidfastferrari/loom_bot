@@ -100,7 +100,7 @@ impl<
         self,
         swap_encoder: NE,
     ) -> Topology<DB, NE, P, Ethereum, LoomDataTypesEthereum> {
-        //let swap_encoder = Arc::new(swap_encoder);
+        let swap_encoder = Arc::new(swap_encoder);
         Topology {
             config: self.config,
             clients: self.clients,
