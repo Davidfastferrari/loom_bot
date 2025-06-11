@@ -4956,7 +4956,6 @@ dependencies = [
  "eyre",
  "loom-core-actors",
  "loom-core-actors-macros",
- "loom-core-blockchain",
  "loom-defi-abi",
  "loom-types-blockchain",
  "loom-types-entities",
@@ -4980,7 +4979,6 @@ dependencies = [
  "loom-broadcast-flashbots",
  "loom-core-actors",
  "loom-core-actors-macros",
- "loom-core-blockchain",
  "loom-node-debug-provider",
  "loom-types-blockchain",
  "loom-types-events",
@@ -5075,6 +5073,9 @@ version = "0.6.0"
 dependencies = [
  "alloy",
  "alloy-chains",
+ "alloy-network",
+ "alloy-provider",
+ "alloy-rpc-client",
  "eyre",
  "influxdb",
  "loom-core-actors",
@@ -5085,7 +5086,9 @@ dependencies = [
  "loom-types-entities",
  "loom-types-events",
  "revm",
+ "tokio",
  "tracing",
+ "url",
 ]
 
 [[package]]

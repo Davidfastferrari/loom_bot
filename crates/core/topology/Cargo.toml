@@ -12,7 +12,7 @@ loom-broadcast-accounts = { workspace = true, optional = true }
 loom-broadcast-broadcaster.workspace = true
 loom-broadcast-flashbots.workspace = true
 loom-core-actors.workspace = true
-loom-core-block-history-actor.workspace = true
+loom-core-block-history-actor = { workspace = true, optional = true }
 loom-core-blockchain.workspace = true
 loom-core-mempool.workspace = true
 loom-core-router.workspace = true
@@ -61,3 +61,4 @@ url.workspace = true
 [features]
 db-access = ["dep:loom-node-db-access"]
 loom-broadcast-accounts = ["dep:loom-broadcast-accounts"]
+loom-core-block-history-actor = ["dep:loom-core-block-history-actor"]

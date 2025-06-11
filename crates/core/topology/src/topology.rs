@@ -16,6 +16,7 @@ use loom_broadcast_accounts::{InitializeSignersOneShotBlockingActor, NonceAndBal
 use loom_broadcast_broadcaster::FlashbotsBroadcastActor;
 use loom_broadcast_flashbots::Flashbots;
 use loom_core_actors::{Accessor, Actor, Consumer, Producer, SharedState, WorkerResult};
+#[cfg(feature = "loom-core-block-history-actor")]
 use loom_core_block_history_actor::BlockHistoryActor;
 use loom_core_blockchain::{Blockchain, BlockchainState, Strategy};
 use loom_core_mempool::MempoolActor;
@@ -283,25 +284,28 @@ if let Some(ws_url) = ws_url {
             let blockchain_state = self.get_blockchain_state(Some(k))?;
             let client = self.get_client(None)?;
 
-            info!("Starting block history actor {k}");
-            let mut block_history_actor = BlockHistoryActor::new(client);
-            match block_history_actor
-                .access(blockchain.latest_block())
-                .access(blockchain_state.market_state())
-                .access(blockchain_state.block_history())
-                .consume(blockchain.new_block_headers_channel())
-                .consume(blockchain.new_block_with_tx_channel())
-                .consume(blockchain.new_block_logs_channel())
-                .consume(blockchain.new_block_state_update_channel())
-                .produce(blockchain.market_events_channel())
-                .start()
+            #[cfg(feature = "loom-core-block-history-actor")]
             {
-                Ok(r) => {
-                    tasks.extend(r);
-                    info!("Block history actor started successfully")
-                }
-                Err(e) => {
-                    panic!("{}", e)
+                info!("Starting block history actor {k}");
+                let mut block_history_actor = BlockHistoryActor::new(client);
+                match block_history_actor
+                    .access(blockchain.latest_block())
+                    .access(blockchain_state.market_state())
+                    .access(blockchain_state.block_history())
+                    .consume(blockchain.new_block_headers_channel())
+                    .consume(blockchain.new_block_with_tx_channel())
+                    .consume(blockchain.new_block_logs_channel())
+                    .consume(blockchain.new_block_state_update_channel())
+                    .produce(blockchain.market_events_channel())
+                    .start()
+                {
+                    Ok(r) => {
+                        tasks.extend(r);
+                        info!("Block history actor started successfully")
+                    }
+                    Err(e) => {
+                        panic!("{}", e)
+                    }
                 }
             }
 
