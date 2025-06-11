@@ -74,8 +74,6 @@ repository = "https://github.com/dexloom/loom"
 rust-version = "1.84"
 version = "0.6.0"
 
-[workspace.features]
-with-blockchain = ["crates/core/topology/with-blockchain"]
 
 [workspace.dependencies]
 # broadcast
