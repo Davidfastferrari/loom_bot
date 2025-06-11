@@ -7,8 +7,7 @@ use alloy_rpc_types::BlockTransactions;
 use alloy_sol_types::SolEventInterface;
 use loom_core_actors::{Accessor, Actor, ActorResult, Broadcaster, Consumer, SharedState, WorkerResult};
 use loom_core_actors_macros::{Accessor, Consumer};
-#[cfg(feature = "blockchain")]
-use loom_core_blockchain::Blockchain;
+
 use loom_defi_abi::IERC20::IERC20Events;
 use loom_types_entities::{AccountNonceAndBalanceState, LatestBlock};
 use loom_types_events::MarketEvents;
@@ -176,12 +175,16 @@ where
         Self { with_fetcher: false, ..self }
     }
 
-    #[cfg(feature = "blockchain")]
-    pub fn on_bc(self, bc: &Blockchain) -> NonceAndBalanceMonitorActor<P, N> {
+    pub fn with_state(
+        self,
+        accounts_nonce_and_balance: SharedState<AccountNonceAndBalanceState>,
+        latest_block: SharedState<LatestBlock>,
+        market_events: Broadcaster<MarketEvents>,
+    ) -> NonceAndBalanceMonitorActor<P, N> {
         NonceAndBalanceMonitorActor {
-            accounts_nonce_and_balance: Some(bc.nonce_and_balance()),
-            latest_block: Some(bc.latest_block().clone()),
-            market_events: Some(bc.market_events_channel().clone()),
+            accounts_nonce_and_balance: Some(accounts_nonce_and_balance),
+            latest_block: Some(latest_block),
+            market_events: Some(market_events),
             ..self
         }
     }

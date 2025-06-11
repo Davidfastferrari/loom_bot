@@ -6,8 +6,7 @@ use tracing::{error, info};
 
 use loom_core_actors::{Actor, ActorResult, Broadcaster, Consumer, Producer, WorkerResult};
 use loom_core_actors_macros::{Accessor, Consumer, Producer};
-#[cfg(feature = "blockchain")]
-use loom_core_blockchain::Blockchain;
+
 use loom_types_blockchain::{LoomDataTypes, LoomDataTypesEthereum, LoomTx};
 use loom_types_events::{MessageTxCompose, RlpState, TxComposeData, TxComposeMessageType, TxState};
 
@@ -118,9 +117,8 @@ impl<LDT: LoomDataTypes> TxSignersActor<LDT> {
         TxSignersActor::<LDT>::default()
     }
 
-    #[cfg(feature = "blockchain")]
-    pub fn on_bc(self, bc: &Blockchain<LDT>) -> Self {
-        Self { compose_channel_rx: Some(bc.tx_compose_channel()), compose_channel_tx: Some(bc.tx_compose_channel()) }
+    pub fn with_compose_channel(self, compose_channel: Broadcaster<MessageTxCompose<LDT>>) -> Self {
+        Self { compose_channel_rx: Some(compose_channel.clone()), compose_channel_tx: Some(compose_channel) }
     }
 }
 
