@@ -18,7 +18,10 @@ use loom_broadcast_flashbots::Flashbots;
 use loom_core_actors::{Accessor, Actor, Consumer, Producer, SharedState, WorkerResult};
 #[cfg(feature = "loom-core-block-history-actor")]
 use loom_core_block_history_actor::BlockHistoryActor;
+#[cfg(feature = "with-blockchain")]
 use loom_core_blockchain::{Blockchain, BlockchainState, Strategy};
+#[cfg(not(feature = "with-blockchain"))]
+compile_error!("The feature \"with-blockchain\" must be enabled to use loom-core-topology crate because it depends on loom-core-blockchain optionally.");
 use loom_core_mempool::MempoolActor;
 use loom_defi_health_monitor::PoolHealthMonitorActor;
 use loom_defi_market::{HistoryPoolLoaderOneShotActor, NewPoolLoaderActor, PoolLoaderActor, ProtocolPoolLoaderOneShotActor};

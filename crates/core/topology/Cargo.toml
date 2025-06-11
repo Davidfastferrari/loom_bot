@@ -14,7 +14,7 @@ loom-broadcast-flashbots.workspace = true
 loom-core-actors.workspace = true
 # Changed to optional to break cycle
 loom-core-block-history-actor = { workspace = true, optional = true }
-loom-core-blockchain.workspace = true
+loom-core-blockchain = { workspace = true, optional = true }
 loom-core-mempool.workspace = true
 loom-core-router.workspace = true
 loom-defi-health-monitor.workspace = true
@@ -63,3 +63,4 @@ url.workspace = true
 db-access = ["dep:loom-node-db-access"]
 loom-broadcast-accounts = ["dep:loom-broadcast-accounts"]
 loom-core-block-history-actor = ["dep:loom-core-block-history-actor"]
+with-blockchain = ["dep:loom-core-blockchain"]
