@@ -60,4 +60,4 @@ url.workspace = true
 
 [features]
 db-access = ["dep:loom-node-db-access"]
-loom-broadcast-accounts = []
+loom-broadcast-accounts = ["loom-broadcast-accounts"]
