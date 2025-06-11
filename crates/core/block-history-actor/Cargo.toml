@@ -27,6 +27,20 @@ tracing.workspace = true
 [features]
 with-blockchain = ["loom-core-blockchain"]
 
+[dependencies]
+loom-core-actors.workspace = true
+loom-core-actors-macros.workspace = true
+loom-core-blockchain = { workspace = true, optional = true }
+loom-evm-db.workspace = true
+loom-node-debug-provider.workspace = true
+loom-types-blockchain.workspace = true
+loom-types-entities.workspace = true
+loom-types-events.workspace = true
+
+eyre.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+
 alloy-network.workspace = true
 alloy-primitives.workspace = true
 alloy-provider.workspace = true
