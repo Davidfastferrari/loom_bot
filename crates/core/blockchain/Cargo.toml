@@ -29,4 +29,4 @@ url.workspace = true
 alloy-rpc-client.workspace = true
 alloy-provider.workspace = true
 alloy-network.workspace = true
-loom-core-topology.workspace = true
+loom-core-topology = { workspace = true, optional = true }

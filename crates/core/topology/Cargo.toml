@@ -8,7 +8,7 @@ homepage.workspace = true
 repository.workspace = true
 
 [dependencies]
-loom-broadcast-accounts.workspace = true
+loom-broadcast-accounts = { workspace = true, optional = true }
 loom-broadcast-broadcaster.workspace = true
 loom-broadcast-flashbots.workspace = true
 loom-core-actors.workspace = true
@@ -60,3 +60,4 @@ url.workspace = true
 
 [features]
 db-access = ["dep:loom-node-db-access"]
+loom-broadcast-accounts = []
