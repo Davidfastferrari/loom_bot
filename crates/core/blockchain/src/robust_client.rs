@@ -2,6 +2,7 @@ use alloy_network::Network;
 use alloy_provider::{Provider, ProviderBuilder, RootProvider};
 use alloy_rpc_client::{ClientBuilder, WsConnect};
 use eyre::{eyre, Result};
+#[cfg(feature = "with-topology")]
 use loom_core_topology::ws_config::create_optimized_ws_client_builder;
 use std::time::Duration;
 use tracing::{debug, error, info, warn};

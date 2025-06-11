@@ -32,3 +32,6 @@ alloy-network.workspace = true
 # Changed to optional to break cycle
 loom-core-topology = { workspace = true, optional = true }
 
+[features]
+with-topology = ["loom-core-topology"]
+
