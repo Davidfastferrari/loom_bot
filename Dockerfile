@@ -31,7 +31,7 @@ RUN set -e; \
 
 # Set working directory
 WORKDIR /app
-
+#
 # Copy entire source code first
 COPY . .
 
