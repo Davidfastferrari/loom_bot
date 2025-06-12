@@ -21,4 +21,3 @@ loom-node-debug-provider = { workspace = true }
 revm = { workspace = true }
 influxdb.workspace = true
 loom-core-actors.workspace = true
-loom-core-blockchain.workspace = true
