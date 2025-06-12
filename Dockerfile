@@ -1,8 +1,11 @@
 FROM rust:1.84-slim-bullseye as builder
 
 # Install build dependencies
-RUN apt-get update && \
-    apt-get install -y --fix-missing \
+# Robust apt-get install with retries and recovery for network/package issues
+RUN set -e; \
+    for i in 1 2 3; do \
+      apt-get update && \
+      apt-get install -y --fix-missing \
         pkg-config \
         libssl-dev \
         build-essential \
@@ -18,8 +21,11 @@ RUN apt-get update && \
         libalgorithm-merge-perl \
         libfile-fcntllock-perl \
         libalgorithm-diff-perl \
-    && apt-get install -f -y \
-    && rm -rf /var/lib/apt/lists/*
+      && break || sleep 5; \
+    done; \
+    dpkg --configure -a; \
+    apt-get install -f -y; \
+    rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
