@@ -3,7 +3,7 @@ name = "loom-core-blockchain"
 version = "0.6.0"
 
 [lib]
-crate_name = "loom_core_blockchain"
+
 edition = "2021"
 rust-version = "1.84"
 license = "MIT OR Apache-2.0"
