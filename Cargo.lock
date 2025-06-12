@@ -5081,6 +5081,8 @@ dependencies = [
  "influxdb",
  "loom-core-actors",
  "loom-core-actors-macros",
+ "loom-core-blockchain-actors-block-history",
+ "loom-core-blockchain-actors-blockchain",
  "loom-core-blockchain-shared",
  "loom-core-blockchain-types",
  "loom-core-topology-shared",
@@ -5149,9 +5151,6 @@ dependencies = [
 [[package]]
 name = "loom-core-blockchain-actors-blockchain"
 version = "0.6.0"
-dependencies = [
- "loom-core-blockchain",
-]
 
 [[package]]
 name = "loom-core-blockchain-shared"
