@@ -1,6 +1,7 @@
 use eyre::{eyre, Result};
 use loom_core_actors::{Accessor, Actor, ActorResult, Broadcaster, Consumer, Producer, SharedState, WorkerResult};
 use loom_core_actors_macros::{Accessor, Consumer, Producer};
+#[cfg(feature = "with-blockchain")]
 use loom_core_blockchain::{Blockchain, Strategy};
 use loom_types_entities::{AccountNonceAndBalanceState, TxSigners};
 use loom_types_events::{MessageSwapCompose, MessageTxCompose, SwapComposeData, SwapComposeMessage, TxComposeData};
