@@ -1,0 +1,13 @@
+[package]
+name = "loom-core-blockchain-actors-block-history"
+version = "0.6.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/dexloom/loom"
+
+[dependencies]
+loom-core-block-history-actor = { workspace = true }
+# Add other dependencies from blockchain-actors related to block-history here
+
+[features]
+default = []
