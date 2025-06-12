@@ -41,7 +41,7 @@ use loom_node_json_rpc::{NodeBlockActor, NodeMempoolActor};
 use loom_types_blockchain::LoomDataTypes;
 use loom_types_entities::pool_config::PoolsLoadingConfig;
 use loom_types_entities::{BlockHistoryState, MarketState, PoolLoaders, SwapEncoder, TxSigners};
-// Removed duplicate import of LoomDataTypesEthereum
+use loom_types_blockchain::loom_data_types_ethereum::LoomDataTypesEthereum;
 use revm::{Database, DatabaseCommit, DatabaseRef};
 use tokio::task::JoinHandle;
 use tracing::{error, info, warn};
