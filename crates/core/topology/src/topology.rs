@@ -12,7 +12,6 @@ use alloy_transport_ipc::IpcConnect;
 use alloy_transport_ws::WsConnect;
 use eyre::{eyre, ErrReport, Result};
 use url::Url;
-#[cfg(feature = "loom-broadcast-accounts")]
 use loom_broadcast_accounts::{InitializeSignersOneShotBlockingActor, NonceAndBalanceMonitorActor, TxSignersActor};
 use loom_broadcast_broadcaster::FlashbotsBroadcastActor;
 use loom_broadcast_flashbots::Flashbots;
@@ -51,7 +50,7 @@ pub struct Topology<
     E: Send + Sync + Clone + 'static = MulticallerSwapEncoder,
     P: Provider<N> + Send + Sync + Clone + 'static = RootProvider,
     N: Network = Ethereum,
-    LDT: LoomDataTypes = LoomDataTypesEthereum,
+    LDT: LoomDataTypes + 'static = LoomDataTypesEthereum,
 > {
     config: TopologyConfig,
     clients: HashMap<String, RootProvider<N>>,
@@ -747,23 +746,14 @@ if let Some(ws_url) = ws_url {
         Ok(tasks)
     }
 
-    pub fn get_client(&self, name: Option<&String>) -> Result<RootProvider<Ethereum>> {
-        let binding = "local".to_string();
-        match self.clients.get(name.unwrap_or(&binding)) {
-            Some(a) => Ok(a.clone()),
-            None => Err(eyre!("CLIENT_NOT_FOUND")),
-        }
-    }
+}
 
-    pub fn get_client_config(&self, name: Option<&String>) -> Result<ClientConfig<RootProvider, Ethereum>> {
-        let binding = "local".to_string();
-        let name = name.unwrap_or(&binding);
-        match self.config.clients.get(name) {
-            Some(a) => Ok(a.clone().into_client_config::<RootProvider, Ethereum>()),
-            None => Err(eyre!("CLIENT_NOT_FOUND")),
-        }
-    }
-
+impl<
+    DB: Clone + Send + Sync + 'static,
+    E: Send + Sync + Clone + 'static,
+    P: Provider<Ethereum> + Send + Sync + Clone + 'static,
+    LDT: LoomDataTypes + 'static,
+> Topology<DB, E, P, Ethereum, LDT> {
     pub fn get_blockchain(&self, name: Option<&String>) -> Result<&Blockchain<LDT>> {
         let binding = self.default_blockchain_name.clone().unwrap();
         match self.blockchains.get(name.unwrap_or(&binding)) {
@@ -788,14 +778,6 @@ if let Some(ws_url) = ws_url {
         }
     }
 
-    pub fn get_multicaller_address(&self, name: Option<&String>) -> Result<Address> {
-        let binding = self.default_multicaller_encoder_name.clone().unwrap();
-        match self.multicaller_encoders.get(name.unwrap_or(&binding)) {
-            Some(multicaller_address) => Ok(*multicaller_address),
-            None => Err(eyre!("ENCODER_NOT_FOUND")),
-        }
-    }
-
     pub fn get_signers(&self, name: Option<&String>) -> Result<SharedState<TxSigners>> {
         let binding = self.default_multicaller_encoder_name.clone().unwrap();
         match self.signers.get(name.unwrap_or(&binding)) {
@@ -803,6 +785,7 @@ if let Some(ws_url) = ws_url {
             None => Err(eyre!("SIGNERS_NOT_FOUND")),
         }
     }
+
     pub fn get_blockchain_mut(&mut self, name: Option<&String>) -> Result<&mut Blockchain<LDT>> {
         let binding = self.default_blockchain_name.clone().unwrap();
         match self.blockchains.get_mut(name.unwrap_or(&binding)) {
@@ -810,4 +793,5 @@ if let Some(ws_url) = ws_url {
             None => Err(eyre!("CLIENT_NOT_FOUND")),
         }
     }
+}
 }
