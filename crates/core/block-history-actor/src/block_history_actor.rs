@@ -5,7 +5,7 @@ use alloy_rpc_types::Header;
 use eyre::{eyre, Result};
 use loom_core_actors::{run_sync, subscribe, Accessor, Actor, ActorResult, Broadcaster, Consumer, Producer, SharedState, WorkerResult};
 use loom_core_actors_macros::{Accessor, Consumer, Producer};
-use loom_core_blockchain::{Blockchain, BlockchainState};
+use loom_core_blockchain_types::{Blockchain, BlockchainState};
 use loom_evm_db::DatabaseLoomExt;
 use loom_node_debug_provider::DebugProviderExt;
 use loom_types_blockchain::ChainParameters;

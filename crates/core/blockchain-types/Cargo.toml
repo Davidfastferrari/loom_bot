@@ -1,0 +1,21 @@
+[package]
+name = "loom-core-blockchain-types"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/dexloom/loom"
+
+[dependencies]
+eyre = "0.6"
+tokio = { version = "1", features = ["full"] }
+tracing = "0.1"
+alloy_network = { workspace = true }
+alloy_primitives = { workspace = true }
+alloy_provider = { workspace = true }
+alloy_rpc_types = { workspace = true }
+loom_types_blockchain = { workspace = true }
+loom_types_entities = { workspace = true }
+loom_types_events = { workspace = true }
+loom_evm_db = { workspace = true }
+loom_node_debug_provider = { workspace = true }
+revm = { workspace = true }
