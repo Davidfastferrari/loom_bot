@@ -147,6 +147,7 @@ where
         Self { signers: Some(signers), ..self }
     }
 
+    #[cfg(feature = "with-blockchain")]
     pub fn on_bc(self, bc: &Blockchain, strategy: &Strategy<DB>) -> Self {
         Self {
             swap_compose_channel_rx: Some(strategy.swap_compose_channel()),
