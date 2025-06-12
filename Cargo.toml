@@ -133,8 +133,11 @@ loom-strategy-merger = { path = "crates/strategy/merger" }
 loom-strategy-simple-arb = { path = "crates/strategy/simple_arb" }
 # types
 loom-types-blockchain = { path = "crates/types/blockchain" }
+loom_types_blockchain = { path = "crates/types/blockchain" }
 loom-types-entities = { path = "crates/types/entities" }
+loom_types_entities = { path = "crates/types/entities" }
 loom-types-events = { path = "crates/types/events" }
+loom_types_events = { path = "crates/types/events" }
 
 # logging
 env_logger = "0.11.5"
