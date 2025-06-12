@@ -12,6 +12,7 @@ use alloy_transport_ipc::IpcConnect;
 use alloy_transport_ws::WsConnect;
 use eyre::{eyre, ErrReport, Result};
 use url::Url;
+#[cfg(feature = "loom-broadcast-accounts")]
 use loom_broadcast_accounts::{InitializeSignersOneShotBlockingActor, NonceAndBalanceMonitorActor, TxSignersActor};
 use loom_broadcast_broadcaster::FlashbotsBroadcastActor;
 use loom_broadcast_flashbots::Flashbots;
@@ -37,10 +38,10 @@ use loom_node_actor_config::NodeBlockActorConfig;
 use loom_node_db_access::RethDbAccessBlockActor;
 use loom_node_grpc::NodeExExGrpcActor;
 use loom_node_json_rpc::{NodeBlockActor, NodeMempoolActor};
-use loom_types_blockchain::{LoomDataTypes, LoomDataTypesEthereum};
+use loom_types_blockchain::LoomDataTypes;
 use loom_types_entities::pool_config::PoolsLoadingConfig;
 use loom_types_entities::{BlockHistoryState, MarketState, PoolLoaders, SwapEncoder, TxSigners};
-use loom_types_blockchain::loom_data_types_ethereum::LoomDataTypesEthereum;
+// Removed duplicate import of LoomDataTypesEthereum
 use revm::{Database, DatabaseCommit, DatabaseRef};
 use tokio::task::JoinHandle;
 use tracing::{error, info, warn};
