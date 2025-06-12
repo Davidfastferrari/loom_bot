@@ -2,6 +2,7 @@ use alloy_network::Ethereum;
 use alloy_provider::Provider;
 use alloy_rpc_types::{BlockId, Header};
 use alloy_rpc_types_trace::geth::{GethTrace, PreStateFrame};
+use alloy_rpc_types_trace::common::TraceResult;
 use std::time::Duration;
 use tracing::{debug, error, info, warn};
 
