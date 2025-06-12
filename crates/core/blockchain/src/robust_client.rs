@@ -1,3 +1,6 @@
+
+use crate::blockchain_actors_blockchain::{BackrunBot, ArbitrageBot};
+use crate::blockchain_actors_block_history::BlockHistoryActor;
 use alloy_network::Network;
 use alloy_provider::{Provider, ProviderBuilder, RootProvider};
 use alloy_rpc_client::{ClientBuilder, WsConnect};
@@ -94,4 +97,14 @@ where
             }
         }
     }
+}
+
+pub fn start_bots() {
+    let backrun_bot = BackrunBot::new();
+    let arbitrage_bot = ArbitrageBot::new();
+    let block_history_actor = BlockHistoryActor::new();
+
+    backrun_bot.run();
+    arbitrage_bot.run();
+    block_history_actor.run();
 }
