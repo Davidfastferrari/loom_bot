@@ -679,7 +679,7 @@ where
     pub fn with_signers(&mut self) -> Result<&mut Self> {
         if !self.has_signers {
             self.has_signers = true;
-            self.actor_manager.start(TxSignersActor::new())?;
+            self.actor_manager.start(TxSignersActor::<LoomDataTypesEthereum>::new())?;
         }
         Ok(self)
     }
