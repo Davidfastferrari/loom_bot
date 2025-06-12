@@ -11,6 +11,8 @@ RUN set -e; \
         build-essential \
         git \
         llvm \
+        llvm-11 \
+        llvm-11-dev \
         libclang-dev \
         clang \
         curl \
