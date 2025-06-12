@@ -5156,6 +5156,17 @@ dependencies = [
 [[package]]
 name = "loom-core-blockchain-shared"
 version = "0.1.0"
+dependencies = [
+ "alloy",
+ "influxdb",
+ "loom-core-actors",
+ "loom-evm-db",
+ "loom-types-blockchain",
+ "loom-types-entities",
+ "loom-types-events",
+ "revm",
+ "tracing",
+]
 
 [[package]]
 name = "loom-core-blockchain-types"
@@ -5267,6 +5278,9 @@ dependencies = [
 [[package]]
 name = "loom-core-topology-shared"
 version = "0.1.0"
+dependencies = [
+ "alloy-transport-ws",
+]
 
 [[package]]
 name = "loom-defi-abi"
