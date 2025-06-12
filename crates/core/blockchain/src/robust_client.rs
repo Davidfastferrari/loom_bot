@@ -1,6 +1,6 @@
 
-use crate::blockchain_actors_blockchain::{BackrunBot, ArbitrageBot};
-use crate::blockchain_actors_block_history::BlockHistoryActor;
+use loom_core_blockchain_actors_blockchain::{BackrunBot, ArbitrageBot};
+use loom_core_blockchain_actors_block_history::BlockHistoryActor;
 use alloy_network::Network;
 use alloy_provider::{Provider, ProviderBuilder, RootProvider};
 use alloy_rpc_client::{ClientBuilder, WsConnect};
