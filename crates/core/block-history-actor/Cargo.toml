@@ -19,6 +19,7 @@ loom-types-blockchain.workspace = true
 loom-types-entities.workspace = true
 loom-types-events.workspace = true
 loom-core-blockchain-shared = { path = "../blockchain-shared" }
+loom-core-blockchain.workspace = true
 
 eyre.workspace = true
 tokio.workspace = true
