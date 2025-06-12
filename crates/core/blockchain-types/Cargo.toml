@@ -9,10 +9,10 @@ repository = "https://github.com/dexloom/loom"
 eyre = "0.6"
 tokio = { version = "1", features = ["full"] }
 tracing = "0.1"
-alloy_network = { workspace = true }
-alloy_primitives = { workspace = true }
-alloy_provider = { workspace = true }
-alloy_rpc_types = { workspace = true }
+alloy-network = { workspace = true }
+alloy-primitives = { workspace = true }
+alloy-provider = { workspace = true }
+alloy-rpc-types = { workspace = true }
 loom_types_blockchain = { workspace = true }
 loom_types_entities = { workspace = true }
 loom_types_events = { workspace = true }
