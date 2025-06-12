@@ -3,7 +3,7 @@ FROM rust:1.84-slim-bullseye as builder
 # Install build dependencies
 # Robust apt-get install with retries and recovery for network/package issues
 RUN set -e; \
-    apt-get update; \
+    apt-get update --fix-missing; \
     apt-get install -y --fix-missing \
         pkg-config \
         libssl-dev \
