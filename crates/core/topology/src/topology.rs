@@ -367,7 +367,7 @@ if let Some(ws_url) = ws_url {
                         }
                     }
 
-                    let mut signers_actor = TxSignersActor::new();
+                    let mut signers_actor = TxSignersActor::<LoomDataTypesEthereum>::new();
                     match signers_actor.consume(blockchain.tx_compose_channel()).produce(blockchain.tx_compose_channel()).start() {
                         Ok(r) => {
                             tasks.extend(r);
