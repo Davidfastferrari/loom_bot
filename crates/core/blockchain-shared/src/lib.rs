@@ -53,9 +53,10 @@ impl Blockchain<LoomDataTypesEthereum> {
 
         let mut market_instance = Market::default();
 
-        if let Err(error) = crate::add_default_tokens_to_market(&mut market_instance, chain_id) {
-            error!(%error, "Failed to add default tokens to market");
-        }
+        // TODO: add_default_tokens_to_market is not available in this crate. Implement or import as needed.
+        // if let Err(error) = crate::add_default_tokens_to_market(&mut market_instance, chain_id) {
+        //     error!(%error, "Failed to add default tokens to market");
+        // }
 
         Blockchain {
             chain_id,

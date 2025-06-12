@@ -6,4 +6,12 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/dexloom/loom"
 
 [dependencies]
-# Add dependencies as needed when moving shared code
+alloy.workspace = true
+influxdb.workspace = true
+loom-core-actors.workspace = true
+loom-types-blockchain.workspace = true
+loom-types-entities.workspace = true
+loom-types-events.workspace = true
+revm.workspace = true
+tracing.workspace = true
+loom-evm-db.workspace = true
