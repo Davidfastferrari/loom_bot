@@ -18,7 +18,6 @@ use loom_broadcast_flashbots::Flashbots;
 use loom_core_actors::{Accessor, Actor, Consumer, Producer, SharedState, WorkerResult};
 #[cfg(feature = "loom-core-block-history-actor")]
 use loom_core_block_history_actor::BlockHistoryActor;
-#[cfg(feature = "with-blockchain")]
 use loom_core_blockchain::{Blockchain, BlockchainState, Strategy};
 /*
 #[cfg(not(feature = "with-blockchain"))]
@@ -54,9 +53,9 @@ pub struct Topology<
 > {
     config: TopologyConfig,
     clients: HashMap<String, RootProvider<N>>,
-    blockchains: HashMap<String, Blockchain>,
+    blockchains: HashMap<String, Blockchain<LDT>>,
     blockchain_states: HashMap<String, BlockchainState<DB>>,
-    strategies: HashMap<String, Strategy<DB>>,
+    strategies: HashMap<String, Strategy<DB, LDT>>,
     signers: HashMap<String, SharedState<TxSigners>>,
     multicaller_encoders: HashMap<String, Address>,
     default_blockchain_name: Option<String>,
@@ -764,7 +763,7 @@ if let Some(ws_url) = ws_url {
         }
     }
 
-    pub fn get_blockchain(&self, name: Option<&String>) -> Result<&Blockchain> {
+    pub fn get_blockchain(&self, name: Option<&String>) -> Result<&Blockchain<LDT>> {
         let binding = self.default_blockchain_name.clone().unwrap();
         match self.blockchains.get(name.unwrap_or(&binding)) {
             Some(a) => Ok(a),
@@ -780,7 +779,7 @@ if let Some(ws_url) = ws_url {
         }
     }
 
-    pub fn get_strategy(&self, name: Option<&String>) -> Result<&Strategy<DB>> {
+    pub fn get_strategy(&self, name: Option<&String>) -> Result<&Strategy<DB, LDT>> {
         let binding = self.default_blockchain_name.clone().unwrap();
         match self.strategies.get(name.unwrap_or(&binding)) {
             Some(a) => Ok(a),
@@ -803,7 +802,7 @@ if let Some(ws_url) = ws_url {
             None => Err(eyre!("SIGNERS_NOT_FOUND")),
         }
     }
-    pub fn get_blockchain_mut(&mut self, name: Option<&String>) -> Result<&mut Blockchain> {
+    pub fn get_blockchain_mut(&mut self, name: Option<&String>) -> Result<&mut Blockchain<LDT>> {
         let binding = self.default_blockchain_name.clone().unwrap();
         match self.blockchains.get_mut(name.unwrap_or(&binding)) {
             Some(a) => Ok(a),

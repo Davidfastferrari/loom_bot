@@ -6,7 +6,6 @@ use std::fs;
 use strum_macros::Display;
 use std::marker::PhantomData;
 
-mod ws_config;
 
 
 #[derive(Clone, Debug, Deserialize)]
