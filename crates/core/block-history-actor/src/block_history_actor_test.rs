@@ -3,7 +3,7 @@ mod test {
     use crate::BlockHistoryActor;
     use alloy_network::Ethereum;
     use alloy_provider::Provider;
-    use loom_core_blockchain::{Blockchain, BlockchainState};
+    use loom_core_blockchain_shared::{Blockchain, BlockchainState};
     use loom_types_events::{BlockLogs, BlockStateUpdate, BlockUpdate, MessageBlockHeader};
     use revm::db::DatabaseRef;
     use tracing::error;

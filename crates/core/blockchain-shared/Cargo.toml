@@ -1,0 +1,9 @@
+[package]
+name = "loom-core-blockchain-shared"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/dexloom/loom"
+
+[dependencies]
+# Add dependencies as needed when moving shared code

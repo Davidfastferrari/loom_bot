@@ -1,5 +1,4 @@
-pub use blockchain::Blockchain;
-pub use blockchain_state::BlockchainState;
+pub use loom_core_blockchain_shared::{Blockchain, BlockchainState};
 pub use robust_client::create_robust_provider;
 pub use strategy::Strategy;
 

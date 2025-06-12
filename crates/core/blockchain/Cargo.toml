@@ -16,7 +16,7 @@ loom-evm-db.workspace = true
 loom-types-blockchain.workspace = true
 loom-types-entities.workspace = true
 loom-types-events.workspace = true
-loom-core-block-history-actor = { workspace = true, optional = true }
+loom-core-blockchain-shared = { path = "../blockchain-shared" }
 
 alloy-chains.workspace = true
 
