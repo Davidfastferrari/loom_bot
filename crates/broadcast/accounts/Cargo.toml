@@ -1,6 +1,9 @@
 [package]
 name = "loom-broadcast-accounts"
 edition.workspace = true
+
+[lib]
+crate_name = "loom_broadcast_accounts"
 exclude.workspace = true
 homepage.workspace = true
 license.workspace = true

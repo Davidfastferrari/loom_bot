@@ -4942,7 +4942,7 @@ dependencies = [
 
 [[package]]
 name = "loom-broadcast-accounts"
-version = "0.6.0"
+version = "0.0.0"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -5041,7 +5041,7 @@ dependencies = [
 
 [[package]]
 name = "loom-core-block-history-actor"
-version = "0.6.0"
+version = "0.0.0"
 dependencies = [
  "alloy-eips",
  "alloy-network",

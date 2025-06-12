@@ -1,11 +1,14 @@
 [package]
 name = "loom-core-blockchain"
-version.workspace = true
-edition.workspace = true
-rust-version.workspace = true
-license.workspace = true
-homepage.workspace = true
-repository.workspace = true
+version = "0.6.0"
+
+[lib]
+crate_name = "loom_core_blockchain"
+edition = "2021"
+rust-version = "1.84"
+license = "MIT OR Apache-2.0"
+homepage = "https://github.com/dexloom/loom"
+repository = "https://github.com/dexloom/loom"
 
 [dependencies]
 loom-core-topology-shared = { path = "../topology-shared" }
