@@ -52,7 +52,7 @@ where
                 };
 
                 // Use our optimized WebSocket client builder
-                let _ws_builder = create_optimized_ws_connect();
+                let _ws_builder = create_optimized_ws_connect(url);
                 let ws_connect = WsConnect::new(parsed_url);
 
                 match ClientBuilder::default().ws(ws_connect).await {
