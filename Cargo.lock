@@ -5055,7 +5055,8 @@ dependencies = [
  "eyre",
  "loom-core-actors",
  "loom-core-actors-macros",
- "loom-core-blockchain",
+ "loom-core-blockchain-shared",
+ "loom-core-blockchain-types",
  "loom-evm-db",
  "loom-evm-utils",
  "loom-node-debug-provider",
@@ -5080,6 +5081,9 @@ dependencies = [
  "influxdb",
  "loom-core-actors",
  "loom-core-actors-macros",
+ "loom-core-blockchain-shared",
+ "loom-core-blockchain-types",
+ "loom-core-topology-shared",
  "loom-defi-address-book",
  "loom-evm-db",
  "loom-types-blockchain",
@@ -5133,6 +5137,43 @@ dependencies = [
  "loom-types-entities",
  "revm",
  "tokio-util",
+]
+
+[[package]]
+name = "loom-core-blockchain-actors-block-history"
+version = "0.6.0"
+dependencies = [
+ "loom-core-block-history-actor",
+]
+
+[[package]]
+name = "loom-core-blockchain-actors-blockchain"
+version = "0.6.0"
+dependencies = [
+ "loom-core-blockchain",
+]
+
+[[package]]
+name = "loom-core-blockchain-shared"
+version = "0.1.0"
+
+[[package]]
+name = "loom-core-blockchain-types"
+version = "0.1.0"
+dependencies = [
+ "alloy-network",
+ "alloy-primitives",
+ "alloy-provider",
+ "alloy-rpc-types",
+ "eyre",
+ "loom-evm-db",
+ "loom-node-debug-provider",
+ "loom-types-blockchain",
+ "loom-types-entities",
+ "loom-types-events",
+ "revm",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -5191,6 +5232,7 @@ dependencies = [
  "loom-core-blockchain",
  "loom-core-mempool",
  "loom-core-router",
+ "loom-core-topology-shared",
  "loom-defi-health-monitor",
  "loom-defi-market",
  "loom-defi-pools",
@@ -5221,6 +5263,10 @@ dependencies = [
  "tracing",
  "url",
 ]
+
+[[package]]
+name = "loom-core-topology-shared"
+version = "0.1.0"
 
 [[package]]
 name = "loom-defi-abi"

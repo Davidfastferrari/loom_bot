@@ -8,6 +8,7 @@ homepage.workspace = true
 repository.workspace = true
 
 [dependencies]
+loom-core-topology-shared = { path = "../topology-shared" }
 loom-broadcast-accounts = { workspace = true, optional = true }
 loom-broadcast-broadcaster.workspace = true
 loom-broadcast-flashbots.workspace = true
