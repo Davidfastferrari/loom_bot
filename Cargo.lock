@@ -5177,6 +5177,8 @@ dependencies = [
  "alloy-provider",
  "alloy-rpc-types",
  "eyre",
+ "influxdb",
+ "loom-core-actors",
  "loom-evm-db",
  "loom-node-debug-provider",
  "loom-types-blockchain",

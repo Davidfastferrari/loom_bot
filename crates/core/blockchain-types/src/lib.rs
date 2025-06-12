@@ -1,5 +1,4 @@
-use alloy::primitives::BlockHash;
-use alloy::primitives::ChainId;
+use alloy_primitives::{BlockHash, ChainId};
 use influxdb::WriteQuery;
 use loom_core_actors::{Broadcaster, SharedState};
 use loom_types_blockchain::{ChainParameters, Mempool};
