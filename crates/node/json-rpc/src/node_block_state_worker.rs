@@ -72,13 +72,13 @@ where
                         let mut post_state = Vec::new();
                         
                         for result in trace_results {
-                            if let alloy_rpc_types_trace::common::TraceResult::Success { result, .. } = result {
-                                if let alloy_rpc_types_trace::geth::GethTrace::PreStateTracer(frame) = result {
+                            if let alloy_rpc_types::common::TraceResult::Success { result, .. } = result {
+                                if let alloy_rpc_types::geth::GethTrace::PreStateTracer(frame) = result {
                                     match frame {
-                                        alloy_rpc_types_trace::geth::PreStateFrame::Diff(diff) => {
+                                        alloy_rpc_types::geth::PreStateFrame::Diff(diff) => {
                                             post_state.push(diff.post);
                                         },
-                                        alloy_rpc_types_trace::geth::PreStateFrame::Default(_) => {
+                                        alloy_rpc_types::geth::PreStateFrame::Default(_) => {
                                             // Default frame doesn't have post state
                                         }
                                     }

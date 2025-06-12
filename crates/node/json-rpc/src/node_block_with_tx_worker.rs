@@ -75,6 +75,7 @@ where
                             header,
                             transactions: BlockTransactions::Full(transactions),
                             withdrawals: None,
+                            uncles: vec![],
                         };
                         
                         if let Err(e) = sender.send(Message::new_with_time(BlockUpdate { block })) {

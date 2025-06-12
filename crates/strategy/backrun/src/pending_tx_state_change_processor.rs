@@ -1,4 +1,4 @@
-\use alloy_consensus::constants::{EIP1559_TX_TYPE_ID, EIP2930_TX_TYPE_ID, EIP4844_TX_TYPE_ID, LEGACY_TX_TYPE_ID};
+use alloy_consensus::constants::{EIP1559_TX_TYPE_ID, EIP2930_TX_TYPE_ID, EIP4844_TX_TYPE_ID, LEGACY_TX_TYPE_ID};
 use alloy_eips::BlockNumberOrTag;
 use alloy_network::{Network, TransactionBuilder, TransactionResponse};
 use alloy_primitives::{Address, BlockNumber, TxHash, U256};
