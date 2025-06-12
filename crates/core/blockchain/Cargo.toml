@@ -35,4 +35,5 @@ loom-core-topology = { workspace = true, optional = true }
 [features]
 default = []
 with-topology = ["loom-core-topology"]
+with-block-history = ["loom-core-block-history-actor"]
 
