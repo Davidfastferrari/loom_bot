@@ -103,6 +103,7 @@ loom-defi-price = { path = "crates/defi/price" }
 loom-defi-uniswap-v3-math = { path = "crates/defi/uniswap-v3-math" }
 # evm
 loom-evm-db = { path = "crates/evm/db" }
+loom_evm_db = { path = "crates/evm/db" }
 loom-evm-utils = { path = "crates/evm/utils" }
 # execution
 loom-execution-estimator = { path = "crates/execution/estimator" }
