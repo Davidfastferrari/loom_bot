@@ -16,7 +16,7 @@ mod chain_parameters;
 mod chunked_fetcher;
 mod fetchstate;
 mod loom_data_types;
-mod loom_data_types_ethereum;
+pub mod loom_data_types_ethereum;
 mod mempool;
 mod mempool_tx;
 mod new_block;
