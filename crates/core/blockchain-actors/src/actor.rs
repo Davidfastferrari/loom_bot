@@ -633,7 +633,7 @@ where
         let key: B256 = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80".parse()?;
 
         self.actor_manager.start_and_wait(
-            InitializeSignersOneShotBlockingActor::new(Some(key.to_vec())).with_signers(self.signers.clone()).on_bc(&self.bc),
+            InitializeSignersOneShotBlockingActor::new(Some(key.to_vec())).with_signers(self.signers.clone()),
         )?;
         self.with_signers()?;
         Ok(self)
@@ -642,7 +642,7 @@ where
     /// Initialize signers with the private key. Random key generated if param in None
     pub fn initialize_signers_with_key(&mut self, key: Option<Vec<u8>>) -> Result<&mut Self> {
         self.actor_manager
-            .start_and_wait(InitializeSignersOneShotBlockingActor::new(key).with_signers(self.signers.clone()).on_bc(&self.bc))?;
+            .start_and_wait(InitializeSignersOneShotBlockingActor::new(key).with_signers(self.signers.clone()))?;
         self.with_signers()?;
         Ok(self)
     }
@@ -651,7 +651,7 @@ where
     pub fn initialize_signers_with_keys(&mut self, keys: Vec<Vec<u8>>) -> Result<&mut Self> {
         for key in keys {
             self.actor_manager
-                .start_and_wait(InitializeSignersOneShotBlockingActor::new(Some(key)).with_signers(self.signers.clone()).on_bc(&self.bc))?;
+                .start_and_wait(InitializeSignersOneShotBlockingActor::new(Some(key)).with_signers(self.signers.clone()))?;
         }
         self.with_signers()?;
         Ok(self)
@@ -660,7 +660,7 @@ where
     /// Initialize signers with encrypted private key
     pub fn initialize_signers_with_encrypted_key(&mut self, key: Vec<u8>) -> Result<&mut Self> {
         self.actor_manager.start_and_wait(
-            InitializeSignersOneShotBlockingActor::new_from_encrypted_key(key)?.with_signers(self.signers.clone()).on_bc(&self.bc),
+            InitializeSignersOneShotBlockingActor::new_from_encrypted_key(key)?.with_signers(self.signers.clone()),
         )?;
         self.with_signers()?;
         Ok(self)
@@ -669,7 +669,7 @@ where
     /// Initializes signers with encrypted key form DATA env var
     pub fn initialize_signers_with_env(&mut self) -> Result<&mut Self> {
         self.actor_manager.start_and_wait(
-            InitializeSignersOneShotBlockingActor::new_from_encrypted_env()?.with_signers(self.signers.clone()).on_bc(&self.bc),
+            InitializeSignersOneShotBlockingActor::new_from_encrypted_env()?.with_signers(self.signers.clone()),
         )?;
         self.with_signers()?;
         Ok(self)
@@ -679,7 +679,7 @@ where
     pub fn with_signers(&mut self) -> Result<&mut Self> {
         if !self.has_signers {
             self.has_signers = true;
-            self.actor_manager.start(TxSignersActor::new().on_bc(&self.bc))?;
+            self.actor_manager.start(TxSignersActor::new())?;
         }
         Ok(self)
     }
@@ -744,12 +744,12 @@ where
 
     /// Starts nonce and balance monitor
     pub fn with_nonce_and_balance_monitor(&mut self) -> Result<&mut Self> {
-        self.actor_manager.start(NonceAndBalanceMonitorActor::new(self.provider.clone()).on_bc(&self.bc))?;
+        self.actor_manager.start(NonceAndBalanceMonitorActor::new(self.provider.clone()))?;
         Ok(self)
     }
 
     pub fn with_nonce_and_balance_monitor_only_events(&mut self) -> Result<&mut Self> {
-        self.actor_manager.start(NonceAndBalanceMonitorActor::new(self.provider.clone()).only_once().on_bc(&self.bc))?;
+        self.actor_manager.start(NonceAndBalanceMonitorActor::new(self.provider.clone()).only_once())?;
         Ok(self)
     }
 
@@ -818,7 +818,7 @@ where
             false => Flashbots::new(self.provider.clone(), "https://relay.flashbots.net", None).with_relays(self.relays.clone()),
         };
 
-        self.actor_manager.start(FlashbotsBroadcastActor::new(flashbots, allow_broadcast).on_bc(&self.bc))?;
+        self.actor_manager.start(FlashbotsBroadcastActor::new(flashbots, allow_broadcast))?;
         Ok(self)
     }
 
