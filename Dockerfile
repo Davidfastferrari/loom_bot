@@ -1,17 +1,24 @@
 FROM rust:1.84-slim-bullseye as builder
 
 # Install build dependencies
-RUN apt-get update && apt-get install -y --fix-missing \
-    pkg-config \
-    libssl-dev \
-    build-essential \
-    git \
-    llvm \
-    libclang-dev \
-    clang \
-    curl \
-    protobuf-compiler \
-    libpq-dev \
+RUN apt-get update && \
+    apt-get install -y --fix-missing \
+        pkg-config \
+        libssl-dev \
+        build-essential \
+        git \
+        llvm \
+        libclang-dev \
+        clang \
+        curl \
+        protobuf-compiler \
+        libpq-dev \
+        perl \
+        libalgorithm-diff-xs-perl \
+        libalgorithm-merge-perl \
+        libfile-fcntllock-perl \
+        libalgorithm-diff-perl \
+    && apt-get install -f -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
