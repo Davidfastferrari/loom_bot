@@ -18,6 +18,7 @@ loom-node-debug-provider.workspace = true
 loom-types-blockchain.workspace = true
 loom-types-entities.workspace = true
 loom-types-events.workspace = true
+loom-core-blockchain = { workspace = true }
 
 eyre.workspace = true
 tokio.workspace = true
