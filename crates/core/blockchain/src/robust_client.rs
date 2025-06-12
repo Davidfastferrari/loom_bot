@@ -5,7 +5,7 @@ use alloy_network::Network;
 use alloy_provider::{Provider, ProviderBuilder, RootProvider};
 use alloy_rpc_client::{ClientBuilder, WsConnect};
 use eyre::{eyre, Result};
-use loom_core_topology_shared::create_optimized_ws_client_builder;
+use loom_core_topology_shared::create_optimized_ws_connect;
 use std::time::Duration;
 use tracing::{debug, error, info, warn};
 use url::Url;
@@ -52,7 +52,7 @@ where
                 };
 
                 // Use our optimized WebSocket client builder
-                let _ws_builder = create_optimized_ws_client_builder();
+                let _ws_builder = create_optimized_ws_connect();
                 let ws_connect = WsConnect::new(parsed_url);
 
                 match ClientBuilder::default().ws(ws_connect).await {
