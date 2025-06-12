@@ -116,6 +116,7 @@ loom-metrics = { path = "crates/metrics" }
 loom-node-actor-config = { path = "crates/node/node-actor-config" }
 loom-node-db-access = { path = "crates/node/db-access" }
 loom-node-debug-provider = { path = "crates/node/debug-provider" }
+loom_node_debug_provider = { path = "crates/node/debug-provider" }
 loom-node-exex = { path = "crates/node/exex" }
 loom-node-grpc = { path = "crates/node/grpc" }
 loom-node-grpc-exex-proto = { path = "crates/node/grpc-exex-proto" }
