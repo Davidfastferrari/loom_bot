@@ -1,6 +1,8 @@
 use alloy_network::Ethereum;
 use alloy_provider::Provider;
 use alloy_rpc_types::{BlockId, Header};
+use alloy_rpc_types_trace::common::TraceResult;
+use alloy_rpc_types_trace::geth::{GethTrace, PreStateFrame};
 use std::time::Duration;
 use tracing::{debug, error, info, warn};
 
@@ -72,13 +74,13 @@ where
                         let mut post_state = Vec::new();
                         
                         for result in trace_results {
-                            if let alloy_rpc_types::common::TraceResult::Success { result, .. } = result {
-                                if let alloy_rpc_types::geth::GethTrace::PreStateTracer(frame) = result {
+                            if let TraceResult::Success { result, .. } = result {
+                                if let GethTrace::PreStateTracer(frame) = result {
                                     match frame {
-                                        alloy_rpc_types::geth::PreStateFrame::Diff(diff) => {
+                                        PreStateFrame::Diff(diff) => {
                                             post_state.push(diff.post);
                                         },
-                                        alloy_rpc_types::geth::PreStateFrame::Default(_) => {
+                                        PreStateFrame::Default(_) => {
                                             // Default frame doesn't have post state
                                         }
                                     }
