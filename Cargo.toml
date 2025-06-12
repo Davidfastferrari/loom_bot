@@ -90,6 +90,7 @@ loom-core-blockchain-actors = { path = "crates/core/blockchain-actors" }
 loom-core-mempool = { path = "crates/core/mempool" }
 loom-core-router = { path = "crates/core/router" }
 loom-core-topology = { path = "crates/core/topology" }
+loom-core-blockchain-types = { path = "crates/core/blockchain-types" }
 url = "2.5.2"
 # defi
 loom-defi-abi = { path = "crates/defi/abi" }
