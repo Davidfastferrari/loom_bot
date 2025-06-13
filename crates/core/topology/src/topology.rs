@@ -64,6 +64,7 @@ pub struct Topology<
     default_signer_name: Option<String>,
     swap_encoder: E,
     pool_loaders: Arc<PoolLoaders<P, N, LDT>>,
+}
 
 impl<
         DB: Database<Error = ErrReport>
@@ -97,7 +98,9 @@ impl<
             default_signer_name: None,
             swap_encoder: encoder,
             pool_loaders,
-            
+        }
+    }
+
     pub fn with_swap_encoder<NE: SwapEncoder + Send + Sync + Clone + 'static>(
         self,
         swap_encoder: NE,
@@ -115,7 +118,9 @@ impl<
             default_signer_name: self.default_signer_name,
             pool_loaders: self.pool_loaders,
             swap_encoder,
-            
+        }
+    }
+
     pub fn with_pool_loaders<NP: Provider + Send + Sync + Clone + 'static>(
         self,
         pool_loaders: PoolLoaders<NP, Ethereum, LoomDataTypesEthereum>,
@@ -133,7 +138,9 @@ impl<
             default_signer_name: self.default_signer_name,
             swap_encoder: self.swap_encoder,
             pool_loaders: Arc::new(pool_loaders),
-            
+        }
+    }
+
     pub async fn start_clients(self) -> Result<Self> {
         let mut clients = HashMap::new();
         for (name, v) in self.config.clients.iter() {
@@ -194,8 +201,10 @@ if let Some(ws_url) = ws_url {
             let provider = ProviderBuilder::<_, _, Ethereum>::new().disable_recommended_fillers().on_client(client);
 
             clients.insert(name.clone(), provider);
-                Ok(Topology { clients, ..self })
-    
+        }
+        Ok(Topology { clients, ..self })
+    }
+
     pub fn build_blockchains(self) -> Self {
         let mut multicaller_encoders = HashMap::new();
         let mut strategies = HashMap::new();
@@ -248,7 +257,9 @@ if let Some(ws_url) = ws_url {
             default_blockchain_name,
             default_signer_name,
             ..self
-            
+        }
+    }
+
     pub async fn start_actors(&self) -> Result<Vec<JoinHandle<WorkerResult>>> {
         let mut tasks: Vec<JoinHandle<WorkerResult>> = Vec::new();
 
@@ -618,7 +629,8 @@ if let Some(ws_url) = ws_url {
             warn!("No estimator actors in config")
         
         Ok(tasks)
-    
+    }
+}
 
 impl<
     DB: Clone + Send + Sync + 'static,
@@ -655,4 +667,6 @@ impl<
         match self.blockchains.get_mut(name.unwrap_or(&binding)) {
             Some(a) => Ok(a),
             None => Err(eyre!("CLIENT_NOT_FOUND")),
+    }
+}
             
