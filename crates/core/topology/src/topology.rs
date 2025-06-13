@@ -162,18 +162,17 @@ impl<
             
             // Try WebSocket first if available
             let mut client_result = None;
-if let Some(ws_url) = ws_url {
-    info!("Attempting WebSocket connection to {name} at {ws_url}");
-    // Remove ws_config as WsConfig is not found in alloy_transport_ws
-    let transport = WsConnect { url: ws_url, auth: None, config: None };
-
-    let ws_client = ClientBuilder::default().ws(transport).await;
-    if let Ok(client) = ws_client {
-        info!("Successfully connected to {name} via WebSocket (subscriptions supported)");
-        client_result = Some(Ok(client));
-    } else {
-        info!("WebSocket connection failed, falling back to configured transport");
-    
+            if let Some(ws_url) = ws_url {
+                info!("Attempting WebSocket connection to {name} at {ws_url}");
+                let transport = WsConnect { url: ws_url, auth: None, config: None };
+                let ws_client = ClientBuilder::default().ws(transport).await;
+                if let Ok(client) = ws_client {
+                    info!("Successfully connected to {name} via WebSocket (subscriptions supported)");
+                    client_result = Some(Ok(client));
+                } else {
+                    info!("WebSocket connection failed, falling back to configured transport");
+                }
+            }
             // If WebSocket failed or wasn't attempted, use the configured transport
             if client_result.is_none() {
                 client_result = Some(match config_params.transport {
@@ -181,25 +180,27 @@ if let Some(ws_url) = ws_url {
                         info!("Starting IPC connection");
                         let transport = IpcConnect::from(config_params.url);
                         ClientBuilder::default().ipc(transport).await
-                                        TransportType::Http => {
+                    }
+                    TransportType::Http => {
                         info!("Starting HTTP connection (subscriptions not supported)");
                         let url = Url::parse(&config_params.url)?;
                         Ok(ClientBuilder::default().http(url))
-                                        TransportType::Ws => {
+                    }
+                    TransportType::Ws => {
                         info!("Starting WS connection");
                         let transport = WsConnect { url: config_params.url, auth: None, config: None };
                         ClientBuilder::default().ws(transport).await
-                                    });
-            
+                    }
+                });
+            }
             let client = match client_result.unwrap() {
                 Ok(client) => client,
                 Err(e) => {
                     error!("Error connecting to {name} error : {}", e);
                     continue;
-                            };
-
+                }
+            };
             let provider = ProviderBuilder::<_, _, Ethereum>::new().disable_recommended_fillers().on_client(client);
-
             clients.insert(name.clone(), provider);
         }
         Ok(Topology { clients, ..self })
@@ -643,30 +644,39 @@ impl<
         match self.blockchains.get(name.unwrap_or(&binding)) {
             Some(a) => Ok(a),
             None => Err(eyre!("BLOCKCHAIN_NOT_FOUND")),
-            
+        }
+    }
+
     pub fn get_blockchain_state(&self, name: Option<&String>) -> Result<&BlockchainState<DB>> {
         let binding = self.default_blockchain_name.clone().unwrap();
         match self.blockchain_states.get(name.unwrap_or(&binding)) {
             Some(a) => Ok(a),
             None => Err(eyre!("BLOCKCHAIN_NOT_FOUND")),
-            
+        }
+    }
+
     pub fn get_strategy(&self, name: Option<&String>) -> Result<&Strategy<DB, LDT>> {
         let binding = self.default_blockchain_name.clone().unwrap();
         match self.strategies.get(name.unwrap_or(&binding)) {
             Some(a) => Ok(a),
             None => Err(eyre!("BLOCKCHAIN_NOT_FOUND")),
-            
+        }
+    }
+
     pub fn get_signers(&self, name: Option<&String>) -> Result<SharedState<TxSigners>> {
         let binding = self.default_multicaller_encoder_name.clone().unwrap();
         match self.signers.get(name.unwrap_or(&binding)) {
             Some(a) => Ok(a.clone()),
             None => Err(eyre!("SIGNERS_NOT_FOUND")),
-            
+        }
+    }
+
     pub fn get_blockchain_mut(&mut self, name: Option<&String>) -> Result<&mut Blockchain<LDT>> {
         let binding = self.default_blockchain_name.clone().unwrap();
         match self.blockchains.get_mut(name.unwrap_or(&binding)) {
             Some(a) => Ok(a),
             None => Err(eyre!("CLIENT_NOT_FOUND")),
+        }
     }
 }
             
