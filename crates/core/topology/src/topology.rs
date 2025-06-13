@@ -223,7 +223,11 @@ impl<
                     if let Ok(address) = c.address.parse() {
                         multicaller_encoders.insert(k.clone(), address);
                         default_multicaller_encoder_name = Some(k.clone());
-                                                        
+                    }
+                }
+            }
+        }
+
         for (k, params) in self.config.blockchains.iter() {
             let blockchain = Blockchain::new(params.chain_id.unwrap_or(1) as u64);
             let market_state = MarketState::new(DB::default());
@@ -231,23 +235,26 @@ impl<
             let strategy = Strategy::<DB>::new();
 
             blockchains.insert(k.clone(), blockchain);
-
             blockchain_states.insert(k.clone(), blockchain_state);
             strategies.insert(k.clone(), strategy);
-
             default_blockchain_name = Some(k.clone());
-        
+        }
+
         // Ensure default_blockchain_name is set to "base" if not set
         if default_blockchain_name.is_none() {
             default_blockchain_name = Some("base".to_string());
-        
+        }
+
         for (name, params) in self.config.signers.iter() {
             match params {
                 SignersConfig::Env(_params) => {
                     let signers_state = SharedState::new(TxSigners::new());
                     signers.insert(name.clone(), signers_state);
                     default_signer_name = Some(name.clone());
-                                    
+                }
+            }
+        }
+
         Self {
             blockchains,
             blockchain_states,
