@@ -752,6 +752,29 @@ impl<
             None => Err(eyre!("CLIENT_NOT_FOUND")),
         }
     }
+
+    pub fn get_client(&self, name: Option<&String>) -> Result<RootProvider<Ethereum>> {
+        let binding = self.default_blockchain_name.clone().unwrap();
+        let key = name.unwrap_or(&binding);
+        self.clients.get(key)
+            .cloned()
+            .ok_or_else(|| eyre!("CLIENT_NOT_FOUND"))
+    }
+
+    pub fn get_multicaller_address(&self, name: Option<&String>) -> Result<Address> {
+        let binding = self.default_multicaller_encoder_name.clone().unwrap();
+        let key = name.unwrap_or(&binding);
+        self.multicaller_encoders.get(key)
+            .cloned()
+            .ok_or_else(|| eyre!("MULTICALLER_NOT_FOUND"))
+    }
+
+    pub fn get_client_config(&self, name: Option<&String>) -> Result<&ClientConfig> {
+        let binding = self.default_blockchain_name.clone().unwrap();
+        let key = name.unwrap_or(&binding);
+        self.config.clients.get(key)
+            .ok_or_else(|| eyre!("CLIENT_CONFIG_NOT_FOUND"))
+    }
 }
 
 // Remove this impl block and move the methods into the main impl block for Topology<DB, E, P, Ethereum, LoomDataTypesEthereum>
