@@ -712,15 +712,8 @@ impl<
 
         Ok(tasks)
     }
-}
 
-impl<
-    DB: Clone + Send + Sync + 'static,
-    E: Send + Sync + Clone + 'static,
-    P: Provider<Ethereum> + Send + Sync + Clone + 'static,
-    LDT: LoomDataTypes + 'static,
-> Topology<DB, E, P, Ethereum, LDT> {
-    pub fn get_blockchain(&self, name: Option<&String>) -> Result<&Blockchain<LDT>> {
+    pub fn get_blockchain(&self, name: Option<&String>) -> Result<&Blockchain<LoomDataTypesEthereum>> {
         let binding = self.default_blockchain_name.clone().unwrap();
         match self.blockchains.get(name.unwrap_or(&binding)) {
             Some(a) => Ok(a),
@@ -736,7 +729,7 @@ impl<
         }
     }
 
-    pub fn get_strategy(&self, name: Option<&String>) -> Result<&Strategy<DB, LDT>> {
+    pub fn get_strategy(&self, name: Option<&String>) -> Result<&Strategy<DB, LoomDataTypesEthereum>> {
         let binding = self.default_blockchain_name.clone().unwrap();
         match self.strategies.get(name.unwrap_or(&binding)) {
             Some(a) => Ok(a),
@@ -752,7 +745,7 @@ impl<
         }
     }
 
-    pub fn get_blockchain_mut(&mut self, name: Option<&String>) -> Result<&mut Blockchain<LDT>> {
+    pub fn get_blockchain_mut(&mut self, name: Option<&String>) -> Result<&mut Blockchain<LoomDataTypesEthereum>> {
         let binding = self.default_blockchain_name.clone().unwrap();
         match self.blockchains.get_mut(name.unwrap_or(&binding)) {
             Some(a) => Ok(a),
@@ -760,6 +753,8 @@ impl<
         }
     }
 }
+
+// Remove this impl block and move the methods into the main impl block for Topology<DB, E, P, Ethereum, LoomDataTypesEthereum>
 // Add extra closing braces to ensure all blocks are closed
 }
             
