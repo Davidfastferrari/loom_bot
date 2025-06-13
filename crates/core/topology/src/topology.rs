@@ -67,6 +67,73 @@ pub struct Topology<
 }
 
 impl<
+    DB: Clone + Send + Sync + 'static,
+    E: Send + Sync + Clone + 'static,
+    P: Provider<N> + Send + Sync + Clone + 'static,
+    N: Network,
+    LDT: LoomDataTypes + 'static,
+> Topology<DB, E, P, N, LDT> {
+    pub fn get_blockchain(&self, name: Option<&String>) -> Result<&Blockchain<LDT>> {
+        let name = name.or_else(|| self.default_blockchain_name.as_ref())
+            .ok_or_else(|| eyre!("No blockchain name provided and no default blockchain set"))?;
+        self.blockchains.get(name)
+            .ok_or_else(|| eyre!("Blockchain not found: {}", name))
+    }
+
+    pub fn get_blockchain_state(&self, name: Option<&String>) -> Result<&BlockchainState<DB>> {
+        let name = name.or_else(|| self.default_blockchain_name.as_ref())
+            .ok_or_else(|| eyre!("No blockchain name provided and no default blockchain set"))?;
+        self.blockchain_states.get(name)
+            .ok_or_else(|| eyre!("Blockchain state not found: {}", name))
+    }
+
+    pub fn get_strategy(&self, name: Option<&String>) -> Result<&Strategy<DB, LDT>> {
+        let name = name.or_else(|| self.default_blockchain_name.as_ref())
+            .ok_or_else(|| eyre!("No blockchain name provided and no default blockchain set"))?;
+        self.strategies.get(name)
+            .ok_or_else(|| eyre!("Strategy not found: {}", name))
+    }
+
+    pub fn get_signers(&self, name: Option<&String>) -> Result<SharedState<TxSigners>> {
+        let name = name.or_else(|| self.default_signer_name.as_ref())
+            .ok_or_else(|| eyre!("No signer name provided and no default signer set"))?;
+        self.signers.get(name)
+            .cloned()
+            .ok_or_else(|| eyre!("Signers not found: {}", name))
+    }
+
+    pub fn get_blockchain_mut(&mut self, name: Option<&String>) -> Result<&mut Blockchain<LDT>> {
+        let name = name.or_else(|| self.default_blockchain_name.as_ref())
+            .ok_or_else(|| eyre!("No blockchain name provided and no default blockchain set"))?;
+        self.blockchains.get_mut(name)
+            .ok_or_else(|| eyre!("Blockchain not found: {}", name))
+    }
+
+    pub fn get_client(&self, name: Option<&String>) -> Result<RootProvider<N>> {
+        let name = name.or_else(|| self.default_blockchain_name.as_ref())
+            .ok_or_else(|| eyre!("No client name provided and no default client set"))?;
+        self.clients.get(name)
+            .cloned()
+            .ok_or_else(|| eyre!("Client not found: {}", name))
+    }
+
+    pub fn get_multicaller_address(&self, name: Option<&String>) -> Result<Address> {
+        let name = name.or_else(|| self.default_multicaller_encoder_name.as_ref())
+            .ok_or_else(|| eyre!("No multicaller encoder name provided and no default multicaller encoder set"))?;
+        self.multicaller_encoders.get(name)
+            .cloned()
+            .ok_or_else(|| eyre!("Multicaller address not found: {}", name))
+    }
+
+    pub fn get_client_config(&self, name: Option<&String>) -> Result<&ClientConfig> {
+        let name = name.or_else(|| self.default_blockchain_name.as_ref())
+            .ok_or_else(|| eyre!("No client name provided and no default client set"))?;
+        self.config.clients.get(name)
+            .ok_or_else(|| eyre!("Client config not found: {}", name))
+    }
+}
+
+impl<
         DB: Database<Error = ErrReport>
             + DatabaseRef<Error = ErrReport>
             + DatabaseCommit
@@ -273,7 +340,8 @@ impl<
 
         if self.clients.is_empty() {
             return Err(eyre!("NO_CLIENTS_CONNECTED"));
-        
+        }
+
         for (k, _params) in self.config.blockchains.iter() {
             let blockchain = self.get_blockchain(Some(k))?;
             let blockchain_state = self.get_blockchain_state(Some(k))?;
@@ -779,5 +847,5 @@ impl<
 
 // Remove this impl block and move the methods into the main impl block for Topology<DB, E, P, Ethereum, LoomDataTypesEthereum>
 // Add extra closing braces to ensure all blocks are closed
-}
+
             
