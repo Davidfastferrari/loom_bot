@@ -64,7 +64,6 @@ pub struct Topology<
     default_signer_name: Option<String>,
     swap_encoder: E,
     pool_loaders: Arc<PoolLoaders<P, N, LDT>>,
-}
 
 impl<
         DB: Database<Error = ErrReport>
@@ -98,9 +97,7 @@ impl<
             default_signer_name: None,
             swap_encoder: encoder,
             pool_loaders,
-        }
-    }
-
+            
     pub fn with_swap_encoder<NE: SwapEncoder + Send + Sync + Clone + 'static>(
         self,
         swap_encoder: NE,
@@ -118,9 +115,7 @@ impl<
             default_signer_name: self.default_signer_name,
             pool_loaders: self.pool_loaders,
             swap_encoder,
-        }
-    }
-
+            
     pub fn with_pool_loaders<NP: Provider + Send + Sync + Clone + 'static>(
         self,
         pool_loaders: PoolLoaders<NP, Ethereum, LoomDataTypesEthereum>,
@@ -138,9 +133,7 @@ impl<
             default_signer_name: self.default_signer_name,
             swap_encoder: self.swap_encoder,
             pool_loaders: Arc::new(pool_loaders),
-        }
-    }
-
+            
     pub async fn start_clients(self) -> Result<Self> {
         let mut clients = HashMap::new();
         for (name, v) in self.config.clients.iter() {
@@ -173,9 +166,7 @@ if let Some(ws_url) = ws_url {
         client_result = Some(Ok(client));
     } else {
         info!("WebSocket connection failed, falling back to configured transport");
-    }
-}
-
+    
             // If WebSocket failed or wasn't attempted, use the configured transport
             if client_result.is_none() {
                 client_result = Some(match config_params.transport {
@@ -183,35 +174,28 @@ if let Some(ws_url) = ws_url {
                         info!("Starting IPC connection");
                         let transport = IpcConnect::from(config_params.url);
                         ClientBuilder::default().ipc(transport).await
-                    }
-                    TransportType::Http => {
+                                        TransportType::Http => {
                         info!("Starting HTTP connection (subscriptions not supported)");
                         let url = Url::parse(&config_params.url)?;
                         Ok(ClientBuilder::default().http(url))
-                    }
-                    TransportType::Ws => {
+                                        TransportType::Ws => {
                         info!("Starting WS connection");
                         let transport = WsConnect { url: config_params.url, auth: None, config: None };
                         ClientBuilder::default().ws(transport).await
-                    }
-                });
-            }
-
+                                    });
+            
             let client = match client_result.unwrap() {
                 Ok(client) => client,
                 Err(e) => {
                     error!("Error connecting to {name} error : {}", e);
                     continue;
-                }
-            };
+                            };
 
             let provider = ProviderBuilder::<_, _, Ethereum>::new().disable_recommended_fillers().on_client(client);
 
             clients.insert(name.clone(), provider);
-        }
-        Ok(Topology { clients, ..self })
-    }
-
+                Ok(Topology { clients, ..self })
+    
     pub fn build_blockchains(self) -> Self {
         let mut multicaller_encoders = HashMap::new();
         let mut strategies = HashMap::new();
@@ -229,11 +213,7 @@ if let Some(ws_url) = ws_url {
                     if let Ok(address) = c.address.parse() {
                         multicaller_encoders.insert(k.clone(), address);
                         default_multicaller_encoder_name = Some(k.clone());
-                    }
-                }
-            }
-        }
-
+                                                        
         for (k, params) in self.config.blockchains.iter() {
             let blockchain = Blockchain::new(params.chain_id.unwrap_or(1) as u64);
             let market_state = MarketState::new(DB::default());
@@ -246,23 +226,18 @@ if let Some(ws_url) = ws_url {
             strategies.insert(k.clone(), strategy);
 
             default_blockchain_name = Some(k.clone());
-        }
-
+        
         // Ensure default_blockchain_name is set to "base" if not set
         if default_blockchain_name.is_none() {
             default_blockchain_name = Some("base".to_string());
-        }
-
+        
         for (name, params) in self.config.signers.iter() {
             match params {
                 SignersConfig::Env(_params) => {
                     let signers_state = SharedState::new(TxSigners::new());
                     signers.insert(name.clone(), signers_state);
                     default_signer_name = Some(name.clone());
-                }
-            }
-        }
-
+                                    
         Self {
             blockchains,
             blockchain_states,
@@ -273,16 +248,13 @@ if let Some(ws_url) = ws_url {
             default_blockchain_name,
             default_signer_name,
             ..self
-        }
-    }
-
+            
     pub async fn start_actors(&self) -> Result<Vec<JoinHandle<WorkerResult>>> {
         let mut tasks: Vec<JoinHandle<WorkerResult>> = Vec::new();
 
         if self.clients.is_empty() {
             return Err(eyre!("NO_CLIENTS_CONNECTED"));
-        }
-
+        
         for (k, _params) in self.config.blockchains.iter() {
             let blockchain = self.get_blockchain(Some(k))?;
             let blockchain_state = self.get_blockchain_state(Some(k))?;
@@ -306,13 +278,9 @@ if let Some(ws_url) = ws_url {
                     Ok(r) => {
                         tasks.extend(r);
                         info!("Block history actor started successfully")
-                    }
-                    Err(e) => {
+                                        Err(e) => {
                         panic!("{}", e)
-                    }
-                }
-            }
-
+                                                
             info!("Starting mempool actor {k}");
             let mut mempool_actor = MempoolActor::new();
             match mempool_actor
@@ -327,12 +295,9 @@ if let Some(ws_url) = ws_url {
                 Ok(r) => {
                     tasks.extend(r);
                     info!("Mempool actor started successfully")
-                }
-                Err(e) => {
+                                Err(e) => {
                     panic!("{}", e)
-                }
-            }
-
+                            
             info!("Starting pool monitor monitor actor {k}");
             let mut new_pool_health_monior_actor = PoolHealthMonitorActor::new();
             match new_pool_health_monior_actor
@@ -344,13 +309,9 @@ if let Some(ws_url) = ws_url {
                 Ok(r) => {
                     tasks.extend(r);
                     info!("Pool monitor monitor actor started")
-                }
-                Err(e) => {
+                                Err(e) => {
                     panic!("PoolHealthMonitorActor error {}", e)
-                }
-            }
-        }
-
+                                    
         for (name, params) in self.config.signers.iter() {
             let signers = self.get_signers(Some(name))?;
             match params {
@@ -362,26 +323,17 @@ if let Some(ws_url) = ws_url {
                     match initialize_signers_actor?.access(signers.clone()).access(blockchain.nonce_and_balance()).start_and_wait() {
                         Ok(_) => {
                             info!("Signers have been initialized")
-                        }
-                        Err(e) => {
+                                                Err(e) => {
                             panic!("Cannot initialize signers {}", e);
-                        }
-                    }
-
+                                            
                     let mut signers_actor = TxSignersActor::<LoomDataTypesEthereum>::new();
                     match signers_actor.consume(blockchain.tx_compose_channel()).produce(blockchain.tx_compose_channel()).start() {
                         Ok(r) => {
                             tasks.extend(r);
                             info!("Signers actor has been started")
-                        }
-                        Err(e) => {
+                                                Err(e) => {
                             panic!("Cannot start signers actor {}", e)
-                        }
-                    }
-                }
-            }
-        }
-
+                                                                                
         if let Some(preloader_actors) = &self.config.preloaders {
             for (name, params) in preloader_actors {
                 info!("Starting market state preload actor {name}");
@@ -396,13 +348,9 @@ if let Some(ws_url) = ws_url {
                 match market_state_preload_actor.access(blockchain_state.market_state()).start_and_wait() {
                     Ok(_) => {
                         info!("Market state preload actor executed successfully")
-                    }
-                    Err(e) => {
+                                        Err(e) => {
                         panic!("MarketStatePreloadedOneShotActor : {}", e)
-                    }
-                }
-            }
-        } else {
+                                                        } else {
             info!("No preloader in config, creating default preloader");
             
             // Create a default preloader for each blockchain
@@ -417,23 +365,17 @@ if let Some(ws_url) = ws_url {
                 // Try to get a multicaller address, but don't fail if not available
                 if let Ok(multicaller_address) = self.get_multicaller_address(None) {
                     market_state_preload_actor = market_state_preload_actor.with_copied_account(multicaller_address);
-                }
-                
+                                
                 match market_state_preload_actor
                     .access(blockchain_state.market_state())
                     .start_and_wait()
                 {
                     Ok(_) => {
                         info!("Default preloader for {} completed successfully", blockchain_name);
-                    }
-                    Err(e) => {
+                                        Err(e) => {
                         warn!("Default preloader for {} failed: {}", blockchain_name, e);
                         // Don't panic, just warn and continue
-                    }
-                }
-            }
-        }
-
+                                                        
         if let Some(node_exex_actors) = &self.config.actors.node_exex {
             for (name, params) in node_exex_actors {
                 let blockchain = self.get_blockchain(params.blockchain.as_ref())?;
@@ -452,14 +394,9 @@ if let Some(ws_url) = ws_url {
                     Ok(r) => {
                         tasks.extend(r);
                         info!("Node ExEx actor started successfully for : {} @ {}", name, blockchain.chain_id())
-                    }
-                    Err(e) => {
+                                        Err(e) => {
                         panic!("{}", e)
-                    }
-                }
-            }
-        }
-
+                                                        
         if let Some(node_block_actors) = &self.config.actors.node {
             for (name, params) in node_block_actors {
                 let client = self.get_client(params.client.as_ref())?;
@@ -485,13 +422,9 @@ if let Some(ws_url) = ws_url {
                         Ok(r) => {
                             tasks.extend(r);
                             info!("Reth db access node actor started successfully for : {} @ {}", name, blockchain.chain_id())
-                        }
-                        Err(e) => {
+                                                Err(e) => {
                             panic!("{}", e)
-                        }
-                    }
-                }
-
+                                                            
                 if client_config.db_path.is_none() {
                     let mut node_block_actor = NodeBlockActor::new(client, NodeBlockActorConfig::all_enabled());
                     match node_block_actor
@@ -504,15 +437,9 @@ if let Some(ws_url) = ws_url {
                         Ok(r) => {
                             tasks.extend(r);
                             info!("Node actor started successfully for : {} @ {}", name, blockchain.chain_id())
-                        }
-                        Err(e) => {
+                                                Err(e) => {
                             panic!("{}", e)
-                        }
-                    }
-                }
-            }
-        }
-
+                                                                                
         if let Some(node_mempool_actors) = &self.config.actors.mempool {
             for (name, params) in node_mempool_actors {
                 let blockchain = self.get_blockchain(params.blockchain.as_ref())?;
@@ -524,19 +451,11 @@ if let Some(ws_url) = ws_url {
                             Ok(r) => {
                                 tasks.extend(r);
                                 info!("Node mempool actor started successfully {name}")
-                            }
-                            Err(e) => {
+                                                        Err(e) => {
                                 panic!("{}", e)
-                            }
-                        }
-                    }
-                    Err(e) => {
+                                                                                            Err(e) => {
                         error!("Skipping mempool actor for {} @ {} : {}", name, blockchain.chain_id(), e)
-                    }
-                }
-            }
-        }
-
+                                                        
         if let Some(price_actors) = &self.config.actors.price {
             for (name, c) in price_actors {
                 let client = self.get_client(c.client.as_ref())?;
@@ -547,16 +466,11 @@ if let Some(ws_url) = ws_url {
                     Ok(r) => {
                         tasks.extend(r);
                         info!("Price actor has been initialized : {}", name)
-                    }
-                    Err(e) => {
+                                        Err(e) => {
                         panic!("Cannot initialize price actor {} : {}", name, e);
-                    }
-                }
-            }
-        } else {
+                                                        } else {
             warn!("No price actor in config")
-        }
-
+        
         if let Some(node_balance_actors) = &self.config.actors.noncebalance {
             for (name, c) in node_balance_actors {
                 let client = self.get_client(c.client.as_ref())?;
@@ -573,16 +487,11 @@ if let Some(ws_url) = ws_url {
                     Ok(r) => {
                         tasks.extend(r);
                         info!("Nonce monitor has been initialized {name} for {}", blockchain.chain_id())
-                    }
-                    Err(e) => {
+                                        Err(e) => {
                         panic!("Cannot initialize nonce and balance monitor {} : {}", name, e);
-                    }
-                }
-            }
-        } else {
+                                                        } else {
             warn!("No nonce and balance actors in config");
-        }
-
+        
         if let Some(broadcaster_actors) = &self.config.actors.broadcaster {
             for (name, params) in broadcaster_actors {
                 match params {
@@ -596,18 +505,11 @@ if let Some(ws_url) = ws_url {
                             Ok(r) => {
                                 tasks.extend(r);
                                 info!("Flashbots broadcaster actor {name} started successfully for {}", blockchain.chain_id())
-                            }
-                            Err(e) => {
+                                                        Err(e) => {
                                 panic!("Error starting flashbots broadcaster actor {name} for {} : {}", blockchain.chain_id(), e)
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
+                                                                                                            } else {
             warn!("No broadcaster actors in config")
-        }
-
+        
         if let Some(pool_actors) = &self.config.actors.pools {
             let mut blockchains = HashMap::new();
 
@@ -627,27 +529,19 @@ if let Some(ws_url) = ws_url {
                         Ok(r) => {
                             tasks.extend(r);
                             info!("History pool loader actor started successfully {name}")
-                        }
-                        Err(e) => {
+                                                Err(e) => {
                             panic!("HistoryPoolLoaderOneShotActor : {}", e)
-                        }
-                    }
-                }
-                if params.protocol {
+                                                                            if params.protocol {
                     info!("Starting curve pools loader {name}");
 
                     let mut curve_pools_loader_actor = ProtocolPoolLoaderOneShotActor::new(client.clone(), pool_loaders.clone());
                     match curve_pools_loader_actor.produce(blockchain.tasks_channel()).start() {
                         Err(e) => {
                             panic!("CurvePoolLoaderOneShotActor : {}", e)
-                        }
-                        Ok(r) => {
+                                                Ok(r) => {
                             tasks.extend(r);
                             info!("Curve pool loader actor started successfully")
-                        }
-                    }
-                }
-
+                                                            
                 if params.new {
                     info!("Starting new pool loader actor {name}");
                     let mut new_pool_actor = NewPoolLoaderActor::new(pool_loaders.clone());
@@ -655,13 +549,9 @@ if let Some(ws_url) = ws_url {
                         Ok(r) => {
                             tasks.extend(r);
                             info!("New pool actor started")
-                        }
-                        Err(e) => {
+                                                Err(e) => {
                             panic!("NewPoolLoaderActor : {}", e)
-                        }
-                    }
-                }
-
+                                                            
                 info!("Starting pool loader actor {name}");
                 let mut pool_loader_actor = PoolLoaderActor::new(client.clone(), pool_loaders.clone(), PoolsLoadingConfig::new());
                 match pool_loader_actor
@@ -674,16 +564,11 @@ if let Some(ws_url) = ws_url {
                     Ok(r) => {
                         tasks.extend(r);
                         info!("Pool loader actor started successfully")
-                    }
-                    Err(e) => {
+                                        Err(e) => {
                         panic!("PoolLoaderActor : {}", e)
-                    }
-                }
-            }
-        } else {
+                                                        } else {
             warn!("No pool loader actors in config")
-        }
-
+        
         if let Some(estimator_actors) = &self.config.actors.estimator {
             for (name, params) in estimator_actors {
                 match params {
@@ -708,13 +593,9 @@ if let Some(ws_url) = ws_url {
                             Ok(r) => {
                                 tasks.extend(r);
                                 info!("EVM estimator actor started successfully {name} @ {}", blockchain.chain_id())
-                            }
-                            Err(e) => {
+                                                        Err(e) => {
                                 panic!("Error starting EVM estimator actor {name} @ {} : {}", blockchain.chain_id(), e)
-                            }
-                        }
-                    }
-                    EstimatorConfig::Geth(params) => {
+                                                                                            EstimatorConfig::Geth(params) => {
                         let client = self.get_client(params.client.as_ref())?;
                         let blockchain = self.get_blockchain(params.blockchain.as_ref())?;
                         let strategy = self.get_strategy(params.blockchain.as_ref())?;
@@ -731,22 +612,13 @@ if let Some(ws_url) = ws_url {
                             Ok(r) => {
                                 tasks.extend(r);
                                 info!("Geth estimator actor started successfully {name} @ {}", blockchain.chain_id())
-                            }
-                            Err(e) => {
+                                                        Err(e) => {
                                 panic!("Error starting Geth estimator actor for {name} @ {} : {}", blockchain.chain_id(), e)
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
+                                                                                                            } else {
             warn!("No estimator actors in config")
-        }
-
+        
         Ok(tasks)
-    }
-
-}
+    
 
 impl<
     DB: Clone + Send + Sync + 'static,
@@ -759,38 +631,28 @@ impl<
         match self.blockchains.get(name.unwrap_or(&binding)) {
             Some(a) => Ok(a),
             None => Err(eyre!("BLOCKCHAIN_NOT_FOUND")),
-        }
-    }
-
+            
     pub fn get_blockchain_state(&self, name: Option<&String>) -> Result<&BlockchainState<DB>> {
         let binding = self.default_blockchain_name.clone().unwrap();
         match self.blockchain_states.get(name.unwrap_or(&binding)) {
             Some(a) => Ok(a),
             None => Err(eyre!("BLOCKCHAIN_NOT_FOUND")),
-        }
-    }
-
+            
     pub fn get_strategy(&self, name: Option<&String>) -> Result<&Strategy<DB, LDT>> {
         let binding = self.default_blockchain_name.clone().unwrap();
         match self.strategies.get(name.unwrap_or(&binding)) {
             Some(a) => Ok(a),
             None => Err(eyre!("BLOCKCHAIN_NOT_FOUND")),
-        }
-    }
-
+            
     pub fn get_signers(&self, name: Option<&String>) -> Result<SharedState<TxSigners>> {
         let binding = self.default_multicaller_encoder_name.clone().unwrap();
         match self.signers.get(name.unwrap_or(&binding)) {
             Some(a) => Ok(a.clone()),
             None => Err(eyre!("SIGNERS_NOT_FOUND")),
-        }
-    }
-
+            
     pub fn get_blockchain_mut(&mut self, name: Option<&String>) -> Result<&mut Blockchain<LDT>> {
         let binding = self.default_blockchain_name.clone().unwrap();
         match self.blockchains.get_mut(name.unwrap_or(&binding)) {
             Some(a) => Ok(a),
             None => Err(eyre!("CLIENT_NOT_FOUND")),
-        }
-    }
-}
+            
