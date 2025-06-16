@@ -12,7 +12,7 @@ use alloy_transport_ipc::IpcConnect;
 use alloy_transport_ws::WsConnect;
 use eyre::{eyre, ErrReport, Result};
 use url::Url;
-use loom_broadcast_accounts::{InitializeSignersOneShotBlockingActor, NonceAndBalanceMonitorActor, TxSignersActor};
+use loom_broadcast_flashbots::{InitializeSignersOneShotBlockingActor, NonceAndBalanceMonitorActor, TxSignersActor};
 use loom_broadcast_broadcaster::FlashbotsBroadcastActor;
 use loom_broadcast_flashbots::Flashbots;
 use loom_core_actors::{Accessor, Actor, Consumer, Producer, SharedState, WorkerResult};
@@ -125,7 +125,7 @@ impl<
             .ok_or_else(|| eyre!("Multicaller address not found: {}", name))
     }
 
-    pub fn get_client_config(&self, name: Option<&String>) -> Result<&ClientConfig> {
+    pub fn get_client_config(&self, name: Option<&String>) -> Result<&ClientConfig<P, N>> {
         let name = name.or_else(|| self.default_blockchain_name.as_ref())
             .ok_or_else(|| eyre!("No client name provided and no default client set"))?;
         self.config.clients.get(name)
@@ -272,7 +272,6 @@ impl<
         }
         Ok(Topology { clients, ..self })
     }
-}
 
     pub async fn start_actors(&self) -> Result<Vec<JoinHandle<WorkerResult>>> {
         let mut tasks: Vec<JoinHandle<WorkerResult>> = Vec::new();
