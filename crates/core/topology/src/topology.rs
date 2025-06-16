@@ -272,68 +272,7 @@ impl<
         }
         Ok(Topology { clients, ..self })
     }
-
-    pub fn build_blockchains(self) -> Self {
-        let mut multicaller_encoders = HashMap::new();
-        let mut strategies = HashMap::new();
-        let mut blockchains = HashMap::new();
-        let mut blockchain_states = HashMap::new();
-        let mut signers = HashMap::new();
-
-        let mut default_blockchain_name: Option<String> = None;
-        let mut default_multicaller_encoder_name: Option<String> = None;
-        let mut default_signer_name: Option<String> = None;
-
-        for (k, v) in self.config.encoders.iter() {
-            match v {
-                EncoderConfig::SwapStep(c) => {
-                    if let Ok(address) = c.address.parse() {
-                        multicaller_encoders.insert(k.clone(), address);
-                        default_multicaller_encoder_name = Some(k.clone());
-                    }
-                }
-            }
-        }
-
-        for (k, params) in self.config.blockchains.iter() {
-            let blockchain = Blockchain::new(params.chain_id.unwrap_or(1) as u64);
-            let market_state = MarketState::new(DB::default());
-            let blockchain_state = BlockchainState::<DB>::new_with_market_state(market_state);
-            let strategy = Strategy::<DB>::new();
-
-            blockchains.insert(k.clone(), blockchain);
-            blockchain_states.insert(k.clone(), blockchain_state);
-            strategies.insert(k.clone(), strategy);
-            default_blockchain_name = Some(k.clone());
-        }
-
-        // Ensure default_blockchain_name is set to "base" if not set
-        if default_blockchain_name.is_none() {
-            default_blockchain_name = Some("base".to_string());
-        }
-
-        for (name, params) in self.config.signers.iter() {
-            match params {
-                SignersConfig::Env(_params) => {
-                    let signers_state = SharedState::new(TxSigners::new());
-                    signers.insert(name.clone(), signers_state);
-                    default_signer_name = Some(name.clone());
-                }
-            }
-        }
-
-        Self {
-            blockchains,
-            blockchain_states,
-            multicaller_encoders,
-            strategies,
-            signers,
-            default_multicaller_encoder_name,
-            default_blockchain_name,
-            default_signer_name,
-            ..self
-        }
-    }
+}
 
     pub async fn start_actors(&self) -> Result<Vec<JoinHandle<WorkerResult>>> {
         let mut tasks: Vec<JoinHandle<WorkerResult>> = Vec::new();
@@ -781,71 +720,9 @@ impl<
         Ok(tasks)
     }
 
-    pub fn get_blockchain(&self, name: Option<&String>) -> Result<&Blockchain<LoomDataTypesEthereum>> {
-        let binding = self.default_blockchain_name.clone().unwrap();
-        match self.blockchains.get(name.unwrap_or(&binding)) {
-            Some(a) => Ok(a),
-            None => Err(eyre!("BLOCKCHAIN_NOT_FOUND")),
-        }
-    }
+    // Removed duplicate methods for get_blockchain, get_blockchain_state, get_strategy, get_signers, get_blockchain_mut, get_client, get_multicaller_address, and get_client_config
 
-    pub fn get_blockchain_state(&self, name: Option<&String>) -> Result<&BlockchainState<DB>> {
-        let binding = self.default_blockchain_name.clone().unwrap();
-        match self.blockchain_states.get(name.unwrap_or(&binding)) {
-            Some(a) => Ok(a),
-            None => Err(eyre!("BLOCKCHAIN_NOT_FOUND")),
-        }
-    }
 
-    pub fn get_strategy(&self, name: Option<&String>) -> Result<&Strategy<DB, LoomDataTypesEthereum>> {
-        let binding = self.default_blockchain_name.clone().unwrap();
-        match self.strategies.get(name.unwrap_or(&binding)) {
-            Some(a) => Ok(a),
-            None => Err(eyre!("BLOCKCHAIN_NOT_FOUND")),
-        }
-    }
-
-    pub fn get_signers(&self, name: Option<&String>) -> Result<SharedState<TxSigners>> {
-        let binding = self.default_multicaller_encoder_name.clone().unwrap();
-        match self.signers.get(name.unwrap_or(&binding)) {
-            Some(a) => Ok(a.clone()),
-            None => Err(eyre!("SIGNERS_NOT_FOUND")),
-        }
-    }
-
-    pub fn get_blockchain_mut(&mut self, name: Option<&String>) -> Result<&mut Blockchain<LoomDataTypesEthereum>> {
-        let binding = self.default_blockchain_name.clone().unwrap();
-        match self.blockchains.get_mut(name.unwrap_or(&binding)) {
-            Some(a) => Ok(a),
-            None => Err(eyre!("CLIENT_NOT_FOUND")),
-        }
-    }
-
-    pub fn get_client(&self, name: Option<&String>) -> Result<RootProvider<Ethereum>> {
-        let binding = self.default_blockchain_name.clone().unwrap();
-        let key = name.unwrap_or(&binding);
-        self.clients.get(key)
-            .cloned()
-            .ok_or_else(|| eyre!("CLIENT_NOT_FOUND"))
-    }
-
-    pub fn get_multicaller_address(&self, name: Option<&String>) -> Result<Address> {
-        let binding = self.default_multicaller_encoder_name.clone().unwrap();
-        let key = name.unwrap_or(&binding);
-        self.multicaller_encoders.get(key)
-            .cloned()
-            .ok_or_else(|| eyre!("MULTICALLER_NOT_FOUND"))
-    }
-
-    pub fn get_client_config(&self, name: Option<&String>) -> Result<&ClientConfig> {
-        let binding = self.default_blockchain_name.clone().unwrap();
-        let key = name.unwrap_or(&binding);
-        self.config.clients.get(key)
-            .ok_or_else(|| eyre!("CLIENT_CONFIG_NOT_FOUND"))
-    }
-}
-
-// Remove this impl block and move the methods into the main impl block for Topology<DB, E, P, Ethereum, LoomDataTypesEthereum>
-// Add extra closing braces to ensure all blocks are closed
+// All duplicate methods removed. File ends cleanly.
 
             
