@@ -20,7 +20,7 @@ loom-core-blockchain = { workspace = true, optional = true }
 loom-core-blockchain-actors = { workspace = true, optional = true }
 loom-core-mempool = { workspace = true, optional = true }
 loom-core-router = { workspace = true, optional = true }
-loom-core-topology = { workspace = true, optional = true }
+loom-core-topology = { workspace = true, optional = true, features = ["with-blockchain"] }
 # defi
 loom-defi-abi = { workspace = true, optional = true }
 loom-defi-address-book = { workspace = true, optional = true }
