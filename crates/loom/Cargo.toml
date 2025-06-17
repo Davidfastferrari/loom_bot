@@ -85,7 +85,7 @@ core-blockchain = ["core", "dep:loom-core-blockchain"]
 core-blockchain-actors = ["core", "dep:loom-core-blockchain-actors"]
 core-mempool = ["core", "dep:loom-core-mempool"]
 core-router = ["core", "dep:loom-core-router"]
-core-topology = ["core", "dep:loom-core-topology/with-blockchain"]
+core-topology = ["core", "dep:loom-core-topology", "loom-core-topology/with-blockchain"]
 
 defi-abi = ["defi", "dep:loom-defi-abi"]
 defi-address-book = ["defi", "dep:loom-defi-address-book"]
