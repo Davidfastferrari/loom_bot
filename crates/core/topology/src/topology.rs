@@ -12,17 +12,15 @@ use alloy_transport_ipc::IpcConnect;
 use alloy_transport_ws::WsConnect;
 use eyre::{eyre, ErrReport, Result};
 use url::Url;
-use loom_broadcast_flashbots::{InitializeSignersOneShotBlockingActor, NonceAndBalanceMonitorActor, TxSignersActor};
+use loom_broadcast_accounts::{InitializeSignersOneShotBlockingActor, NonceAndBalanceMonitorActor, TxSignersActor};
 use loom_broadcast_broadcaster::FlashbotsBroadcastActor;
 use loom_broadcast_flashbots::Flashbots;
 use loom_core_actors::{Accessor, Actor, Consumer, Producer, SharedState, WorkerResult};
 #[cfg(feature = "loom-core-block-history-actor")]
 use loom_core_block_history_actor::BlockHistoryActor;
 use loom_core_blockchain::{Blockchain, BlockchainState, Strategy};
-/*
 #[cfg(not(feature = "with-blockchain"))]
 compile_error!("The feature \"with-blockchain\" must be enabled to use loom-core-topology crate because it depends on loom-core-blockchain optionally.");
-*/
 use loom_core_mempool::MempoolActor;
 use loom_defi_health_monitor::PoolHealthMonitorActor;
 use loom_defi_market::{HistoryPoolLoaderOneShotActor, NewPoolLoaderActor, PoolLoaderActor, ProtocolPoolLoaderOneShotActor};
@@ -331,9 +329,9 @@ impl<
                 }
             }
 
-            info!("Starting pool monitor monitor actor {k}");
-            let mut new_pool_health_monior_actor = PoolHealthMonitorActor::new();
-            match new_pool_health_monior_actor
+            info!("Starting pool health monitor actor {k}");
+            let mut new_pool_health_monitor_actor = PoolHealthMonitorActor::new();
+            match new_pool_health_monitor_actor
                 .access(blockchain.market())
                 .consume(blockchain.health_monitor_channel())
                 .produce(blockchain.influxdb_write_channel())
@@ -508,7 +506,7 @@ impl<
                 let blockchain = self.get_blockchain(params.blockchain.as_ref())?;
                 match self.get_client(params.client.as_ref()) {
                     Ok(client) => {
-                        println!("Starting node mempool actor {name}");
+                        info!("Starting node mempool actor {name}");
                         let mut node_mempool_actor = NodeMempoolActor::new(client).with_name(name.clone());
                         match node_mempool_actor.produce(blockchain.new_mempool_tx_channel()).start() {
                             Ok(r) => {
@@ -618,15 +616,15 @@ impl<
                     }
                 }
                 if params.protocol {
-                    info!("Starting curve pools loader {name}");
-                    let mut curve_pools_loader_actor = ProtocolPoolLoaderOneShotActor::new(client.clone(), pool_loaders.clone());
-                    match curve_pools_loader_actor.produce(blockchain.tasks_channel()).start() {
+                    info!("Starting protocol pools loader {name}");
+                    let mut protocol_pools_loader_actor = ProtocolPoolLoaderOneShotActor::new(client.clone(), pool_loaders.clone());
+                    match protocol_pools_loader_actor.produce(blockchain.tasks_channel()).start() {
                         Ok(r) => {
                             tasks.extend(r);
-                            info!("Curve pool loader actor started successfully");
+                            info!("Protocol pool loader actor started successfully {name}");
                         }
                         Err(e) => {
-                            panic!("CurvePoolLoaderOneShotActor : {}", e)
+                            panic!("ProtocolPoolLoaderOneShotActor : {}", e)
                         }
                     }
                 }
@@ -636,7 +634,7 @@ impl<
                     match new_pool_actor.consume(blockchain.new_block_logs_channel()).produce(blockchain.tasks_channel()).start() {
                         Ok(r) => {
                             tasks.extend(r);
-                            info!("New pool actor started");
+                            info!("New pool actor started successfully {name}");
                         }
                         Err(e) => {
                             panic!("NewPoolLoaderActor : {}", e)
@@ -654,7 +652,7 @@ impl<
                 {
                     Ok(r) => {
                         tasks.extend(r);
-                        info!("Pool loader actor started successfully");
+                        info!("Pool loader actor started successfully {name}");
                     }
                     Err(e) => {
                         panic!("PoolLoaderActor : {}", e)
