@@ -12,7 +12,7 @@ use alloy_transport_ipc::IpcConnect;
 use alloy_transport_ws::WsConnect;
 use eyre::{eyre, ErrReport, Result};
 use url::Url;
-use loom_broadcast_accounts::{InitializeSignersOneShotBlockingActor, NonceAndBalanceMonitorActor, TxSignersActor};
+use loom_broadcast_flashbots::{InitializeSignersOneShotBlockingActor, NonceAndBalanceMonitorActor, TxSignersActor};
 use loom_broadcast_broadcaster::FlashbotsBroadcastActor;
 use loom_broadcast_flashbots::Flashbots;
 use loom_core_actors::{Accessor, Actor, Consumer, Producer, SharedState, WorkerResult};
