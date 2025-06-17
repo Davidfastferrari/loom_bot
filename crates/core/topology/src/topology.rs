@@ -718,10 +718,6 @@ impl<
 
         Ok(tasks)
     }
-
-    // Removed duplicate methods for get_blockchain, get_blockchain_state, get_strategy, get_signers, get_blockchain_mut, get_client, get_multicaller_address, and get_client_config
-
-
-// All duplicate methods removed. File ends cleanly.
+}
 
             
