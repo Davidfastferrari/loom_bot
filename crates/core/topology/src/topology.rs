@@ -44,7 +44,7 @@ use tokio::task::JoinHandle;
 use tracing::{error, info, warn};
 
 pub struct Topology<
-    DB: Clone + Send + Sync + 'static,
+    DB: DatabaseRef + Database + DatabaseCommit + BlockHistoryState + DatabaseLoomExt + Clone + Send + Sync + Default + 'static,
     E: Send + Sync + Clone + 'static = MulticallerSwapEncoder,
     P: Provider<N> + Send + Sync + Clone + 'static = RootProvider,
     N: Network = Ethereum,
@@ -64,7 +64,7 @@ pub struct Topology<
 }
 
 impl<
-    DB: Clone + Send + Sync + 'static,
+    DB: DatabaseRef + Database + DatabaseCommit + BlockHistoryState + DatabaseLoomExt + Clone + Send + Sync + Default + 'static,
     E: Send + Sync + Clone + 'static,
     P: Provider<N> + Send + Sync + Clone + 'static,
     N: Network,
@@ -83,11 +83,11 @@ impl<
             self.blockchains.insert(name.clone(), blockchain);
             
             // Initialize corresponding blockchain state
-            let blockchain_state = BlockchainState::<DB>::default();
+            let blockchain_state = BlockchainState::<DB>::new();
             self.blockchain_states.insert(name.clone(), blockchain_state);
             
             // Initialize corresponding strategy
-            let strategy = Strategy::<DB, LoomDataTypesEthereum>::default();
+            let strategy = Strategy::<DB, LoomDataTypesEthereum>::new();
             self.strategies.insert(name.clone(), strategy);
         }
         
