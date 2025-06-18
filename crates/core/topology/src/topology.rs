@@ -78,6 +78,15 @@ impl<
             .ok_or_else(|| eyre!("Blockchain not found: {}", name))
     }
 
+    pub fn initialize_blockchains(&mut self, chain_id_map: &std::collections::HashMap<String, i64>) -> Result<()> {
+        use loom_core_blockchain::Blockchain;
+        for (name, chain_id) in chain_id_map.iter() {
+            let blockchain = Blockchain::new(*chain_id); // Adjust constructor as needed
+            self.blockchains.insert(name.clone(), blockchain);
+        }
+        Ok(())
+    }
+
     pub fn get_blockchain_state(&self, name: Option<&String>) -> Result<&BlockchainState<DB>> {
         let name = name.or_else(|| self.default_blockchain_name.as_ref())
             .ok_or_else(|| eyre!("No blockchain name provided and no default blockchain set"))?;
