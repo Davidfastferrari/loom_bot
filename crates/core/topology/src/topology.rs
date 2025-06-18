@@ -78,10 +78,10 @@ impl<
             .ok_or_else(|| eyre!("Blockchain not found: {}", name))
     }
 
-    pub fn initialize_blockchains(&mut self, chain_id_map: &std::collections::HashMap<String, i64>) -> Result<()> {
+    pub fn initialize_blockchains<TLDT: LoomDataTypes + 'static>(&mut self, chain_id_map: &std::collections::HashMap<String, i64>) -> Result<()> {
         use loom_core_blockchain::Blockchain;
         for (name, chain_id) in chain_id_map.iter() {
-            let blockchain = Blockchain::new((*chain_id).try_into().unwrap()); // Convert i64 to u64
+            let blockchain = Blockchain::<TLDT>::new((*chain_id).try_into().unwrap()); // Convert i64 to u64
             self.blockchains.insert(name.clone(), blockchain);
         }
         Ok(())
