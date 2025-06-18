@@ -1,4 +1,3 @@
-use alloy::providers::Provider;
 use eyre::Result;
 use tracing::{error, info};
 
@@ -31,8 +30,8 @@ async fn main() -> Result<()> {
         Topology::<LoomDBType>::from_config(topology_config).with_swap_encoder(encoder).start_clients().await?;
 
     // Debug logging to verify clients and default client name
-    info!("Clients keys after start_clients: {:?}", topology.clients.keys().collect::<Vec<_>>());
-    info!("Default client name after start_clients: {:?}", topology.default_client_name);
+    info!("Clients keys after start_clients: {:?}", topology.get_clients_keys());
+    info!("Default client name after start_clients: {:?}", topology.get_default_client_name());
 
     // Set the default client to "local" to match our config
     topology.set_default_client("local")?;
