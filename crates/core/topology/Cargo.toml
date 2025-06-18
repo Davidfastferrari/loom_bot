@@ -9,7 +9,7 @@ repository.workspace = true
 
 [dependencies]
 loom-core-topology-shared = { path = "../topology-shared" }
-loom-broadcast-accounts = { workspace = true, optional = true }
+loom-broadcast-accounts = { workspace = true }
 loom-broadcast-broadcaster.workspace = true
 loom-broadcast-flashbots.workspace = true
 loom-core-actors.workspace = true
@@ -61,7 +61,7 @@ alloy-transport-ws.workspace = true
 url.workspace = true
 
 [features]
-default = []
+default = ["loom-broadcast-accounts"]
 db-access = ["dep:loom-node-db-access"]
 loom-broadcast-accounts = ["dep:loom-broadcast-accounts"]
 loom-core-block-history-actor = ["dep:loom-core-block-history-actor"]
