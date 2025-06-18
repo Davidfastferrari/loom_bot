@@ -92,7 +92,7 @@ impl<
             .ok_or_else(|| eyre!("Blockchain state not found: {}", name))
     }
 
-    pub fn get_strategy(&self, name: Option<&String>) -> Result<&Strategy<DB, LDT>> {
+    pub fn get_strategy(&self, name: Option<&String>) -> Result<&Strategy<DB, LoomDataTypesEthereum>> {
         let name = name.or_else(|| self.default_blockchain_name.as_ref())
             .ok_or_else(|| eyre!("No blockchain name provided and no default blockchain set"))?;
         self.strategies.get(name)
@@ -107,7 +107,7 @@ impl<
             .ok_or_else(|| eyre!("Signers not found: {}", name))
     }
 
-    pub fn get_blockchain_mut(&mut self, name: Option<&String>) -> Result<&mut Blockchain<LDT>> {
+    pub fn get_blockchain_mut(&mut self, name: Option<&String>) -> Result<&mut Blockchain<LoomDataTypesEthereum>> {
         let name = name.or_else(|| self.default_blockchain_name.as_ref())
             .ok_or_else(|| eyre!("No blockchain name provided and no default blockchain set"))?;
         self.blockchains.get_mut(name)
