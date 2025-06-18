@@ -64,6 +64,22 @@ pub struct Topology<
     pool_loaders: Arc<PoolLoaders<P, N, LoomDataTypesEthereum>>,
 }
 
+impl<DB, E, P, N> Topology<DB, E, P, N>
+where
+    DB: DatabaseRef + Database + DatabaseCommit + BlockHistoryState + DatabaseLoomExt + Clone + Send + Sync + Default + 'static,
+    E: Send + Sync + Clone + 'static,
+    P: Provider<N> + Send + Sync + Clone + 'static,
+    N: Network,
+{
+    pub fn get_clients_keys(&self) -> Vec<String> {
+        self.clients.keys().cloned().collect()
+    }
+
+    pub fn get_default_client_name(&self) -> Option<String> {
+        self.default_client_name.clone()
+    }
+}
+
 impl<
     DB: DatabaseRef + Database + DatabaseCommit + BlockHistoryState + DatabaseLoomExt + Clone + Send + Sync + Default + 'static,
     E: Send + Sync + Clone + 'static,
