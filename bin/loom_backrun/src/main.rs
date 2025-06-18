@@ -28,7 +28,7 @@ async fn main() -> Result<()> {
     let encoder = MulticallerSwapEncoder::default();
 
     let topology =
-        Topology::<LoomDBType>::from_config(topology_config).with_swap_encoder(encoder).build_blockchains().start_clients().await?;
+        Topology::<LoomDBType>::from_config(topology_config).with_swap_encoder(encoder).start_clients().await?;
 
     let mut worker_task_vec = topology.start_actors().await?;
 
