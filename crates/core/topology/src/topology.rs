@@ -48,20 +48,19 @@ pub struct Topology<
     E: Send + Sync + Clone + 'static = MulticallerSwapEncoder,
     P: Provider<N> + Send + Sync + Clone + 'static = RootProvider,
     N: Network = Ethereum,
-    LDT: LoomDataTypes + 'static = LoomDataTypesEthereum,
 > {
     config: TopologyConfig,
     clients: HashMap<String, RootProvider<N>>,
-    blockchains: HashMap<String, Blockchain<LDT>>,
+    blockchains: HashMap<String, Blockchain<LoomDataTypesEthereum>>,
     blockchain_states: HashMap<String, BlockchainState<DB>>,
-    strategies: HashMap<String, Strategy<DB, LDT>>,
+    strategies: HashMap<String, Strategy<DB, LoomDataTypesEthereum>>,
     signers: HashMap<String, SharedState<TxSigners>>,
     multicaller_encoders: HashMap<String, Address>,
     default_blockchain_name: Option<String>,
     default_multicaller_encoder_name: Option<String>,
     default_signer_name: Option<String>,
     swap_encoder: E,
-    pool_loaders: Arc<PoolLoaders<P, N, LDT>>,
+    pool_loaders: Arc<PoolLoaders<P, N, LoomDataTypesEthereum>>,
 }
 
 impl<
@@ -69,19 +68,18 @@ impl<
     E: Send + Sync + Clone + 'static,
     P: Provider<N> + Send + Sync + Clone + 'static,
     N: Network,
-    LDT: LoomDataTypes + 'static,
-> Topology<DB, E, P, N, LDT> {
-    pub fn get_blockchain(&self, name: Option<&String>) -> Result<&Blockchain<LDT>> {
+> Topology<DB, E, P, N> {
+    pub fn get_blockchain(&self, name: Option<&String>) -> Result<&Blockchain<LoomDataTypesEthereum>> {
         let name = name.or_else(|| self.default_blockchain_name.as_ref())
             .ok_or_else(|| eyre!("No blockchain name provided and no default blockchain set"))?;
         self.blockchains.get(name)
             .ok_or_else(|| eyre!("Blockchain not found: {}", name))
     }
 
-    pub fn initialize_blockchains<TLDT: LoomDataTypes + 'static>(&mut self, chain_id_map: &std::collections::HashMap<String, i64>) -> Result<()> {
+    pub fn initialize_blockchains(&mut self, chain_id_map: &std::collections::HashMap<String, i64>) -> Result<()> {
         use loom_core_blockchain::Blockchain;
         for (name, chain_id) in chain_id_map.iter() {
-            let blockchain = Blockchain::<TLDT>::new((*chain_id).try_into().unwrap()); // Convert i64 to u64
+            let blockchain = Blockchain::new((*chain_id).try_into().unwrap()); // Convert i64 to u64
             self.blockchains.insert(name.clone(), blockchain);
         }
         Ok(())
