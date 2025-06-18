@@ -81,7 +81,7 @@ impl<
     pub fn initialize_blockchains(&mut self, chain_id_map: &std::collections::HashMap<String, i64>) -> Result<()> {
         use loom_core_blockchain::Blockchain;
         for (name, chain_id) in chain_id_map.iter() {
-            let blockchain = Blockchain::new(*chain_id); // Adjust constructor as needed
+            let blockchain = Blockchain::new((*chain_id).try_into().unwrap()); // Convert i64 to u64
             self.blockchains.insert(name.clone(), blockchain);
         }
         Ok(())
