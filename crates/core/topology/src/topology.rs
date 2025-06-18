@@ -57,6 +57,7 @@ pub struct Topology<
     signers: HashMap<String, SharedState<TxSigners>>,
     multicaller_encoders: HashMap<String, Address>,
     default_blockchain_name: Option<String>,
+    default_client_name: Option<String>,
     default_multicaller_encoder_name: Option<String>,
     default_signer_name: Option<String>,
     swap_encoder: E,
@@ -106,6 +107,23 @@ impl<
         self.default_signer_name = Some(signer_name.to_string());
         Ok(())
     }
+    
+    pub fn set_default_blockchain(&mut self, blockchain_name: &str) -> Result<()> {
+        if !self.blockchains.contains_key(blockchain_name) {
+            return Err(eyre!("Blockchain not found: {}", blockchain_name));
+        }
+        self.default_blockchain_name = Some(blockchain_name.to_string());
+        Ok(())
+    }
+    
+    pub fn set_default_client(&mut self, client_name: &str) -> Result<()> {
+        if !self.clients.contains_key(client_name) {
+            return Err(eyre!("Client not found: {}", client_name));
+        }
+        // Store the client name in a separate field
+        self.default_client_name = Some(client_name.to_string());
+        Ok(())
+    }
 
     pub fn get_blockchain_state(&self, name: Option<&String>) -> Result<&BlockchainState<DB>> {
         let name = name.or_else(|| self.default_blockchain_name.as_ref())
@@ -137,7 +155,7 @@ impl<
     }
 
     pub fn get_client(&self, name: Option<&String>) -> Result<RootProvider<N>> {
-        let name = name.or_else(|| self.default_blockchain_name.as_ref())
+        let name = name.or_else(|| self.default_client_name.as_ref())
             .ok_or_else(|| eyre!("No client name provided and no default client set"))?;
         self.clients.get(name)
             .cloned()
@@ -189,6 +207,7 @@ impl<
             signers: HashMap::new(),
             multicaller_encoders: HashMap::new(),
             default_blockchain_name: None,
+            default_client_name: None,
             default_multicaller_encoder_name: None,
             default_signer_name: None,
             swap_encoder: encoder,
@@ -209,6 +228,7 @@ impl<
             signers: self.signers,
             multicaller_encoders: self.multicaller_encoders,
             default_blockchain_name: self.default_blockchain_name,
+            default_client_name: self.default_client_name,
             default_multicaller_encoder_name: self.default_multicaller_encoder_name,
             default_signer_name: self.default_signer_name,
             pool_loaders: self.pool_loaders,
@@ -229,6 +249,7 @@ impl<
             signers: self.signers,
             multicaller_encoders: self.multicaller_encoders,
             default_blockchain_name: self.default_blockchain_name,
+            default_client_name: self.default_client_name,
             default_multicaller_encoder_name: self.default_multicaller_encoder_name,
             default_signer_name: self.default_signer_name,
             swap_encoder: self.swap_encoder,

@@ -30,6 +30,9 @@ async fn main() -> Result<()> {
     let mut topology =
         Topology::<LoomDBType>::from_config(topology_config).with_swap_encoder(encoder).start_clients().await?;
 
+    // Set the default client to "local" to match our config
+    topology.set_default_client("local")?;
+
     // Initialize blockchains field with "base" blockchain with chain ID 8453
     let mut chain_id_map = std::collections::HashMap::new();
     chain_id_map.insert("base".to_string(), 8453);
@@ -37,6 +40,9 @@ async fn main() -> Result<()> {
     
     // Initialize signers
     topology.initialize_signers("env_signer")?;
+    
+    // Set the default blockchain name to "base" to match our config
+    topology.set_default_blockchain("base")?;
     
     let mut worker_task_vec = topology.start_actors().await?;
 
