@@ -6,7 +6,7 @@ Right now you will find `TokenAddress`, `FactoryAddress`, `PeripheryAddress` and
 
 ## Example
 Just import is using the `loom` or the dedicated `defi-address-book` crate.
-
+## equation
 ```rust,ignore
 use loom::eth::address_book::TokenAddress;
 
