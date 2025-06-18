@@ -5136,6 +5136,7 @@ dependencies = [
  "loom-storage-db",
  "loom-strategy-backrun",
  "loom-strategy-merger",
+ "loom-types-blockchain",
  "loom-types-entities",
  "revm",
  "tokio-util",
