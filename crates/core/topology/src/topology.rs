@@ -152,7 +152,7 @@ impl<
             + 'static,
         E: SwapEncoder + Send + Sync + Clone + 'static,
         P: Provider<Ethereum> + Send + Sync + Clone + 'static,
-    > Topology<DB, E, P, Ethereum, LoomDataTypesEthereum>
+    > Topology<DB, E, P, Ethereum>
 {
     pub fn from_config(config: TopologyConfig) -> Topology<DB, MulticallerSwapEncoder> {
         let encoder = MulticallerSwapEncoder::default();
