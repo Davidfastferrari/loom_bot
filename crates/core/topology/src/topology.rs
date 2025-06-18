@@ -177,7 +177,7 @@ impl<
     pub fn with_swap_encoder<NE: SwapEncoder + Send + Sync + Clone + 'static>(
         self,
         swap_encoder: NE,
-    ) -> Topology<DB, NE, P, Ethereum, LoomDataTypesEthereum> {
+    ) -> Topology<DB, NE, P, Ethereum> {
         Topology {
             config: self.config,
             clients: self.clients,
@@ -197,7 +197,7 @@ impl<
     pub fn with_pool_loaders<NP: Provider + Send + Sync + Clone + 'static>(
         self,
         pool_loaders: PoolLoaders<NP, Ethereum, LoomDataTypesEthereum>,
-    ) -> Topology<DB, E, NP, Ethereum, LoomDataTypesEthereum> {
+    ) -> Topology<DB, E, NP, Ethereum> {
         Topology {
             config: self.config,
             clients: self.clients,
