@@ -34,7 +34,10 @@ async fn main() -> Result<()> {
     let mut chain_id_map = std::collections::HashMap::new();
     chain_id_map.insert("base".to_string(), 8453);
     topology.initialize_blockchains(&chain_id_map)?;
-
+    
+    // Initialize signers
+    topology.initialize_signers("env_signer")?;
+    
     let mut worker_task_vec = topology.start_actors().await?;
 
     //mut worker_task_vec = topology.start_actors().await;

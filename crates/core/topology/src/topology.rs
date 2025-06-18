@@ -81,7 +81,29 @@ impl<
         for (name, chain_id) in chain_id_map.iter() {
             let blockchain = Blockchain::new((*chain_id).try_into().unwrap()); // Convert i64 to u64
             self.blockchains.insert(name.clone(), blockchain);
+            
+            // Initialize corresponding blockchain state
+            let blockchain_state = BlockchainState::<DB>::default();
+            self.blockchain_states.insert(name.clone(), blockchain_state);
+            
+            // Initialize corresponding strategy
+            let strategy = Strategy::<DB, LoomDataTypesEthereum>::default();
+            self.strategies.insert(name.clone(), strategy);
         }
+        
+        // Set default blockchain name if not already set
+        if self.default_blockchain_name.is_none() && !chain_id_map.is_empty() {
+            self.default_blockchain_name = Some(chain_id_map.keys().next().unwrap().clone());
+        }
+        
+        Ok(())
+    }
+    
+    pub fn initialize_signers(&mut self, signer_name: &str) -> Result<()> {
+        // Initialize signers
+        let signers = SharedState::new(TxSigners::default());
+        self.signers.insert(signer_name.to_string(), signers);
+        self.default_signer_name = Some(signer_name.to_string());
         Ok(())
     }
 
