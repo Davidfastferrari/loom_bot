@@ -27,8 +27,15 @@ async fn main() -> Result<()> {
 
     let encoder = MulticallerSwapEncoder::default();
 
-    let topology =
+    let mut topology =
         Topology::<LoomDBType>::from_config(topology_config).with_swap_encoder(encoder).start_clients().await?;
+
+    // Initialize blockchains field with "base" blockchain with chain ID 8453
+    use loom_core_blockchain::Blockchain;
+    let mut blockchains = std::collections::HashMap::new();
+    let base_blockchain = Blockchain::new(8453); // Adjust constructor as needed
+    blockchains.insert("base".to_string(), base_blockchain);
+    topology.blockchains = blockchains;
 
     let mut worker_task_vec = topology.start_actors().await?;
 
