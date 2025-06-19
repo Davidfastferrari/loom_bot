@@ -125,7 +125,7 @@ async fn main() -> Result<()> {
     info!("Router actor started successfully");
 
     // Create and start health monitor actors
-    let mut state_health_monitor = StateHealthMonitorActor::new(client.clone());
+    let mut state_health_monitor: StateHealthMonitorActor<_, LoomDBType> = StateHealthMonitorActor::new(client.clone());
     let state_health_monitor_tasks = state_health_monitor
         .consume(blockchain.tx_compose_channel())
         .consume(blockchain.market_events_channel())
