@@ -7,6 +7,7 @@ use loom::core::topology::{Topology, TopologyConfig};
 use loom::defi::health_monitor::{MetricsRecorderActor, StateHealthMonitorActor, StuffingTxMonitorActor};
 use loom::evm::db::LoomDBType;
 use loom::execution::multicaller::MulticallerSwapEncoder;
+use loom::types::entities::SwapEncoder;
 use loom::metrics::InfluxDbWriterActor;
 use loom::strategy::backrun::{BackrunConfig, BackrunConfigSection, StateChangeArbActor};
 use loom::strategy::merger::{ArbSwapPathMergerActor, DiffPathMergerActor, SamePathMergerActor};
@@ -61,7 +62,7 @@ async fn main() -> Result<()> {
     let client = topology.get_client(None)?;
 
     // Load backrun strategy configuration
-    let backrun_config = load_from_file::<BackrunConfig>("config.toml".to_string())?;
+    let backrun_config = load_from_file::<BackrunConfig>("config.toml".to_string()).await?;
     info!("Backrun config loaded: {:?}", backrun_config);
 
     // Get the blockchain for the backrun strategy
@@ -69,12 +70,12 @@ async fn main() -> Result<()> {
     let blockchain_state = topology.get_blockchain_state(Some(&"base".to_string()))?;
 
     // Create and start the backrun strategy actor
-    let mut backrun_actor = StateChangeArbActor::new(backrun_config);
+    let mut backrun_actor = StateChangeArbActor::new(client.clone(), true, true, backrun_config);
     let backrun_tasks = backrun_actor
         .access(blockchain.market())
         .access(blockchain_state.market_state())
+        .consume(blockchain.tx_compose_channel())
         .consume(blockchain.market_events_channel())
-        .produce(blockchain.swap_compose_channel())
         .produce(blockchain.health_monitor_channel())
         .produce(blockchain.influxdb_write_channel())
         .start()?;
@@ -83,28 +84,28 @@ async fn main() -> Result<()> {
     info!("Backrun actor started successfully");
 
     // Create and start the merger actors
-    let mut same_path_merger = SamePathMergerActor::new();
+    let mut same_path_merger = SamePathMergerActor::new(client.clone());
     let same_path_merger_tasks = same_path_merger
-        .consume(blockchain.swap_compose_channel())
-        .produce(blockchain.swap_compose_channel())
+        .consume(blockchain.tx_compose_channel())
+        .produce(blockchain.tx_compose_channel())
         .start()?;
     
     worker_task_vec.extend(same_path_merger_tasks);
     info!("Same path merger actor started successfully");
 
-    let mut diff_path_merger = DiffPathMergerActor::new();
+    let mut diff_path_merger = DiffPathMergerActor::new(client.clone());
     let diff_path_merger_tasks = diff_path_merger
-        .consume(blockchain.swap_compose_channel())
-        .produce(blockchain.swap_compose_channel())
+        .consume(blockchain.tx_compose_channel())
+        .produce(blockchain.tx_compose_channel())
         .start()?;
     
     worker_task_vec.extend(diff_path_merger_tasks);
     info!("Diff path merger actor started successfully");
 
-    let mut arb_swap_merger = ArbSwapPathMergerActor::new();
+    let mut arb_swap_merger = ArbSwapPathMergerActor::new(client.clone());
     let arb_swap_merger_tasks = arb_swap_merger
-        .consume(blockchain.swap_compose_channel())
-        .produce(blockchain.swap_compose_channel())
+        .consume(blockchain.tx_compose_channel())
+        .produce(blockchain.tx_compose_channel())
         .start()?;
     
     worker_task_vec.extend(arb_swap_merger_tasks);
