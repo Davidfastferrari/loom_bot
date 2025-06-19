@@ -10,6 +10,13 @@ use loom::execution::multicaller::MulticallerSwapEncoder;
 use loom::types::entities::SwapEncoder;
 use loom::metrics::InfluxDbWriterActor;
 use loom::strategy::backrun::{BackrunConfig, BackrunConfigSection, StateChangeArbActor};
+use serde::Deserialize;
+use std::fs;
+
+#[derive(Deserialize)]
+struct ConfigWrapper {
+    backrun_strategy: BackrunConfig,
+}
 use std::path::PathBuf;
 use loom::strategy::merger::{ArbSwapPathMergerActor, DiffPathMergerActor, SamePathMergerActor};
 use loom::types::entities::strategy_config::load_from_file;
@@ -63,7 +70,9 @@ async fn main() -> Result<()> {
     let client = topology.get_client(None)?;
 
     // Load backrun strategy configuration
-    let backrun_config = load_from_file::<BackrunConfig>("config.toml".to_string().into()).await?;
+    let contents = fs::read_to_string("config.toml")?;
+    let config_wrapper: ConfigWrapper = toml::from_str(&contents)?;
+    let backrun_config = config_wrapper.backrun_strategy;
     info!("Backrun config loaded: {:?}", backrun_config);
 
     // Get the blockchain for the backrun strategy
