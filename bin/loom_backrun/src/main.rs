@@ -129,7 +129,6 @@ async fn main() -> Result<()> {
     let state_health_monitor_tasks = state_health_monitor
         .consume(blockchain.tx_compose_channel())
         .consume(blockchain.market_events_channel())
-        .produce(blockchain.influxdb_write_channel())
         .start()?;
     
     worker_task_vec.extend(state_health_monitor_tasks);
@@ -149,7 +148,7 @@ async fn main() -> Result<()> {
     if let Some(influxdb_config) = influxdb_config {
         let mut metrics_recorder = MetricsRecorderActor::new();
         let metrics_recorder_tasks = metrics_recorder
-            .consume(blockchain.health_monitor_channel())
+            .consume(blockchain.new_block_headers_channel())
             .produce(blockchain.influxdb_write_channel())
             .start()?;
         
