@@ -10,6 +10,7 @@ use loom::execution::multicaller::MulticallerSwapEncoder;
 use loom::types::entities::SwapEncoder;
 use loom::metrics::InfluxDbWriterActor;
 use loom::strategy::backrun::{BackrunConfig, BackrunConfigSection, StateChangeArbActor};
+use std::path::PathBuf;
 use loom::strategy::merger::{ArbSwapPathMergerActor, DiffPathMergerActor, SamePathMergerActor};
 use loom::types::entities::strategy_config::load_from_file;
 use loom::types::events::MarketEvents;
@@ -62,7 +63,7 @@ async fn main() -> Result<()> {
     let client = topology.get_client(None)?;
 
     // Load backrun strategy configuration
-    let backrun_config = load_from_file::<BackrunConfig>("config.toml".to_string()).await?;
+    let backrun_config = load_from_file::<BackrunConfig>("config.toml".to_string().into()).await?;
     info!("Backrun config loaded: {:?}", backrun_config);
 
     // Get the blockchain for the backrun strategy
@@ -93,7 +94,7 @@ async fn main() -> Result<()> {
     worker_task_vec.extend(same_path_merger_tasks);
     info!("Same path merger actor started successfully");
 
-    let mut diff_path_merger = DiffPathMergerActor::new(client.clone());
+    let mut diff_path_merger = DiffPathMergerActor::new();
     let diff_path_merger_tasks = diff_path_merger
         .consume(blockchain.tx_compose_channel())
         .produce(blockchain.tx_compose_channel())
@@ -102,7 +103,8 @@ async fn main() -> Result<()> {
     worker_task_vec.extend(diff_path_merger_tasks);
     info!("Diff path merger actor started successfully");
 
-    let mut arb_swap_merger = ArbSwapPathMergerActor::new(client.clone());
+    let multicaller_address = topology.get_multicaller_address(None)?;
+    let mut arb_swap_merger = ArbSwapPathMergerActor::new(multicaller_address);
     let arb_swap_merger_tasks = arb_swap_merger
         .consume(blockchain.tx_compose_channel())
         .produce(blockchain.tx_compose_channel())
