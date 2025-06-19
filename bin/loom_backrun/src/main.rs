@@ -52,14 +52,9 @@ async fn main() -> Result<()> {
     // Initialize signers
     topology.initialize_signers("env_signer")?;
     
-    // Manually add the multicaller address to the topology's multicaller_encoders map
-    // This is a workaround since there's no direct method to initialize it
-    unsafe {
-        let topology_ptr = &mut topology as *mut Topology<LoomDBType>;
-        let topology_ref = &mut *topology_ptr;
-        topology_ref.multicaller_encoders.insert("multicaller".to_string(), multicaller_address);
-        topology_ref.default_multicaller_encoder_name = Some("multicaller".to_string());
-    }
+    // Set the multicaller address using the new public setter methods
+    topology.set_multicaller_encoder("multicaller".to_string(), multicaller_address);
+    topology.set_default_multicaller_encoder_name(Some("multicaller".to_string()));
     
     let mut worker_task_vec = topology.start_actors().await?;
 

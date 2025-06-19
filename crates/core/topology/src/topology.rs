@@ -78,6 +78,15 @@ where
     pub fn get_default_client_name(&self) -> Option<String> {
         self.default_client_name.clone()
     }
+
+    // Added setter methods for multicaller fields
+    pub fn set_multicaller_encoder(&mut self, name: String, address: Address) {
+        self.multicaller_encoders.insert(name, address);
+    }
+
+    pub fn set_default_multicaller_encoder_name(&mut self, name: Option<String>) {
+        self.default_multicaller_encoder_name = name;
+    }
 }
 
 impl<
