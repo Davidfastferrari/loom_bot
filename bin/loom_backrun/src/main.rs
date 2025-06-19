@@ -76,7 +76,7 @@ async fn main() -> Result<()> {
     let backrun_tasks = backrun_actor
         .access(blockchain.market())
         .access(blockchain_state.market_state())
-        .consume(strategy.swap_compose_channel())
+        .consume(blockchain.mempool_events_channel())
         .consume(blockchain.market_events_channel())
         .produce(blockchain.health_monitor_channel())
         .produce(blockchain.influxdb_write_channel())
