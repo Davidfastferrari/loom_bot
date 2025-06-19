@@ -58,6 +58,8 @@ async fn main() -> Result<()> {
     
     let mut worker_task_vec = topology.start_actors().await?;
 
+    let client = topology.get_client(None)?;
+
     // Load backrun strategy configuration
     let backrun_config = load_from_file::<BackrunConfig>("config.toml".to_string())?;
     info!("Backrun config loaded: {:?}", backrun_config);
@@ -119,18 +121,20 @@ async fn main() -> Result<()> {
     info!("Router actor started successfully");
 
     // Create and start health monitor actors
-    let mut state_health_monitor = StateHealthMonitorActor::new();
+    let mut state_health_monitor = StateHealthMonitorActor::new(client.clone());
     let state_health_monitor_tasks = state_health_monitor
-        .consume(blockchain.health_monitor_channel())
+        .consume(blockchain.tx_compose_channel())
+        .consume(blockchain.market_events_channel())
         .produce(blockchain.influxdb_write_channel())
         .start()?;
     
     worker_task_vec.extend(state_health_monitor_tasks);
     info!("State health monitor actor started successfully");
 
-    let mut stuffing_tx_monitor = StuffingTxMonitorActor::new();
+    let mut stuffing_tx_monitor = StuffingTxMonitorActor::new(client.clone());
     let stuffing_tx_monitor_tasks = stuffing_tx_monitor
-        .consume(blockchain.health_monitor_channel())
+        .consume(blockchain.tx_compose_channel())
+        .consume(blockchain.market_events_channel())
         .produce(blockchain.influxdb_write_channel())
         .start()?;
     
@@ -148,7 +152,11 @@ async fn main() -> Result<()> {
         worker_task_vec.extend(metrics_recorder_tasks);
         info!("Metrics recorder actor started successfully");
 
-        let mut influxdb_writer = InfluxDbWriterActor::new(influxdb_config);
+        let mut influxdb_writer = InfluxDbWriterActor::new(
+            influxdb_config.url,
+            influxdb_config.database,
+            influxdb_config.tags,
+        );
         let influxdb_writer_tasks = influxdb_writer
             .consume(blockchain.influxdb_write_channel())
             .start()?;
