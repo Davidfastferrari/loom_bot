@@ -3,8 +3,8 @@ FROM rust:1.84-slim-bullseye as builder
 # Install build dependencies
 # Robust apt-get install with retries and recovery for network/package issues
 RUN set -e; \
-    apt-get update --fix-missing; \
-    apt-get install -y --fix-missing \
+    for i in 1 2 3; do \
+      apt-get update --fix-missing && apt-get install -y --fix-missing \
         pkg-config \
         libssl-dev \
         build-essential \
@@ -19,7 +19,8 @@ RUN set -e; \
         libalgorithm-diff-xs-perl \
         libalgorithm-merge-perl \
         libfile-fcntllock-perl \
-        libalgorithm-diff-perl; \
+        libalgorithm-diff-perl && break || (echo "Retrying apt-get install... ($i)" && sleep 5); \
+    done; \
     dpkg --configure -a; \
     apt-get install -f -y; \
     apt-get clean; \
