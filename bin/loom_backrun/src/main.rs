@@ -69,13 +69,14 @@ async fn main() -> Result<()> {
     // Get the blockchain for the backrun strategy
     let blockchain = topology.get_blockchain(Some(&"base".to_string()))?;
     let blockchain_state = topology.get_blockchain_state(Some(&"base".to_string()))?;
+    let strategy = topology.get_strategy(Some(&"base".to_string()))?;
 
     // Create and start the backrun strategy actor
     let mut backrun_actor = StateChangeArbActor::new(client.clone(), true, true, backrun_config);
     let backrun_tasks = backrun_actor
         .access(blockchain.market())
         .access(blockchain_state.market_state())
-        .consume(blockchain.tx_compose_channel())
+        .consume(strategy.swap_compose_channel())
         .consume(blockchain.market_events_channel())
         .produce(blockchain.health_monitor_channel())
         .produce(blockchain.influxdb_write_channel())
@@ -87,8 +88,8 @@ async fn main() -> Result<()> {
     // Create and start the merger actors
     let mut same_path_merger = SamePathMergerActor::new(client.clone());
     let same_path_merger_tasks = same_path_merger
-        .consume(blockchain.tx_compose_channel())
-        .produce(blockchain.tx_compose_channel())
+        .consume(strategy.swap_compose_channel())
+        .produce(strategy.swap_compose_channel())
         .start()?;
     
     worker_task_vec.extend(same_path_merger_tasks);
@@ -96,8 +97,8 @@ async fn main() -> Result<()> {
 
     let mut diff_path_merger = DiffPathMergerActor::new();
     let diff_path_merger_tasks = diff_path_merger
-        .consume(blockchain.tx_compose_channel())
-        .produce(blockchain.tx_compose_channel())
+        .consume(strategy.swap_compose_channel())
+        .produce(strategy.swap_compose_channel())
         .start()?;
     
     worker_task_vec.extend(diff_path_merger_tasks);
@@ -106,8 +107,8 @@ async fn main() -> Result<()> {
     let multicaller_address = topology.get_multicaller_address(None)?;
     let mut arb_swap_merger = ArbSwapPathMergerActor::new(multicaller_address);
     let arb_swap_merger_tasks = arb_swap_merger
-        .consume(blockchain.tx_compose_channel())
-        .produce(blockchain.tx_compose_channel())
+        .consume(strategy.swap_compose_channel())
+        .produce(strategy.swap_compose_channel())
         .start()?;
     
     worker_task_vec.extend(arb_swap_merger_tasks);
@@ -116,8 +117,8 @@ async fn main() -> Result<()> {
     // Create and start the router actor
     let mut router_actor = SwapRouterActor::new();
     let router_tasks = router_actor
-        .consume(blockchain.swap_compose_channel())
-        .produce(blockchain.tx_compose_channel())
+        .consume(strategy.swap_compose_channel())
+        .produce(strategy.swap_compose_channel())
         .start()?;
     
     worker_task_vec.extend(router_tasks);
