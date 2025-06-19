@@ -41,14 +41,7 @@ async fn main() -> Result<()> {
     encoder.set_address(multicaller_address);
     
     let mut topology =
-        Topology::<LoomDBType>::from_config(topology_config).with_swap_encoder(encoder).start_clients().await?;
-
-    // Debug logging to verify clients and default client name
-    info!("Clients keys after start_clients: {:?}", topology.get_clients_keys());
-    info!("Default client name after start_clients: {:?}", topology.get_default_client_name());
-
-    // Set the default client to "local" to match our config
-    topology.set_default_client("local")?;
+        Topology::<LoomDBType>::from_config(topology_config).with_swap_encoder(encoder);
 
     // Initialize blockchains field with "base" blockchain with chain ID 8453
     let mut chain_id_map = std::collections::HashMap::new();
@@ -60,7 +53,17 @@ async fn main() -> Result<()> {
     
     // Initialize signers
     topology.initialize_signers("env_signer")?;
-    
+
+    // Start clients after initialization
+    topology = topology.start_clients().await?;
+
+    // Debug logging to verify clients and default client name
+    info!("Clients keys after start_clients: {:?}", topology.get_clients_keys());
+    info!("Default client name after start_clients: {:?}", topology.get_default_client_name());
+
+    // Set the default client to "local" to match our config
+    topology.set_default_client("local")?;
+
     // Set the multicaller address using the new public setter methods
     topology.set_multicaller_encoder("multicaller".to_string(), multicaller_address);
     topology.set_default_multicaller_encoder_name(Some("multicaller".to_string()));
