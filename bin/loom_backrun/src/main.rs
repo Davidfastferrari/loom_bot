@@ -145,15 +145,15 @@ async fn main() -> Result<()> {
     info!("Stuffing tx monitor actor started successfully");
 
     // Create and start metrics recorder if InfluxDB is configured
-    if let Some(influxdb_config) = influxdb_config {
-        let mut metrics_recorder = MetricsRecorderActor::new();
-        let metrics_recorder_tasks = metrics_recorder
-            .consume(blockchain.new_block_headers_channel())
-            .produce(blockchain.influxdb_write_channel())
-            .start()?;
-        
-        worker_task_vec.extend(metrics_recorder_tasks);
-        info!("Metrics recorder actor started successfully");
+        if let Some(influxdb_config) = influxdb_config {
+            let mut metrics_recorder: MetricsRecorderActor<LoomDBType> = MetricsRecorderActor::new();
+            let metrics_recorder_tasks = metrics_recorder
+                .consume(blockchain.new_block_headers_channel())
+                .produce(blockchain.influxdb_write_channel())
+                .start()?;
+            
+            worker_task_vec.extend(metrics_recorder_tasks);
+            info!("Metrics recorder actor started successfully");
 
         let mut influxdb_writer = InfluxDbWriterActor::new(
             influxdb_config.url,
