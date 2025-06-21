@@ -88,12 +88,39 @@ where
         let mut tasks: Vec<JoinHandle<WorkerResult>> = Vec::new();
 
         let mut state_update_searcher = StateChangeArbSearcherActor::new(self.backrun_config.clone());
+
+        // Check required fields before unwrap
+        let market = match &self.market {
+            Some(m) => m.clone(),
+            None => {
+                return Err(eyre::eyre!("StateChangeArbActor: market is None"));
+            }
+        };
+        let compose_channel_tx = match &self.compose_channel_tx {
+            Some(tx) => tx.clone(),
+            None => {
+                return Err(eyre::eyre!("StateChangeArbActor: compose_channel_tx is None"));
+            }
+        };
+        let pool_health_monitor_tx = match &self.pool_health_monitor_tx {
+            Some(tx) => tx.clone(),
+            None => {
+                return Err(eyre::eyre!("StateChangeArbActor: pool_health_monitor_tx is None"));
+            }
+        };
+        let influxdb_write_channel_tx = match &self.influxdb_write_channel_tx {
+            Some(tx) => tx.clone(),
+            None => {
+                return Err(eyre::eyre!("StateChangeArbActor: influxdb_write_channel_tx is None"));
+            }
+        };
+
         match state_update_searcher
-            .access(self.market.clone().unwrap())
+            .access(market)
             .consume(searcher_pool_update_channel.clone())
-            .produce(self.compose_channel_tx.clone().unwrap())
-            .produce(self.pool_health_monitor_tx.clone().unwrap())
-            .produce(self.influxdb_write_channel_tx.clone().unwrap())
+            .produce(compose_channel_tx)
+            .produce(pool_health_monitor_tx)
+            .produce(influxdb_write_channel_tx)
             .start()
         {
             Err(e) => {
@@ -105,36 +132,79 @@ where
             }
         }
 
-            if self.mempool_events_tx.is_some() && self.use_mempool {
-                let rate_limit_rps = self.backrun_config.rate_limit_rps.unwrap_or(0);
-                let client = RateLimitedClient::new(self.client.clone(), rate_limit_rps);
-                let mut pending_tx_state_processor = PendingTxStateChangeProcessorActor::new(client);
-                match pending_tx_state_processor
-                    .access(self.mempool.clone().unwrap())
-                    .access(self.latest_block.clone().unwrap())
-                    .access(self.market.clone().unwrap())
-                    .access(self.market_state.clone().unwrap())
-                    .consume(self.mempool_events_tx.clone().unwrap())
-                    .consume(self.market_events_tx.clone().unwrap())
-                    .produce(searcher_pool_update_channel.clone())
-                    .start()
-                {
-                    Err(e) => {
-                        panic!("{}", e)
-                    }
-                    Ok(r) => {
-                        tasks.extend(r);
-                        info!("Pending tx state actor started successfully")
-                    }
+        if self.mempool_events_tx.is_some() && self.use_mempool {
+            let mempool_events_tx = self.mempool_events_tx.clone().unwrap();
+            let market_events_tx = self.market_events_tx.clone().unwrap();
+
+            let mempool = match &self.mempool {
+                Some(m) => m.clone(),
+                None => {
+                    return Err(eyre::eyre!("StateChangeArbActor: mempool is None"));
+                }
+            };
+            let latest_block = match &self.latest_block {
+                Some(lb) => lb.clone(),
+                None => {
+                    return Err(eyre::eyre!("StateChangeArbActor: latest_block is None"));
+                }
+            };
+            let market = match &self.market {
+                Some(m) => m.clone(),
+                None => {
+                    return Err(eyre::eyre!("StateChangeArbActor: market is None"));
+                }
+            };
+            let market_state = match &self.market_state {
+                Some(ms) => ms.clone(),
+                None => {
+                    return Err(eyre::eyre!("StateChangeArbActor: market_state is None"));
+                }
+            };
+
+            let rate_limit_rps = self.backrun_config.rate_limit_rps.unwrap_or(0);
+            let client = RateLimitedClient::new(self.client.clone(), rate_limit_rps);
+            let mut pending_tx_state_processor = PendingTxStateChangeProcessorActor::new(client);
+            match pending_tx_state_processor
+                .access(mempool)
+                .access(latest_block)
+                .access(market)
+                .access(market_state)
+                .consume(mempool_events_tx)
+                .consume(market_events_tx)
+                .produce(searcher_pool_update_channel.clone())
+                .start()
+            {
+                Err(e) => {
+                    panic!("{}", e)
+                }
+                Ok(r) => {
+                    tasks.extend(r);
+                    info!("Pending tx state actor started successfully")
                 }
             }
+        }
 
         if self.market_events_tx.is_some() && self.use_blocks {
+            let market_events_tx = self.market_events_tx.clone().unwrap();
+
+            let market = match &self.market {
+                Some(m) => m.clone(),
+                None => {
+                    return Err(eyre::eyre!("StateChangeArbActor: market is None"));
+                }
+            };
+            let block_history = match &self.block_history {
+                Some(bh) => bh.clone(),
+                None => {
+                    return Err(eyre::eyre!("StateChangeArbActor: block_history is None"));
+                }
+            };
+
             let mut block_state_processor = BlockStateChangeProcessorActor::new();
             match block_state_processor
-                .access(self.market.clone().unwrap())
-                .access(self.block_history.clone().unwrap())
-                .consume(self.market_events_tx.clone().unwrap())
+                .access(market)
+                .access(block_history)
+                .consume(market_events_tx)
                 .produce(searcher_pool_update_channel.clone())
                 .start()
             {
