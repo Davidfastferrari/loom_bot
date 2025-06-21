@@ -90,6 +90,8 @@ async fn main() -> Result<()> {
         .access(blockchain_state.market_state())
         .consume(blockchain.mempool_events_channel())
         .consume(blockchain.market_events_channel())
+        .produce(strategy.swap_compose_channel())
+        .produce(strategy.swap_compose_channel())
         .produce(blockchain.health_monitor_channel())
         .produce(blockchain.influxdb_write_channel())
         .start()?;

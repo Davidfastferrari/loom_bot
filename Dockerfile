@@ -62,19 +62,16 @@ COPY --from=builder /app/target/release/replayer /app/
 
 # Copy configuration files from builder stage
 COPY --from=builder /app/config_base.toml /app/config_base.toml
-COPY --from=builder /app/config_base.toml /app/config_base.toml
 
-# Create empty config files if they don't exist
-RUN if [ ! -f /app/config_base.toml ]; then touch /app/config_base.toml; fi && \
-    if [ ! -f /app/config_base.toml ]; then touch /app/config_base.toml; fi && \
-    if [ ! -f /app/config.toml ]; then \
-      if [ -f /app/config_base.toml ] && [ -s /app/config_base.toml ]; then \
-        cp /app/config_base.toml /app/config.toml; \
-      elif [ -f /app/config_base.toml ] && [ -s /app/config_base.toml ]; then \
-        cp /app/config_base.toml /app/config.toml; \
-      else \
-        touch /app/config.toml; \
-      fi; \
+# Create config.toml by copying from config_base.toml
+RUN if [ -f /app/config_base.toml ] && [ -s /app/config_base.toml ]; then \
+      cp /app/config_base.toml /app/config.toml; \
+      echo "Created config.toml from config_base.toml"; \
+      ls -la /app/config*; \
+    else \
+      echo "ERROR: config_base.toml not found or empty"; \
+      ls -la /app/; \
+      exit 1; \
     fi
 
 # Set ownership of the application directory
