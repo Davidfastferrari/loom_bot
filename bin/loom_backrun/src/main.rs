@@ -88,6 +88,7 @@ async fn main() -> Result<()> {
     let backrun_tasks = backrun_actor
         .access(blockchain.market())
         .access(blockchain_state.market_state())
+        .access(blockchain.mempool())  // Added to fix mempool None error
         .consume(blockchain.mempool_events_channel())
         .consume(blockchain.market_events_channel())
         .produce(strategy.swap_compose_channel())
