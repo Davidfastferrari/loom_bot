@@ -90,6 +90,7 @@ async fn main() -> Result<()> {
         .access(blockchain_state.market_state())
         .access(blockchain.mempool())  // Added to fix mempool None error
         .access(blockchain.latest_block()) // Added to fix latest_block None error
+        .access(blockchain_state.block_history()) // Added to fix block_history None error
         .consume(blockchain.mempool_events_channel())
         .consume(blockchain.market_events_channel())
         .produce(strategy.swap_compose_channel())
