@@ -107,6 +107,7 @@ async fn main() -> Result<()> {
     let same_path_merger_tasks = same_path_merger
         .consume(strategy.swap_compose_channel())
         .produce(strategy.swap_compose_channel())
+        .access(blockchain.latest_block()) // Added to fix latest_block not set error
         .start()?;
     
     worker_task_vec.extend(same_path_merger_tasks);
