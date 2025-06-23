@@ -103,7 +103,8 @@ async fn main() -> Result<()> {
     info!("Backrun actor started successfully");
 
     // Create and start the merger actors
-    let mut same_path_merger = SamePathMergerActor::new(client.clone());
+    let mut same_path_merger = SamePathMergerActor::new(client.clone())
+        .on_bc(&blockchain, &blockchain_state, &strategy);
     let same_path_merger_tasks = same_path_merger
         .consume(strategy.swap_compose_channel())
         .produce(strategy.swap_compose_channel())
