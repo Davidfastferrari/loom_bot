@@ -72,7 +72,7 @@ async fn main() -> Result<()> {
     // Set the default client to "local" to match our config
     topology.set_default_client("local")?;
 
-    // Set the multicaller address using the new public setter methods
+    // Set the multicaller address using the new public setter methods.
     topology.set_multicaller_encoder("multicaller".to_string(), multicaller_address);
     topology.set_default_multicaller_encoder_name(Some("multicaller".to_string()));
     
