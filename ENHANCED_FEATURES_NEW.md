@@ -53,7 +53,7 @@ To use these enhanced features, use the provided `config-multi-network-example.t
 
 ```toml
 [backrun_strategy]
-eoa = "0x0000000000000000000000000000000000000000" # Replace with your EOA
+eoa = "0x6E3b634eBd2EbBffb41a49fA6edF6df6bFe8c0Ee" # Replace with your EOA
 smart = true
 chain_id = 8453 # Base Network
 dynamic_capital = true

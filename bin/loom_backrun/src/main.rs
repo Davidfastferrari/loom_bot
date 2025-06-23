@@ -115,7 +115,9 @@ async fn main() -> Result<()> {
     worker_task_vec.extend(same_path_merger_tasks);
     info!("Same path merger actor started successfully");
 
-    let mut diff_path_merger = DiffPathMergerActor::new();
+    let mut diff_path_merger = DiffPathMergerActor::new()
+        .on_bc(&blockchain)
+        .on_strategy(&strategy);
     let diff_path_merger_tasks = diff_path_merger
         .consume(strategy.swap_compose_channel())
         .produce(strategy.swap_compose_channel())

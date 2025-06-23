@@ -32,7 +32,7 @@ env_signer = { type = "env", bc = "mainnet" }
 
 # Swapstep encoder with address of multicaller deployed
 [encoders]
-mainnet = { type = "swapstep", address = "0x0000000000000000000000000000000000000000" }
+mainnet = { type = "swapstep", address = "0x6E3b634eBd2EbBffb41a49fA6edF6df6bFe8c0Ee" }
 
 # Preloaders for signers and encoders
 [preloaders]
