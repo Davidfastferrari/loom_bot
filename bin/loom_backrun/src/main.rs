@@ -136,14 +136,15 @@ async fn main() -> Result<()> {
     info!("Diff path merger actor started successfully");
 
     let multicaller_address = topology.get_multicaller_address(None)?;
-    let mut arb_swap_merger = ArbSwapPathMergerActor::new(multicaller_address);
-    let arb_swap_merger_tasks = arb_swap_merger
-        .consume(strategy.swap_compose_channel())
-        .produce(strategy.swap_compose_channel())
-        .start()?;
+let mut arb_swap_merger = ArbSwapPathMergerActor::new(multicaller_address)
+    .on_bc(&blockchain, &strategy);
+let arb_swap_merger_tasks = arb_swap_merger
+    .consume(strategy.swap_compose_channel())
+    .produce(strategy.swap_compose_channel())
+    .start()?;
     
-    worker_task_vec.extend(arb_swap_merger_tasks);
-    info!("Arb swap merger actor started successfully");
+worker_task_vec.extend(arb_swap_merger_tasks);
+info!("Arb swap merger actor started successfully");
 
     // Create and start the router actor
     let mut router_actor = SwapRouterActor::new();
