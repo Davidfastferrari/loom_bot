@@ -403,13 +403,24 @@ where
     DB: DatabaseRef<Error = ErrReport> + Database<Error = ErrReport> + DatabaseCommit + Send + Sync + Clone + 'static,
 {
     fn start(&self) -> ActorResult {
+        let latest_block = self.latest_block.clone()
+            .ok_or_else(|| eyre!("SamePathMergerActor: latest_block not set"))?;
+        let market_state = self.market_state.clone()
+            .ok_or_else(|| eyre!("SamePathMergerActor: market_state not set"))?;
+        let market_events = self.market_events.clone()
+            .ok_or_else(|| eyre!("SamePathMergerActor: market_events not set"))?;
+        let compose_channel_rx = self.compose_channel_rx.clone()
+            .ok_or_else(|| eyre!("SamePathMergerActor: compose_channel_rx not set"))?;
+        let compose_channel_tx = self.compose_channel_tx.clone()
+            .ok_or_else(|| eyre!("SamePathMergerActor: compose_channel_tx not set"))?;
+
         let task = tokio::task::spawn(same_path_merger_worker(
             self.client.clone(),
-            self.latest_block.clone().unwrap(),
-            self.market_state.clone().unwrap(),
-            self.market_events.clone().unwrap(),
-            self.compose_channel_rx.clone().unwrap(),
-            self.compose_channel_tx.clone().unwrap(),
+            latest_block,
+            market_state,
+            market_events,
+            compose_channel_rx,
+            compose_channel_tx,
         ));
         Ok(vec![task])
     }

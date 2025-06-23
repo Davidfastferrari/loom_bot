@@ -282,7 +282,7 @@ impl<
         }
     }
 
-    pub async fn start_clients(self) -> Result<Self> {
+    pub async fn start_clients(mut self) -> Result<Self> {
         let mut clients = HashMap::new();
         for (name, v) in self.config.clients.iter() {
             let config_params = v.clone();
@@ -344,6 +344,14 @@ impl<
             let provider = ProviderBuilder::<_, _, Ethereum>::new().disable_recommended_fillers().on_client(client);
             clients.insert(name.clone(), provider);
         }
+        
+        // Initialize blockchains based on config
+        let chain_id_map: HashMap<String, i64> = self.config.blockchains.iter()
+            .map(|(name, config)| (name.clone(), config.chain_id))
+            .collect();
+        self.initialize_blockchains(&chain_id_map)?;
+        info!("Initialized {} blockchains", self.blockchains.len());
+        
         Ok(Topology { clients, ..self })
     }
 
