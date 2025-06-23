@@ -351,6 +351,12 @@ impl<
             .collect();
         self.initialize_blockchains(&chain_id_map)?;
         info!("Initialized {} blockchains", self.blockchains.len());
+
+        // Set default client name if not already set and clients are available
+        if self.default_client_name.is_none() && !clients.is_empty() {
+            self.default_client_name = Some(clients.keys().next().unwrap().clone());
+            info!("Default client name set to {}", self.default_client_name.as_ref().unwrap());
+        }
         
         Ok(Topology { clients, ..self })
     }
