@@ -117,6 +117,7 @@ async fn main() -> Result<()> {
     let diff_path_merger_tasks = diff_path_merger
         .consume(strategy.swap_compose_channel())
         .produce(strategy.swap_compose_channel())
+        .access(blockchain.market_state()) // Added to fix market_state not set error
         .start()?;
     
     worker_task_vec.extend(diff_path_merger_tasks);
