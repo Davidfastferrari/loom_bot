@@ -347,7 +347,7 @@ impl<
         
         // Initialize blockchains based on config
         let chain_id_map: HashMap<String, i64> = self.config.blockchains.iter()
-            .map(|(name, config)| (name.clone(), config.chain_id))
+            .map(|(name, config)| (name.clone(), config.chain_id.unwrap_or_default()))
             .collect();
         self.initialize_blockchains(&chain_id_map)?;
         info!("Initialized {} blockchains", self.blockchains.len());
