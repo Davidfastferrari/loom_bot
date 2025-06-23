@@ -79,6 +79,14 @@ where
         self.default_client_name.clone()
     }
 
+    pub fn get_signers_keys(&self) -> Vec<String> {
+        self.signers.keys().cloned().collect()
+    }
+
+    pub fn get_default_signer_name(&self) -> Option<String> {
+        self.default_signer_name.clone()
+    }
+
     // Added setter methods for multicaller fields
     pub fn set_multicaller_encoder(&mut self, name: String, address: Address) {
         self.multicaller_encoders.insert(name, address);

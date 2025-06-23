@@ -55,8 +55,8 @@ async fn main() -> Result<()> {
     topology.initialize_signers("env_signer")?;
 
     // Debug logging to verify signers and default signer name after initialization
-    info!("Signers keys after initialize_signers: {:?}", topology.signers.keys());
-    info!("Default signer name after initialize_signers: {:?}", topology.default_signer_name);
+    info!("Signers keys after initialize_signers: {:?}", topology.get_signers_keys());
+    info!("Default signer name after initialize_signers: {:?}", topology.get_default_signer_name());
 
     // Start clients after initialization
     topology = topology.start_clients().await?;
@@ -66,8 +66,8 @@ async fn main() -> Result<()> {
     info!("Default client name after start_clients: {:?}", topology.get_default_client_name());
 
     // Debug logging to verify signers and default signer name after start_clients
-    info!("Signers keys after start_clients: {:?}", topology.signers.keys());
-    info!("Default signer name after start_clients: {:?}", topology.default_signer_name);
+    info!("Signers keys after start_clients: {:?}", topology.get_signers_keys());
+    info!("Default signer name after start_clients: {:?}", topology.get_default_signer_name());
 
     // Set the default client to "local" to match our config
     topology.set_default_client("local")?;
