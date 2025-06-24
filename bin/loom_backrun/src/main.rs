@@ -162,8 +162,7 @@ info!("Arb swap merger actor started successfully");
     // Create and start health monitor actors
     let mut state_health_monitor: StateHealthMonitorActor<_, LoomDBType> = StateHealthMonitorActor::new(client.clone());
     let state_health_monitor_tasks = state_health_monitor
-        .consume(blockchain.tx_compose_channel())
-        .consume(blockchain.market_events_channel())
+        .on_bc(&blockchain, &blockchain_state)
         .start()?;
     
     worker_task_vec.extend(state_health_monitor_tasks);
