@@ -179,10 +179,17 @@ where
     DB: DatabaseRef + Database + DatabaseCommit + Send + Sync + Clone + Default + 'static,
 {
     fn start(&self) -> ActorResult {
+        let market_events = self.market_events.clone()
+            .ok_or_else(|| eyre::eyre!("DiffPathMergerActor: market_events not set"))?;
+        let compose_channel_rx = self.compose_channel_rx.clone()
+            .ok_or_else(|| eyre::eyre!("DiffPathMergerActor: compose_channel_rx not set"))?;
+        let compose_channel_tx = self.compose_channel_tx.clone()
+            .ok_or_else(|| eyre::eyre!("DiffPathMergerActor: compose_channel_tx not set"))?;
+
         let task = tokio::task::spawn(diff_path_merger_worker(
-            self.market_events.clone().unwrap(),
-            self.compose_channel_rx.clone().unwrap(),
-            self.compose_channel_tx.clone().unwrap(),
+            market_events,
+            compose_channel_rx,
+            compose_channel_tx,
         ));
         Ok(vec![task])
     }
