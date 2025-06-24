@@ -1,0 +1,1 @@
+"use alloy_primitives::*; fn main() { let private_key = \"87b9c2f432538c706b11c803258efc0b6e931381cd7e70d3ef1ec498dfee2b06\"; let signing_key = alloy_signer_local::PrivateKeySigner::from_bytes(&hex::decode(private_key).unwrap()).unwrap(); println!(\"Address: {}\", signing_key.address()); }" 

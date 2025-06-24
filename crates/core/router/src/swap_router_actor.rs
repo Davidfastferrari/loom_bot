@@ -164,12 +164,23 @@ where
     DB: DatabaseRef + Send + Sync + Clone + Default + 'static,
 {
     fn start(&self) -> ActorResult {
+        let signers = self.signers.clone()
+            .ok_or_else(|| eyre!("SwapRouterActor: signers not set"))?;
+        let account_nonce_balance = self.account_nonce_balance.clone()
+            .ok_or_else(|| eyre!("SwapRouterActor: account_nonce_balance not set"))?;
+        let swap_compose_channel_rx = self.swap_compose_channel_rx.clone()
+            .ok_or_else(|| eyre!("SwapRouterActor: swap_compose_channel_rx not set"))?;
+        let swap_compose_channel_tx = self.swap_compose_channel_tx.clone()
+            .ok_or_else(|| eyre!("SwapRouterActor: swap_compose_channel_tx not set"))?;
+        let tx_compose_channel_tx = self.tx_compose_channel_tx.clone()
+            .ok_or_else(|| eyre!("SwapRouterActor: tx_compose_channel_tx not set"))?;
+
         let task = tokio::task::spawn(swap_router_worker(
-            self.signers.clone().unwrap(),
-            self.account_nonce_balance.clone().unwrap(),
-            self.swap_compose_channel_rx.clone().unwrap(),
-            self.swap_compose_channel_tx.clone().unwrap(),
-            self.tx_compose_channel_tx.clone().unwrap(),
+            signers,
+            account_nonce_balance,
+            swap_compose_channel_rx,
+            swap_compose_channel_tx,
+            tx_compose_channel_tx,
         ));
         Ok(vec![task])
     }
