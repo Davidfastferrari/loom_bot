@@ -149,8 +149,11 @@ info!("Arb swap merger actor started successfully");
     // Create and start the router actor
     let mut router_actor = SwapRouterActor::new();
     let router_tasks = router_actor
+        .access(topology.get_signers(None)?)
+        .access(blockchain.nonce_and_balance())
         .consume(strategy.swap_compose_channel())
         .produce(strategy.swap_compose_channel())
+        .produce(strategy.tx_compose_channel())
         .start()?;
     
     worker_task_vec.extend(router_tasks);

@@ -56,7 +56,7 @@ base = { type = "evm", bc = "base", client = "local", encoder = "multicaller" }
 base = { type = "flashbots", bc = "base", client = "local", smart = true }
 
 [backrun_strategy]
-eoa = "0x6E3b634eBd2EbBffb41a49fA6edF6df6bFe8c0Ee"  # Replace with your EOA address
+eoa = "0xb1c0aa420da988ef0635064782dec493686c1a5e"  # Derived from the private key provided
 smart = true
 chain_id = 8453
 
