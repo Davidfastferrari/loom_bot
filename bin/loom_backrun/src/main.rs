@@ -170,9 +170,7 @@ info!("Arb swap merger actor started successfully");
 
     let mut stuffing_tx_monitor = StuffingTxMonitorActor::new(client.clone());
     let stuffing_tx_monitor_tasks = stuffing_tx_monitor
-        .consume(blockchain.tx_compose_channel())
-        .consume(blockchain.market_events_channel())
-        .produce(blockchain.influxdb_write_channel())
+        .on_bc(&blockchain)
         .start()?;
     
     worker_task_vec.extend(stuffing_tx_monitor_tasks);
