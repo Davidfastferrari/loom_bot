@@ -153,7 +153,7 @@ info!("Arb swap merger actor started successfully");
         .access(blockchain.nonce_and_balance())
         .consume(strategy.swap_compose_channel())
         .produce(strategy.swap_compose_channel())
-        .produce(strategy.tx_compose_channel())
+        .produce(blockchain.tx_compose_channel())
         .start()?;
     
     worker_task_vec.extend(router_tasks);
