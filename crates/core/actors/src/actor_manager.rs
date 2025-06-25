@@ -111,14 +111,14 @@ impl ActorsManager {
             match result {
                 Ok(work_result) => match work_result {
                     Ok(_) => {
-                        info!("ActorWorker {_index} finished successfully")
+                        info!("ActorWorker finished successfully")
                     }
                     Err(e) => {
-                        error!("ActorWorker {_index} finished with error : {e}")
+                        error!("ActorWorker finished with error : {e}")
                     }
                 },
                 Err(e) => {
-                    error!("ActorWorker join error {_index} : {e}")
+                    error!("ActorWorker join error : {e}")
                 }
             }
             f_remaining_futures = remaining_futures;
