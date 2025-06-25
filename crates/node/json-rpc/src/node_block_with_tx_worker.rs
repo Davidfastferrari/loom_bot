@@ -39,7 +39,8 @@ where
                     tokio::time::sleep(Duration::from_millis(backoff)).await;
                 }
                 
-                match client.get_block_by_hash(block_header.hash(), BlockTransactionsKind::Full).await {
+                let fetch_result = client.get_block_by_hash(block_header.hash(), BlockTransactionsKind::Full).await;
+                match fetch_result {
                     Ok(Some(full_block)) => {
                         if let Err(e) = sender.send(Message::new_with_time(BlockUpdate { block: full_block })) {
                             error!("Broadcaster error {}", e);
@@ -54,8 +55,17 @@ where
                         retry_count += 1;
                     }
                     Err(e) => {
-                        error!("Error fetching full block data: {}", e);
-                        retry_count += 1;
+                        // Check if error is deserialization error and handle gracefully
+                        let err_msg = e.to_string();
+                        if err_msg.contains("deserialization error") || err_msg.contains("unknown variant") {
+                            error!("Deserialization error fetching full block data for block {}: {}", block_number, err_msg);
+                            // Skip this block or continue retrying based on policy
+                            // Here, we skip retrying to avoid blocking
+                            break;
+                        } else {
+                            error!("Error fetching full block data: {}", e);
+                            retry_count += 1;
+                        }
                     }
                 }
             }
@@ -64,11 +74,13 @@ where
             if !success {
                 warn!("Falling back to chunked block fetch for block {}", block_number);
                 
-                match fetch_block_with_transactions_chunked(
+                let chunked_result = fetch_block_with_transactions_chunked(
                     client.clone(),
                     BlockId::Hash(block_header.hash().into()),
                     MAX_TX_PER_REQUEST
-                ).await {
+                ).await;
+                
+                match chunked_result {
                     Ok((header, transactions)) => {
                         // Construct a Block from the header and transactions
                         let block = Block {
@@ -85,7 +97,13 @@ where
                         }
                     }
                     Err(e) => {
-                        error!("Chunked block fetch failed for block {}: {}", block_number, e);
+                        let err_msg = e.to_string();
+                        if err_msg.contains("deserialization error") || err_msg.contains("unknown variant") {
+                            error!("Deserialization error in chunked block fetch for block {}: {}", block_number, err_msg);
+                            // Consider skipping or marking block as failed without panicking
+                        } else {
+                            error!("Chunked block fetch failed for block {}: {}", block_number, e);
+                        }
                     }
                 }
             }
