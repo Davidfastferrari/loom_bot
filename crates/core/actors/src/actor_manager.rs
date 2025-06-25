@@ -7,7 +7,7 @@ use crate::{Actor, WorkerResult};
 
 #[derive(Default)]
 pub struct ActorsManager {
-    tasks: Vec<JoinHandle<WorkerResult>>,
+    tasks: Vec<JoinHandle<()>>,
 }
 
 impl ActorsManager {
@@ -36,7 +36,7 @@ impl ActorsManager {
         }
     }
 
-    fn spawn_with_restart<F>(&mut self, name: String, mut handle: JoinHandle<WorkerResult>, actor_factory: F)
+    fn spawn_with_restart<F>(&mut self, name: String, mut handle: JoinHandle<()>, actor_factory: F)
     where
         F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static + Clone,
     {
@@ -47,8 +47,8 @@ impl ActorsManager {
             let mut backoff = 1;
             loop {
                 match &mut handle.await {
-                    Ok(res) => {
-                        info!("ActorWorker {} finished successfully: {:?}", task_name, res);
+                    Ok(_) => {
+                        info!("ActorWorker {} finished successfully", task_name);
                         break;
                     }
                     Err(e) => {
