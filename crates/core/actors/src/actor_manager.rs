@@ -120,3 +120,4 @@ impl ActorsManager {
             futures_counter = f_remaining_futures.len();
         }
     }
+}
