@@ -7,7 +7,7 @@ use crate::{Actor, WorkerResult};
 
 #[derive(Default)]
 pub struct ActorsManager {
-    tasks: Vec<JoinHandle<WorkerResult>>,
+    tasks: Vec<JoinHandle<Result<String, eyre::ErrReport>>>,
 }
 
 impl ActorsManager {
@@ -15,25 +15,34 @@ impl ActorsManager {
         Self::default()
     }
 
-    pub fn start(&mut self, actor: impl Actor + 'static) -> Result<()> {
+    pub fn start<F>(&mut self, actor_factory: F) -> Result<()>
+    where
+        F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static + Clone,
+    {
+        let actor = actor_factory();
+        let actor_name = actor.name().to_string();
         match actor.start() {
             Ok(workers) => {
-                info!("{} started successfully", actor.name());
+                info!("{} started successfully", actor_name);
                 for worker in workers {
-                    self.spawn_with_restart(actor.name().to_string(), worker);
+                    self.spawn_with_restart(actor_name.clone(), worker, actor_factory.clone());
                 }
                 Ok(())
             }
             Err(e) => {
-                error!("Error starting {} : {}", actor.name(), e);
+                error!("Error starting {} : {}", actor_name, e);
                 Err(e)
             }
         }
     }
 
-    fn spawn_with_restart(&mut self, name: String, mut handle: JoinHandle<WorkerResult>) {
+    fn spawn_with_restart<F>(&mut self, name: String, mut handle: JoinHandle<Result<String, eyre::ErrReport>>, actor_factory: F)
+    where
+        F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static + Clone,
+    {
         let tasks = &mut self.tasks;
         let task_name = name.clone();
+        let factory = actor_factory.clone();
         let task = tokio::spawn(async move {
             let mut backoff = 1;
             loop {
@@ -52,10 +61,24 @@ impl ActorsManager {
                 error!("Restarting actor task {} after {} seconds", task_name, backoff);
                 sleep(Duration::from_secs(backoff)).await;
                 backoff = std::cmp::min(backoff * 2, 60);
-                // Here you would restart the actor task by spawning it again
-                // This requires access to actor creation logic, which is not available here
-                // So this is a placeholder for restart logic
-                break; // Remove this break when restart logic is implemented
+                // Restart the actor task by spawning it again
+                let new_actor = factory();
+                match new_actor.start() {
+                    Ok(new_workers) => {
+                        info!("{} restarted successfully", task_name);
+                        if let Some(new_worker) = new_workers.into_iter().next() {
+                            handle = new_worker;
+                            continue;
+                        } else {
+                            error!("{} restart failed: no worker returned", task_name);
+                            break;
+                        }
+                    }
+                    Err(e) => {
+                        error!("{} restart failed: {}", task_name, e);
+                        break;
+                    }
+                }
             }
         });
         tasks.push(task);
@@ -97,4 +120,3 @@ impl ActorsManager {
             futures_counter = f_remaining_futures.len();
         }
     }
-}

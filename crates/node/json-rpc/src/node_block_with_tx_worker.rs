@@ -27,6 +27,22 @@ fn is_recoverable_deserialization_error(error_msg: &str) -> bool {
     error_msg.contains("BlockTransactions")
 }
 
+/// Check if the error is related to unknown transaction types that we should handle gracefully
+fn is_unknown_transaction_type_error(error_msg: &str) -> bool {
+    error_msg.contains("unknown variant") && 
+    (error_msg.contains("0x7e") || 
+     error_msg.contains("0x7f") || 
+     error_msg.contains("0x80") ||
+     error_msg.contains("deserialization error"))
+}
+
+/// Check if the error is a recoverable deserialization error
+fn is_recoverable_deserialization_error(error_msg: &str) -> bool {
+    error_msg.contains("deserialization error") || 
+    error_msg.contains("data did not match any variant") ||
+    error_msg.contains("BlockTransactions")
+}
+
 pub async fn new_block_with_tx_worker<P>(
     client: P,
     block_header_receiver: Broadcaster<Header>,
@@ -59,11 +75,16 @@ where
                 match fetch_result {
                     Ok(Some(full_block)) => {
                         if let Err(e) = sender.send(Message::new_with_time(BlockUpdate { block: full_block })) {
-                            error!("Broadcaster error {}", e);
+                    let err_msg = e.to_string();
+                        
+                        if is_unknown_transaction_type_error(&err_msg) {
+                            warn!("Unknown transaction type encountered in block {}: {}. This may be a Base-specific or newer transaction type. Attempting chunked fallback.", block_number, err_msg);
+                            // Don't retry standard approach, go directly to chunked fallback
+                            break        error!("Recoverable dBroadcaster error {}", e);
                         } else {
                             success = true;
                             debug!("BlockWithTx processing finished {} {}", block_number, block_hash);
-                        }
+        Try chunked approach as fallback                }
                         break;
                     }
                     Ok(None) => {
@@ -98,7 +119,8 @@ where
                     BlockId::Hash(block_header.hash().into()),
                     MAX_TX_PER_REQUEST
                 ).await;
-                
+             
+                        if is_unknown_transaction_type_error(&err_msg   
                 match chunked_result {
                     Ok((header, transactions)) => {
                         // Construct a Block from the header and transactions
