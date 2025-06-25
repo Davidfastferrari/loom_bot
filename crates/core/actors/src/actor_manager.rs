@@ -25,7 +25,15 @@ impl ActorsManager {
             Ok(workers) => {
                 info!("{} started successfully", actor_name);
                 for worker in workers {
-                    self.spawn_with_restart(actor_name.clone(), worker, actor_factory.clone());
+                    // Convert JoinHandle<Result<String, ErrReport>> to JoinHandle<()>
+                    let handle = tokio::spawn(async move {
+                        match worker.await {
+                            Ok(Ok(_)) => (),
+                            Ok(Err(e)) => error!("Actor worker error: {:?}", e),
+                            Err(e) => error!("Actor worker join error: {:?}", e),
+                        }
+                    });
+                    self.spawn_with_restart(actor_name.clone(), handle, actor_factory.clone());
                 }
                 Ok(())
             }
@@ -102,8 +110,8 @@ impl ActorsManager {
             let (result, _index, remaining_futures) = futures::future::select_all(f_remaining_futures).await;
             match result {
                 Ok(work_result) => match work_result {
-                    Ok(s) => {
-                        info!("ActorWorker {_index} finished : {s}")
+                    Ok(_) => {
+                        info!("ActorWorker {_index} finished successfully")
                     }
                     Err(e) => {
                         error!("ActorWorker {_index} finished with error : {e}")
