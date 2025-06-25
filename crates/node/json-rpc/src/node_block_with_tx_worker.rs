@@ -11,6 +11,22 @@ use tracing::{debug, error, info, warn};
 const MAX_TX_PER_REQUEST: usize = 50;
 const MAX_RETRY_ATTEMPTS: usize = 3;
 
+/// Check if the error is related to unknown transaction types that we should handle gracefully
+fn is_unknown_transaction_type_error(error_msg: &str) -> bool {
+    error_msg.contains("unknown variant") && 
+    (error_msg.contains("0x7e") || 
+     error_msg.contains("0x7f") || 
+     error_msg.contains("0x80") ||
+     error_msg.contains("deserialization error"))
+}
+
+/// Check if the error is a recoverable deserialization error
+fn is_recoverable_deserialization_error(error_msg: &str) -> bool {
+    error_msg.contains("deserialization error") || 
+    error_msg.contains("data did not match any variant") ||
+    error_msg.contains("BlockTransactions")
+}
+
 pub async fn new_block_with_tx_worker<P>(
     client: P,
     block_header_receiver: Broadcaster<Header>,
@@ -55,15 +71,18 @@ where
                         retry_count += 1;
                     }
                     Err(e) => {
-                        // Check if error is deserialization error and handle gracefully
                         let err_msg = e.to_string();
-                        if err_msg.contains("deserialization error") || err_msg.contains("unknown variant") {
-                            error!("Deserialization error fetching full block data for block {}: {}", block_number, err_msg);
-                            // Skip this block or continue retrying based on policy
-                            // Here, we skip retrying to avoid blocking
+                        
+                        if is_unknown_transaction_type_error(&err_msg) {
+                            warn!("Unknown transaction type encountered in block {}: {}. This may be a Base-specific or newer transaction type. Attempting chunked fallback.", block_number, err_msg);
+                            // Don't retry standard approach, go directly to chunked fallback
+                            break;
+                        } else if is_recoverable_deserialization_error(&err_msg) {
+                            error!("Recoverable deserialization error fetching full block data for block {}: {}", block_number, err_msg);
+                            // Try chunked approach as fallback
                             break;
                         } else {
-                            error!("Error fetching full block data: {}", e);
+                            error!("Error fetching full block data for block {}: {}", block_number, e);
                             retry_count += 1;
                         }
                     }
@@ -98,9 +117,13 @@ where
                     }
                     Err(e) => {
                         let err_msg = e.to_string();
-                        if err_msg.contains("deserialization error") || err_msg.contains("unknown variant") {
-                            error!("Deserialization error in chunked block fetch for block {}: {}", block_number, err_msg);
-                            // Consider skipping or marking block as failed without panicking
+                        
+                        if is_unknown_transaction_type_error(&err_msg) {
+                            error!("Unknown transaction type in chunked fetch for block {}: {}. Block will be skipped to prevent system halt.", block_number, err_msg);
+                            // Log the issue but continue processing other blocks
+                            warn!("Block {} contains unsupported transaction types and will be skipped. This may affect arbitrage detection for this block.", block_number);
+                        } else if is_recoverable_deserialization_error(&err_msg) {
+                            error!("Deserialization error in chunked block fetch for block {}: {}. Block will be skipped.", block_number, err_msg);
                         } else {
                             error!("Chunked block fetch failed for block {}: {}", block_number, e);
                         }
