@@ -71,13 +71,20 @@ impl ActorsManager {
                 match new_actor.start() {
                     Ok(new_workers) => {
                         info!("{} restarted successfully", task_name);
-                        if let Some(new_worker) = new_workers.into_iter().next() {
-                            handle = new_worker;
-                            continue;
-                        } else {
-                            error!("{} restart failed: no worker returned", task_name);
-                            break;
-                        }
+                            if let Some(new_worker) = new_workers.into_iter().next() {
+                                // Wrap new_worker (JoinHandle<Result<...>>) into JoinHandle<()> by spawning a new task
+                                handle = tokio::spawn(async move {
+                                    match new_worker.await {
+                                        Ok(Ok(_)) => (),
+                                        Ok(Err(e)) => error!("Actor worker error: {:?}", e),
+                                        Err(e) => error!("Actor worker join error: {:?}", e),
+                                    }
+                                });
+                                continue;
+                            } else {
+                                error!("{} restart failed: no worker returned", task_name);
+                                break;
+                            }
                     }
                     Err(e) => {
                         error!("{} restart failed: {}", task_name, e);
