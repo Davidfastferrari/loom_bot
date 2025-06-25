@@ -43,45 +43,31 @@ where
         debug!("Fetching transaction chunk {}/{}", i + 1, total_chunks);
         
         let mut chunk_transactions = Vec::with_capacity(chunk.len());
-        for tx_hash in chunk {
-            match provider.get_transaction_by_hash(*tx_hash).await {
-                Ok(Ok(Some(tx))) => chunk_transactions.push(tx),
-                Ok(Ok(N)one) => {
-                    warn!("Transaction {} not found, skipping", tx_hash);
-                    // Skip adding a placeholder transaction to avoid compilation errors and message size issues.
-                    // This means missing transactions will be omitted from the result.
-                    // This may affect index consistency but prevents runtime errors.
-                }
-                Err(e) => {
-                    let err_msg = e.to_string();
-                    if err_msg.contains("unknown variant") && (err_msg.contains("0x7e") || err_msg.contains("0x7f") || err_msg.contains("0x80")) {
-                        warn!("Transaction {} has unknown type (possibly Base-specific), skipping: {}", tx_hash, err_msg);
-                        // Skip this transaction but continue with others
-                        continue;
-                    } else if err_msg.contains("deserialization error") {
-                        warn!("Transaction {} deserialization failed, skipping: {}", tx_hash, err_msg);
-                        continue;
-                    } else {
-                        // For other errors, propagate them
-                        return Err(e.into());
+            for tx_hash in chunk {
+                match provider.get_transaction_by_hash(*tx_hash).await {
+                    Ok(Some(tx)) => chunk_transactions.push(tx),
+                    Ok(None) => {
+                        warn!("Transaction {} not found, skipping", tx_hash);
+                        // Skip adding a placeholder transaction to avoid compilation errors and message size issues.
+                        // This means missing transactions will be omitted from the result.
+                        // This may affect index consistency but prevents runtime errors.
                     }
-                }
-                Err(e) => {
-                    let err_msg = e.to_string();
-                    if err_msg.contains("unknown variant") && (err_msg.contains("0x7e") || err_msg.contains("0x7f") || err_msg.contains("0x80")) {
-                        warn!("Transaction {} has unknown type (possibly Base-specific), skipping: {}", tx_hash, err_msg);
-                        // Skip this transaction but continue with others
-                        continue;
-                    } else if err_msg.contains("deserialization error") {
-                        warn!("Transaction {} deserialization failed, skipping: {}", tx_hash, err_msg);
-                        continue;
-                    } else {
-                        // For other errors, propagate them
-                        return Err(e.into());
+                    Err(e) => {
+                        let err_msg = e.to_string();
+                        if err_msg.contains("unknown variant") && (err_msg.contains("0x7e") || err_msg.contains("0x7f") || err_msg.contains("0x80")) {
+                            warn!("Transaction {} has unknown type (possibly Base-specific), skipping: {}", tx_hash, err_msg);
+                            // Skip this transaction but continue with others
+                            continue;
+                        } else if err_msg.contains("deserialization error") {
+                            warn!("Transaction {} deserialization failed, skipping: {}", tx_hash, err_msg);
+                            continue;
+                        } else {
+                            // For other errors, propagate them
+                            return Err(e.into());
+                        }
                     }
                 }
             }
-        }
         
         all_transactions.extend(chunk_transactions);
     }
