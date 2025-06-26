@@ -241,10 +241,8 @@ where
     pub fn with_nonce_and_balance_monitor(&mut self) -> Result<&mut Self> {
         use std::sync::Arc;
         let provider = Arc::new(self.provider.clone());
-        self.actor_manager.start({
-            let provider = provider.clone();
-            move || Box::new(NonceAndBalanceMonitorActor::new(provider.clone()))
-        })?;
+        let provider_clone = provider.clone();
+        self.actor_manager.start(Arc::new(move || Box::new(NonceAndBalanceMonitorActor::new(provider_clone.clone()))) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync + Clone>)?;
         Ok(self)
     }
 
@@ -291,13 +289,16 @@ where
         use std::sync::Arc;
         let provider = Arc::new(self.provider.clone());
         let bc = Arc::new(self.bc.clone());
-        let config = Arc::new(config);
-        self.actor_manager.start({
-            let provider = provider.clone();
-            let bc = bc.clone();
-            let config = config.clone();
-            move || Box::new(NodeBlockActor::new(provider.clone(), config.clone()).on_bc(&bc))
-        })?;
+        // Dereference config to avoid Arc
+        let config = config.clone();
+        let provider_clone = provider.clone();
+        let bc_clone = bc.clone();
+        let config_clone = config.clone();
+        self.actor_manager.start(Arc::new(move || {
+            let actor = NodeBlockActor::new(provider_clone.clone(), config_clone.clone());
+            let actor = actor.on_bc(&bc_clone);
+            Box::new(actor)
+        }) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync + Clone>)?;
         Ok(self)
     }
 
@@ -368,7 +369,14 @@ where
             false => Flashbots::new(provider.clone(), "https://relay.flashbots.net", None).with_relays(relays),
         };
 
-        self.actor_manager.start(move || Box::new(FlashbotsBroadcastActor::new(flashbots, allow_broadcast)))?;
+        // Clone flashbots to satisfy Clone bound in closure
+        let flashbots_clone = flashbots.clone();
+
+        use std::sync::Arc;
+        let flashbots_arc = Arc::new(flashbots_clone);
+        let flashbots_arc_clone = flashbots_arc.clone();
+
+        self.actor_manager.start(Arc::new(move || Box::new(FlashbotsBroadcastActor::new(flashbots_arc_clone.clone(), allow_broadcast))) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync + Clone>)?;
         Ok(self)
     }
 
@@ -377,10 +385,25 @@ where
         self.with_evm_estimator()?.with_signers()?.with_flashbots_broadcaster(allow_broadcast)
     }
 
+    /// Starts EVM estimator actor
+    pub fn with_evm_estimator(&mut self) -> Result<&mut Self> {
+        let bc = self.bc.clone();
+        let provider = self.provider.clone();
+        let encoder = self.encoder.clone().ok_or_else(|| eyre!("Encoder not initialized"))?;
+
+        // Start EvmEstimatorActor
+        self.actor_manager.start_and_wait(move || {
+            Box::new(EvmEstimatorActor::new(provider.clone(), encoder.clone()).on_bc(&bc))
+        })?;
+        Ok(self)
+    }
+
     /// Starts pool health monitor
     pub fn with_health_monitor_pools(&mut self) -> Result<&mut Self> {
-        let bc = self.bc.clone();
-        self.actor_manager.start(move || Box::new(PoolHealthMonitorActor::new().on_bc(&bc)))?;
+        use std::sync::Arc;
+        let bc = Arc::new(self.bc.clone());
+        let bc_clone = bc.clone();
+        self.actor_manager.start(Arc::new(move || Box::new(PoolHealthMonitorActor::new().on_bc(&bc_clone))) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync + Clone>)?;
         Ok(self)
     }
 
