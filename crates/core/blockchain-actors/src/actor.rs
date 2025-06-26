@@ -680,7 +680,7 @@ where
     pub fn with_signers(&mut self) -> Result<&mut Self> {
         if !self.has_signers {
             self.has_signers = true;
-        self.actor_manager.start(|| Box::new(TxSignersActor::<LoomDataTypesEthereum>::new()))?;
+            self.actor_manager.start(move || Box::new(TxSignersActor::<LoomDataTypesEthereum>::new()))?;
         }
         Ok(self)
     }
@@ -689,7 +689,10 @@ where
     pub fn with_swap_encoder(&mut self, swap_encoder: E) -> Result<&mut Self> {
         self.mutlicaller_address = Some(swap_encoder.address());
         self.encoder = Some(swap_encoder);
-        self.actor_manager.start(|| Box::new(SwapRouterActor::<DB>::new().with_signers(self.signers.clone()).on_bc(&self.bc, &self.strategy)))?;
+        let signers = self.signers.clone();
+        let bc = self.bc.clone();
+        let strategy = self.strategy.clone();
+        self.actor_manager.start(move || Box::new(SwapRouterActor::<DB>::new().with_signers(signers).on_bc(&bc, &strategy)))?;
         Ok(self)
     }
 
@@ -943,13 +946,18 @@ where
 
     /// Start same path merger
     pub fn with_same_path_merger(&mut self) -> Result<&mut Self> {
-        self.actor_manager.start(|| Box::new(SamePathMergerActor::new(self.provider.clone()).on_bc(&self.bc, &self.state, &self.strategy)))?;
+        let provider = self.provider.clone();
+        let bc = self.bc.clone();
+        let state = self.state.clone();
+        let strategy = self.strategy.clone();
+        self.actor_manager.start(move || Box::new(SamePathMergerActor::new(provider).on_bc(&bc, &state, &strategy)))?;
         Ok(self)
     }
 
     /// Start diff path merger
     pub fn with_diff_path_merger(&mut self) -> Result<&mut Self> {
-        self.actor_manager.start(|| Box::new(DiffPathMergerActor::<DB>::new().on_bc(&self.bc)))?;
+        let bc = self.bc.clone();
+        self.actor_manager.start(move || Box::new(DiffPathMergerActor::<DB>::new().on_bc(&bc)))?;
         Ok(self)
     }
 
@@ -961,26 +969,37 @@ where
     /// Start backrun on block
     pub fn with_backrun_block(&mut self, backrun_config: BackrunConfig) -> Result<&mut Self> {
         if !self.has_state_update {
-        self.actor_manager.start(move || Box::new(StateChangeArbSearcherActor::new(backrun_config).on_bc(&self.bc, &self.strategy)))?;
-        self.has_state_update = true
+            let bc = self.bc.clone();
+            let strategy = self.strategy.clone();
+            self.actor_manager.start(move || Box::new(StateChangeArbSearcherActor::new(backrun_config).on_bc(&bc, &strategy)))?;
+            self.has_state_update = true
+        }
+        let bc = self.bc.clone();
+        let state = self.state.clone();
+        let strategy = self.strategy.clone();
+        self.actor_manager.start(move || Box::new(BlockStateChangeProcessorActor::new().on_bc(&bc, &state, &strategy)))?;
+        Ok(self)
     }
-    self.actor_manager.start(move || Box::new(BlockStateChangeProcessorActor::new().on_bc(&self.bc, &self.state, &self.strategy)))?;
-    Ok(self)
-}
 
     /// Start backrun for pending txs
     pub fn with_backrun_mempool(&mut self, backrun_config: BackrunConfig) -> Result<&mut Self> {
         if !self.has_state_update {
-        self.actor_manager.start(move || Box::new(StateChangeArbSearcherActor::new(backrun_config).on_bc(&self.bc, &self.strategy)))?;
-        self.has_state_update = true
+            let bc = self.bc.clone();
+            let strategy = self.strategy.clone();
+            self.actor_manager.start(move || Box::new(StateChangeArbSearcherActor::new(backrun_config).on_bc(&bc, &strategy)))?;
+            self.has_state_update = true
+        }
+        let provider = self.provider.clone();
+        let bc = self.bc.clone();
+        let state = self.state.clone();
+        let strategy = self.strategy.clone();
+        self.actor_manager.start(move || Box::new(PendingTxStateChangeProcessorActor::new(provider).on_bc(
+            &bc,
+            &state,
+            &strategy,
+        )))?;
+        Ok(self)
     }
-    self.actor_manager.start(move || Box::new(PendingTxStateChangeProcessorActor::new(self.provider.clone()).on_bc(
-        &self.bc,
-        &self.state,
-        &self.strategy,
-    )))?;
-    Ok(self)
-}
 
     /// Start backrun for blocks and pending txs
     pub async fn with_backrun(&mut self, backrun_config: BackrunConfig) -> Result<&mut Self> {
