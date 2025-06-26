@@ -123,37 +123,37 @@ where
                     MAX_TX_PER_REQUEST
                 ).await;
              
-                        if is_unknown_transaction_type_error(&err_msg   
-                match chunked_result {
-                    Ok((header, transactions)) => {
-                        // Construct a Block from the header and transactions
-                        let block = Block {
-                            header,
-                            transactions: BlockTransactions::Full(transactions),
-                            withdrawals: None,
-                            uncles: vec![],
-                        };
-                        
-                        if let Err(e) = sender.send(Message::new_with_time(BlockUpdate { block })) {
-                            error!("Broadcaster error with chunked approach: {}", e);
-                        } else {
-                            info!("BlockWithTx processing finished using chunked approach {} {}", block_number, block_hash);
+             
+                        match chunked_result {
+                            Ok((header, transactions)) => {
+                                // Construct a Block from the header and transactions
+                                let block = Block {
+                                    header,
+                                    transactions: BlockTransactions::Full(transactions),
+                                    withdrawals: None,
+                                    uncles: vec![],
+                                };
+                                
+                                if let Err(e) = sender.send(Message::new_with_time(BlockUpdate { block })) {
+                                    error!("Broadcaster error with chunked approach: {}", e);
+                                } else {
+                                    info!("BlockWithTx processing finished using chunked approach {} {}", block_number, block_hash);
+                                }
+                            }
+                            Err(e) => {
+                                let err_msg = e.to_string();
+                                
+                                if is_unknown_transaction_type_error(&err_msg) {
+                                    error!("Unknown transaction type in chunked fetch for block {}: {}. Block will be skipped to prevent system halt.", block_number, err_msg);
+                                    // Log the issue but continue processing other blocks
+                                    warn!("Block {} contains unsupported transaction types and will be skipped. This may affect arbitrage detection for this block.", block_number);
+                                } else if is_recoverable_deserialization_error(&err_msg) {
+                                    error!("Deserialization error in chunked block fetch for block {}: {}. Block will be skipped.", block_number, err_msg);
+                                } else {
+                                    error!("Chunked block fetch failed for block {}: {}", block_number, e);
+                                }
+                            }
                         }
-                    }
-                    Err(e) => {
-                        let err_msg = e.to_string();
-                        
-                        if is_unknown_transaction_type_error(&err_msg) {
-                            error!("Unknown transaction type in chunked fetch for block {}: {}. Block will be skipped to prevent system halt.", block_number, err_msg);
-                            // Log the issue but continue processing other blocks
-                            warn!("Block {} contains unsupported transaction types and will be skipped. This may affect arbitrage detection for this block.", block_number);
-                        } else if is_recoverable_deserialization_error(&err_msg) {
-                            error!("Deserialization error in chunked block fetch for block {}: {}. Block will be skipped.", block_number, err_msg);
-                        } else {
-                            error!("Chunked block fetch failed for block {}: {}", block_number, e);
-                        }
-                    }
-                }
             }
         }
     }
