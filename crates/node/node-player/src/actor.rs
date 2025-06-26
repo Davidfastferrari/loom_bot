@@ -80,7 +80,7 @@ where
 impl<P, N, DB> Actor for NodeBlockPlayerActor<P, N, DB>
 where
     P: Provider<Ethereum> + DebugProviderExt<Ethereum> + Send + Sync + Clone + 'static,
-    N: Send + Sync,
+    N: Send + Sync + 'static,
     DB: Database<Error = ErrReport> + DatabaseRef<Error = ErrReport> + DatabaseCommit + DatabaseLoomExt + Send + Sync + Clone + 'static,
 {
     fn start(&self) -> ActorResult {
