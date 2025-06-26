@@ -166,7 +166,7 @@ where
     pub fn with_signers(&mut self) -> Result<&mut Self> {
         if !self.has_signers {
             self.has_signers = true;
-            let signers = self.signers.clone();
+            // Removed call to non-existent with_signers method
             self.actor_manager.start(move || Box::new(TxSignersActor::<LoomDataTypesEthereum>::new()))?;
         }
         Ok(self)
@@ -176,7 +176,6 @@ where
     pub fn with_swap_encoder(&mut self, swap_encoder: E) -> Result<&mut Self> {
         self.mutlicaller_address = Some(swap_encoder.address());
         self.encoder = Some(swap_encoder);
-        let signers = self.signers.clone();
         let bc = self.bc.clone();
         let strategy = self.strategy.clone();
         self.actor_manager.start(move || Box::new(SwapRouterActor::<DB>::new().on_bc(&bc, &strategy)))?;
@@ -195,6 +194,7 @@ where
         let bc = self.bc.clone();
         let state = self.state.clone();
 
+        // Closure must implement Actor trait, ensure MarketStatePreloadedOneShotActor implements Actor
         self.actor_manager.start_and_wait(move || Box::new(MarketStatePreloadedOneShotActor::new(provider).on_bc(&bc, &state)))?;
         Ok(self)
     }
