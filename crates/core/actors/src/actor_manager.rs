@@ -33,7 +33,8 @@ impl ActorsManager {
                             Err(e) => error!("Actor worker join error: {:?}", e),
                         }
                     });
-                    self.spawn_with_restart(actor_name.clone(), handle, actor_factory.clone());
+                    // Move actor_factory into spawn_with_restart without cloning
+                    self.spawn_with_restart(actor_name.clone(), handle, &actor_factory);
                 }
                 Ok(())
             }
@@ -44,15 +45,17 @@ impl ActorsManager {
         }
     }
 
-    fn spawn_with_restart<F>(&mut self, name: String, mut handle: JoinHandle<()>, actor_factory: F)
+    fn spawn_with_restart<F>(&mut self, name: String, mut handle: JoinHandle<()>, actor_factory: &F)
     where
         F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
     {
         let tasks = &mut self.tasks;
         let task_name = name.clone();
-        let factory = actor_factory.clone();
+        // Move actor_factory into async task without cloning
         let task = tokio::spawn(async move {
             let mut backoff = 1;
+            let mut handle = handle;
+            let factory = actor_factory;
             loop {
                 match &mut handle.await {
                     Ok(_) => {
@@ -71,20 +74,20 @@ impl ActorsManager {
                 match new_actor.start() {
                     Ok(new_workers) => {
                         info!("{} restarted successfully", task_name);
-                            if let Some(new_worker) = new_workers.into_iter().next() {
-                                // Wrap new_worker (JoinHandle<Result<...>>) into JoinHandle<()> by spawning a new task
-                                handle = tokio::spawn(async move {
-                                    match new_worker.await {
-                                        Ok(Ok(_)) => (),
-                                        Ok(Err(e)) => error!("Actor worker error: {:?}", e),
-                                        Err(e) => error!("Actor worker join error: {:?}", e),
-                                    }
-                                });
-                                continue;
-                            } else {
-                                error!("{} restart failed: no worker returned", task_name);
-                                break;
-                            }
+                        if let Some(new_worker) = new_workers.into_iter().next() {
+                            // Wrap new_worker (JoinHandle<Result<...>>) into JoinHandle<()> by spawning a new task
+                            handle = tokio::spawn(async move {
+                                match new_worker.await {
+                                    Ok(Ok(_)) => (),
+                                    Ok(Err(e)) => error!("Actor worker error: {:?}", e),
+                                    Err(e) => error!("Actor worker join error: {:?}", e),
+                                }
+                            });
+                            continue;
+                        } else {
+                            error!("{} restart failed: no worker returned", task_name);
+                            break;
+                        }
                     }
                     Err(e) => {
                         error!("{} restart failed: {}", task_name, e);
