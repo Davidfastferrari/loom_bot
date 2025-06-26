@@ -576,14 +576,473 @@ where
         S: Clone + Send + Sync + 'static,
         Router: From<Router<S>>,
     {
-        let host = host.clone();
-        let router = router.clone();
-        let db_pool = db_pool.clone();
-        let bc = self.bc.clone();
-        let state = self.state.clone();
-        self.actor_manager.start(move || Box::new(WebServerActor::new(host, router, db_pool, CancellationToken::new()).on_bc(&bc, &state)))?;
+        use std::sync::Arc;
+        let host = Arc::new(host);
+        let router = Arc::new(router);
+        let db_pool = Arc::new(db_pool);
+        let bc = Arc::new(self.bc.clone());
+        let state = Arc::new(self.state.clone());
+        self.actor_manager.start({
+            let host = host.clone();
+            let router = router.clone();
+            let db_pool = db_pool.clone();
+            let bc = bc.clone();
+            let state = state.clone();
+            move || Box::new(WebServerActor::new((*host).clone(), (*router).clone(), (*db_pool).clone(), CancellationToken::new()).on_bc(&bc, &state))
+        })?;
         Ok(self)
     }
+// <<<<<<< SEARCH
+    pub fn with_influxdb_writer(&mut self, url: String, database: String, tags: HashMap<String, String>) -> Result<&mut Self> {
+        let url = url.clone();
+        let database = database.clone();
+        let tags = tags.clone();
+        let bc = self.bc.clone();
+        self.actor_manager.start(move || Box::new(InfluxDbWriterActor::new(url, database, tags).on_bc(&bc)))?;
+        Ok(self)
+    }
+// =======
+    pub fn with_influxdb_writer(&mut self, url: String, database: String, tags: HashMap<String, String>) -> Result<&mut Self> {
+        use std::sync::Arc;
+        let url = Arc::new(url);
+        let database = Arc::new(database);
+        let tags = Arc::new(tags);
+        let bc = Arc::new(self.bc.clone());
+        self.actor_manager.start({
+            let url = url.clone();
+            let database = database.clone();
+            let tags = tags.clone();
+            let bc = bc.clone();
+            move || Box::new(InfluxDbWriterActor::new((*url).clone(), (*database).clone(), (*tags).clone()).on_bc(&bc))
+        })?;
+        Ok(self)
+    }
+// <<<<<<< SEARCH
+    pub fn with_backrun_mempool(&mut self, backrun_config: BackrunConfig) -> Result<&mut Self> {
+        if !self.has_state_update {
+            let bc = self.bc.clone();
+            let strategy = self.strategy.clone();
+            let backrun_config1 = backrun_config.clone();
+            self.actor_manager.start(move || Box::new(StateChangeArbSearcherActor::new(backrun_config1).on_bc(&bc, &strategy)))?;
+            self.has_state_update = true;
+        }
+        let provider = self.provider.clone();
+        let bc = self.bc.clone();
+        let state = self.state.clone();
+        let strategy = self.strategy.clone();
+        self.actor_manager.start(move || Box::new(PendingTxStateChangeProcessorActor::new(provider).on_bc(
+            &bc,
+            &state,
+            &strategy,
+        )))?;
+        Ok(self)
+    }
+// =======
+    pub fn with_backrun_mempool(&mut self, backrun_config: BackrunConfig) -> Result<&mut Self> {
+        use std::sync::Arc;
+        if !self.has_state_update {
+            let bc = Arc::new(self.bc.clone());
+            let strategy = Arc::new(self.strategy.clone());
+            let backrun_config1 = Arc::new(backrun_config.clone());
+            self.actor_manager.start({
+                let bc = bc.clone();
+                let strategy = strategy.clone();
+                let backrun_config1 = backrun_config1.clone();
+                move || Box::new(StateChangeArbSearcherActor::new((*backrun_config1).clone()).on_bc(&bc, &strategy))
+            })?;
+            self.has_state_update = true;
+        }
+        let provider = Arc::new(self.provider.clone());
+        let bc = Arc::new(self.bc.clone());
+        let state = Arc::new(self.state.clone());
+        let strategy = Arc::new(self.strategy.clone());
+        self.actor_manager.start({
+            let provider = provider.clone();
+            let bc = bc.clone();
+            let state = state.clone();
+            let strategy = strategy.clone();
+            move || Box::new(PendingTxStateChangeProcessorActor::new((*provider).clone()).on_bc(&bc, &state, &strategy))
+        })?;
+        Ok(self)
+    }
+// <<<<<<< SEARCH
+    pub fn with_backrun_block(&mut self, backrun_config: BackrunConfig) -> Result<&mut Self> {
+        if !self.has_state_update {
+            let bc = self.bc.clone();
+            let strategy = self.strategy.clone();
+            let backrun_config1 = backrun_config.clone();
+            self.actor_manager.start(move || Box::new(StateChangeArbSearcherActor::new(backrun_config1).on_bc(&bc, &strategy)))?;
+            self.has_state_update = true;
+        }
+        let bc = self.bc.clone();
+        let state = self.state.clone();
+        let strategy = self.strategy.clone();
+        self.actor_manager.start(move || Box::new(BlockStateChangeProcessorActor::new().on_bc(&bc, &state, &strategy)))?;
+        Ok(self)
+    }
+// =======
+    pub fn with_backrun_block(&mut self, backrun_config: BackrunConfig) -> Result<&mut Self> {
+        use std::sync::Arc;
+        if !self.has_state_update {
+            let bc = Arc::new(self.bc.clone());
+            let strategy = Arc::new(self.strategy.clone());
+            let backrun_config1 = Arc::new(backrun_config.clone());
+            self.actor_manager.start({
+                let bc = bc.clone();
+                let strategy = strategy.clone();
+                let backrun_config1 = backrun_config1.clone();
+                move || Box::new(StateChangeArbSearcherActor::new((*backrun_config1).clone()).on_bc(&bc, &strategy))
+            })?;
+            self.has_state_update = true;
+        }
+        let bc = Arc::new(self.bc.clone());
+        let state = Arc::new(self.state.clone());
+        let strategy = Arc::new(self.strategy.clone());
+        self.actor_manager.start({
+            let bc = bc.clone();
+            let state = state.clone();
+            let strategy = strategy.clone();
+            move || Box::new(BlockStateChangeProcessorActor::new().on_bc(&bc, &state, &strategy))
+        })?;
+        Ok(self)
+    }
+// <<<<<<< SEARCH
+    pub fn with_same_path_merger(&mut self) -> Result<&mut Self> {
+        let provider = self.provider.clone();
+        let bc = self.bc.clone();
+        let state = self.state.clone();
+        let strategy = self.strategy.clone();
+        let provider2 = provider.clone();
+        let bc2 = bc.clone();
+        let state2 = state.clone();
+        let strategy2 = strategy.clone();
+        self.actor_manager.start(move || Box::new(SamePathMergerActor::new(provider.clone()).on_bc(&bc, &state, &strategy)))?;
+        self.actor_manager.start(move || Box::new(SamePathMergerActor::new(provider2.clone()).on_bc(&bc2, &state2, &strategy2)))?;
+        Ok(self)
+    }
+// =======
+    pub fn with_same_path_merger(&mut self) -> Result<&mut Self> {
+        use std::sync::Arc;
+        let provider = Arc::new(self.provider.clone());
+        let bc = Arc::new(self.bc.clone());
+        let state = Arc::new(self.state.clone());
+        let strategy = Arc::new(self.strategy.clone());
+        let provider2 = provider.clone();
+        let bc2 = bc.clone();
+        let state2 = state.clone();
+        let strategy2 = strategy.clone();
+        self.actor_manager.start({
+            let provider = provider.clone();
+            let bc = bc.clone();
+            let state = state.clone();
+            let strategy = strategy.clone();
+            move || Box::new(SamePathMergerActor::new((*provider).clone()).on_bc(&bc, &state, &strategy))
+        })?;
+        self.actor_manager.start({
+            let provider2 = provider2.clone();
+            let bc2 = bc2.clone();
+            let state2 = state2.clone();
+            let strategy2 = strategy2.clone();
+            move || Box::new(SamePathMergerActor::new((*provider2).clone()).on_bc(&bc2, &state2, &strategy2))
+        })?;
+        Ok(self)
+    }
+// <<<<<<< SEARCH
+    pub fn with_pool_loader(&mut self, pools_config: PoolsLoadingConfig) -> Result<&mut Self> {
+        let pool_loaders = Arc::new(PoolLoadersBuilder::default_pool_loaders(self.provider.clone(), pools_config.clone()));
+        let provider = self.provider.clone();
+        let pool_loaders_clone = pool_loaders.clone();
+        let pools_config_clone = pools_config.clone();
+        let bc = self.bc.clone();
+        let state = self.state.clone();
+        self.actor_manager.start(move || Box::new(PoolLoaderActor::new(provider.clone(), pool_loaders_clone.clone(), pools_config_clone.clone()).on_bc(&bc, &state)))?;
+        Ok(self)
+    }
+// =======
+    pub fn with_pool_loader(&mut self, pools_config: PoolsLoadingConfig) -> Result<&mut Self> {
+        use std::sync::Arc;
+        let pool_loaders = Arc::new(PoolLoadersBuilder::default_pool_loaders(self.provider.clone(), pools_config.clone()));
+        let provider = Arc::new(self.provider.clone());
+        let pool_loaders_clone = pool_loaders.clone();
+        let pools_config_clone = Arc::new(pools_config.clone());
+        let bc = Arc::new(self.bc.clone());
+        let state = Arc::new(self.state.clone());
+        self.actor_manager.start({
+            let provider = provider.clone();
+            let pool_loaders_clone = pool_loaders_clone.clone();
+            let pools_config_clone = pools_config_clone.clone();
+            let bc = bc.clone();
+            let state = state.clone();
+            move || Box::new(PoolLoaderActor::new((*provider).clone(), pool_loaders_clone.clone(), (*pools_config_clone).clone()).on_bc(&bc, &state))
+        })?;
+        Ok(self)
+    }
+// <<<<<<< SEARCH
+    pub fn with_new_pool_loader(&mut self, pools_config: PoolsLoadingConfig) -> Result<&mut Self> {
+        let pool_loader = Arc::new(PoolLoadersBuilder::default_pool_loaders(self.provider.clone(), pools_config));
+        let pool_loader_clone = pool_loader.clone();
+        let bc = self.bc.clone();
+        self.actor_manager.start(move || Box::new(NewPoolLoaderActor::new(pool_loader_clone).on_bc(&bc)))?;
+        Ok(self)
+    }
+// =======
+    pub fn with_new_pool_loader(&mut self, pools_config: PoolsLoadingConfig) -> Result<&mut Self> {
+        use std::sync::Arc;
+        let pool_loader = Arc::new(PoolLoadersBuilder::default_pool_loaders(self.provider.clone(), pools_config));
+        let pool_loader_clone = pool_loader.clone();
+        let bc = Arc::new(self.bc.clone());
+        self.actor_manager.start({
+            let pool_loader_clone = pool_loader_clone.clone();
+            let bc = bc.clone();
+            move || Box::new(NewPoolLoaderActor::new(pool_loader_clone).on_bc(&bc))
+        })?;
+        Ok(self)
+    }
+// <<<<<<< SEARCH
+    pub fn with_pool_history_loader(&mut self, pools_config: PoolsLoadingConfig) -> Result<&mut Self> {
+        let pool_loaders = Arc::new(PoolLoadersBuilder::default_pool_loaders(self.provider.clone(), pools_config));
+        let provider = self.provider.clone();
+        let pool_loaders_clone = pool_loaders.clone();
+        let bc = self.bc.clone();
+        self.actor_manager.start(move || Box::new(HistoryPoolLoaderOneShotActor::new(provider.clone(), pool_loaders_clone.clone()).on_bc(&bc)))?;
+        Ok(self)
+    }
+// =======
+    pub fn with_pool_history_loader(&mut self, pools_config: PoolsLoadingConfig) -> Result<&mut Self> {
+        use std::sync::Arc;
+        let pool_loaders = Arc::new(PoolLoadersBuilder::default_pool_loaders(self.provider.clone(), pools_config));
+        let provider = Arc::new(self.provider.clone());
+        let pool_loaders_clone = pool_loaders.clone();
+        let bc = Arc::new(self.bc.clone());
+        self.actor_manager.start({
+            let provider = provider.clone();
+            let pool_loaders_clone = pool_loaders_clone.clone();
+            let bc = bc.clone();
+            move || Box::new(HistoryPoolLoaderOneShotActor::new((*provider).clone(), pool_loaders_clone.clone()).on_bc(&bc))
+        })?;
+        Ok(self)
+    }
+// <<<<<<< SEARCH
+    pub fn with_curve_pool_protocol_loader(&mut self, pools_config: PoolsLoadingConfig) -> Result<&mut Self> {
+        let pool_loaders = Arc::new(PoolLoadersBuilder::default_pool_loaders(self.provider.clone(), pools_config));
+        let pool_loaders_clone = pool_loaders.clone();
+        let provider = self.provider.clone();
+        let bc = self.bc.clone();
+        self.actor_manager.start(move || {
+            let pool_loaders = pool_loaders_clone.clone();
+            Box::new(ProtocolPoolLoaderOneShotActor::new(provider, pool_loaders).on_bc(&bc))
+        })?;
+        Ok(self)
+    }
+// =======
+    pub fn with_curve_pool_protocol_loader(&mut self, pools_config: PoolsLoadingConfig) -> Result<&mut Self> {
+        use std::sync::Arc;
+        let pool_loaders = Arc::new(PoolLoadersBuilder::default_pool_loaders(self.provider.clone(), pools_config));
+        let pool_loaders_clone = pool_loaders.clone();
+        let provider = Arc::new(self.provider.clone());
+        let bc = Arc::new(self.bc.clone());
+        self.actor_manager.start({
+            let pool_loaders = pool_loaders_clone.clone();
+            let provider = provider.clone();
+            let bc = bc.clone();
+            move || Box::new(ProtocolPoolLoaderOneShotActor::new((*provider).clone(), pool_loaders).on_bc(&bc))
+        })?;
+        Ok(self)
+    }
+// <<<<<<< SEARCH
+    pub fn with_nonce_and_balance_monitor(&mut self) -> Result<&mut Self> {
+        let provider = self.provider.clone();
+        self.actor_manager.start(move || Box::new(NonceAndBalanceMonitorActor::new(provider)))?;
+        Ok(self)
+    }
+// =======
+    pub fn with_nonce_and_balance_monitor(&mut self) -> Result<&mut Self> {
+        use std::sync::Arc;
+        let provider = Arc::new(self.provider.clone());
+        self.actor_manager.start({
+            let provider = provider.clone();
+            move || Box::new(NonceAndBalanceMonitorActor::new((*provider).clone()))
+        })?;
+        Ok(self)
+    }
+// <<<<<<< SEARCH
+    pub fn with_nonce_and_balance_monitor_only_events(&mut self) -> Result<&mut Self> {
+        let provider = self.provider.clone();
+        self.actor_manager.start(move || Box::new(NonceAndBalanceMonitorActor::new(provider).only_once()))?;
+        Ok(self)
+    }
+// =======
+    pub fn with_nonce_and_balance_monitor_only_events(&mut self) -> Result<&mut Self> {
+        use std::sync::Arc;
+        let provider = Arc::new(self.provider.clone());
+        self.actor_manager.start({
+            let provider = provider.clone();
+            move || Box::new(NonceAndBalanceMonitorActor::new((*provider).clone()).only_once())
+        })?;
+        Ok(self)
+    }
+// <<<<<<< SEARCH
+    pub fn with_block_history(&mut self) -> Result<&mut Self> {
+        let provider = self.provider.clone();
+        let bc = self.bc.clone();
+        let state = self.state.clone();
+        self.actor_manager.start(move || Box::new(BlockHistoryActor::new(provider).on_bc(&bc, &state)))?;
+        Ok(self)
+    }
+// =======
+    pub fn with_block_history(&mut self) -> Result<&mut Self> {
+        use std::sync::Arc;
+        let provider = Arc::new(self.provider.clone());
+        let bc = Arc::new(self.bc.clone());
+        let state = Arc::new(self.state.clone());
+        self.actor_manager.start({
+            let provider = provider.clone();
+            let bc = bc.clone();
+            let state = state.clone();
+            move || Box::new(BlockHistoryActor::new((*provider).clone()).on_bc(&bc, &state))
+        })?;
+        Ok(self)
+    }
+// <<<<<<< SEARCH
+    pub fn with_price_station(&mut self) -> Result<&mut Self> {
+        let provider = self.provider.clone();
+        let bc = self.bc.clone();
+        self.actor_manager.start(move || Box::new(PriceActor::new(provider).on_bc(&bc)))?;
+        Ok(self)
+    }
+// =======
+    pub fn with_price_station(&mut self) -> Result<&mut Self> {
+        use std::sync::Arc;
+        let provider = Arc::new(self.provider.clone());
+        let bc = Arc::new(self.bc.clone());
+        self.actor_manager.start({
+            let provider = provider.clone();
+            let bc = bc.clone();
+            move || Box::new(PriceActor::new((*provider).clone()).on_bc(&bc))
+        })?;
+        Ok(self)
+    }
+// <<<<<<< SEARCH
+    pub fn with_block_events(&mut self, config: NodeBlockActorConfig) -> Result<&mut Self> {
+        let provider = self.provider.clone();
+        let bc = self.bc.clone();
+        self.actor_manager.start(move || Box::new(NodeBlockActor::new(provider, config).on_bc(&bc)))?;
+        Ok(self)
+    }
+// =======
+    pub fn with_block_events(&mut self, config: NodeBlockActorConfig) -> Result<&mut Self> {
+        use std::sync::Arc;
+        let provider = Arc::new(self.provider.clone());
+        let bc = Arc::new(self.bc.clone());
+        self.actor_manager.start({
+            let provider = provider.clone();
+            let bc = bc.clone();
+            let config = config.clone();
+            move || Box::new(NodeBlockActor::new((*provider).clone(), config).on_bc(&bc))
+        })?;
+        Ok(self)
+    }
+// <<<<<<< SEARCH
+    pub fn with_local_mempool_events(&mut self) -> Result<&mut Self> {
+        self.mempool()?;
+        let provider = self.provider.clone();
+        let bc = self.bc.clone();
+        self.actor_manager.start(move || Box::new(NodeMempoolActor::new(provider).on_bc(&bc)))?;
+        Ok(self)
+    }
+// =======
+    pub fn with_local_mempool_events(&mut self) -> Result<&mut Self> {
+        self.mempool()?;
+        use std::sync::Arc;
+        let provider = Arc::new(self.provider.clone());
+        let bc = Arc::new(self.bc.clone());
+        self.actor_manager.start({
+            let provider = provider.clone();
+            let bc = bc.clone();
+            move || Box::new(NodeMempoolActor::new((*provider).clone()).on_bc(&bc))
+        })?;
+        Ok(self)
+    }
+// <<<<<<< SEARCH
+    pub fn with_remote_mempool<PM>(&mut self, provider: PM) -> Result<&mut Self>
+    where
+        PM: Provider<Ethereum> + Send + Sync + Clone + 'static,
+    {
+        self.mempool()?;
+        let bc = self.bc.clone();
+        self.actor_manager.start(move || Box::new(NodeMempoolActor::new(provider).on_bc(&bc)))?;
+        Ok(self)
+    }
+// =======
+    pub fn with_remote_mempool<PM>(&mut self, provider: PM) -> Result<&mut Self>
+    where
+        PM: Provider<Ethereum> + Send + Sync + Clone + 'static,
+    {
+        self.mempool()?;
+        use std::sync::Arc;
+        let bc = Arc::new(self.bc.clone());
+        self.actor_manager.start({
+            let bc = bc.clone();
+            let provider = Arc::new(provider);
+            let provider = provider.clone();
+            move || Box::new(NodeMempoolActor::new((*provider).clone()).on_bc(&bc))
+        })?;
+        Ok(self)
+    }
+// <<<<<<< SEARCH
+    pub fn with_flashbots_broadcaster(&mut self, allow_broadcast: bool) -> Result<&mut Self> {
+        let provider = self.provider.clone();
+        let relays = self.relays.clone();
+        let flashbots = match relays.is_empty() {
+            true => Flashbots::new(provider.clone(), "https://relay.flashbots.net", None).with_default_relays(),
+            false => Flashbots::new(provider.clone(), "https://relay.flashbots.net", None).with_relays(relays),
+        };
+
+        self.actor_manager.start(move || Box::new(FlashbotsBroadcastActor::new(flashbots, allow_broadcast)))?;
+        Ok(self)
+    }
+// =======
+    pub fn with_flashbots_broadcaster(&mut self, allow_broadcast: bool) -> Result<&mut Self> {
+        use std::sync::Arc;
+        let provider = Arc::new(self.provider.clone());
+        let relays = Arc::new(self.relays.clone());
+        let flashbots = match (*relays).is_empty() {
+            true => Flashbots::new((*provider).clone(), "https://relay.flashbots.net", None).with_default_relays(),
+            false => Flashbots::new((*provider).clone(), "https://relay.flashbots.net", None).with_relays((*relays).clone()),
+        };
+
+        self.actor_manager.start({
+            let flashbots = Arc::new(flashbots);
+            let flashbots = flashbots.clone();
+            move || Box::new(FlashbotsBroadcastActor::new((*flashbots).clone(), allow_broadcast))
+        })?;
+        Ok(self)
+    }
+// <<<<<<< SEARCH
+    pub fn with_swap_encoder(&mut self, swap_encoder: E) -> Result<&mut Self> {
+        self.mutlicaller_address = Some(swap_encoder.address());
+        self.encoder = Some(swap_encoder);
+        let signers = self.signers.clone();
+        let bc = self.bc.clone();
+        let strategy = self.strategy.clone();
+        self.actor_manager.start(move || Box::new(SwapRouterActor::<DB>::new().with_signers(signers).on_bc(&bc, &strategy)))?;
+        Ok(self)
+    }
+// =======
+    pub fn with_swap_encoder(&mut self, swap_encoder: E) -> Result<&mut Self> {
+        use std::sync::Arc;
+        self.mutlicaller_address = Some(swap_encoder.address());
+        self.encoder = Some(swap_encoder);
+        let signers = Arc::new(self.signers.clone());
+        let bc = Arc::new(self.bc.clone());
+        let strategy = Arc::new(self.strategy.clone());
+        self.actor_manager.start({
+            let signers = signers.clone();
+            let bc = bc.clone();
+            let strategy = strategy.clone();
+            move || Box::new(SwapRouterActor::<DB>::new().with_signers((*signers).clone()).on_bc(&bc, &strategy))
+        })?;
+        Ok(self)
 
     /// Wait for node sync
     pub fn with_wait_for_node_sync(&mut self) -> Result<&mut Self> {
