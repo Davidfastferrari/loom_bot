@@ -8,7 +8,7 @@ pub type WorkerResult = Result<String>;
 
 pub type ActorResult = Result<Vec<JoinHandle<WorkerResult>>>;
 
-pub trait Actor {
+pub trait Actor: Send + Sync + 'static {
     fn wait(&self, handles: ActorResult) -> Result<()> {
         let handles = handles?;
         let actor_name = self.name();

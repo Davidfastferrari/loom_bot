@@ -17,7 +17,7 @@ impl ActorsManager {
 
     pub fn start<F>(&mut self, actor_factory: F) -> Result<()>
     where
-        F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static + Clone,
+        F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
     {
         let actor = actor_factory();
         let actor_name = actor.name().to_string();
@@ -46,7 +46,7 @@ impl ActorsManager {
 
     fn spawn_with_restart<F>(&mut self, name: String, mut handle: JoinHandle<()>, actor_factory: F)
     where
-        F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static + Clone,
+        F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
     {
         let tasks = &mut self.tasks;
         let task_name = name.clone();

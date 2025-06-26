@@ -680,7 +680,7 @@ where
     pub fn with_signers(&mut self) -> Result<&mut Self> {
         if !self.has_signers {
             self.has_signers = true;
-            self.actor_manager.start(TxSignersActor::<LoomDataTypesEthereum>::new())?;
+        self.actor_manager.start(|| Box::new(TxSignersActor::<LoomDataTypesEthereum>::new()))?;
         }
         Ok(self)
     }
@@ -689,7 +689,7 @@ where
     pub fn with_swap_encoder(&mut self, swap_encoder: E) -> Result<&mut Self> {
         self.mutlicaller_address = Some(swap_encoder.address());
         self.encoder = Some(swap_encoder);
-        self.actor_manager.start(SwapRouterActor::<DB>::new().with_signers(self.signers.clone()).on_bc(&self.bc, &self.strategy))?;
+        self.actor_manager.start(|| Box::new(SwapRouterActor::<DB>::new().with_signers(self.signers.clone()).on_bc(&self.bc, &self.strategy)))?;
         Ok(self)
     }
 
@@ -701,9 +701,7 @@ where
             address_vec.push(loom_multicaller);
         }
 
-        self.actor_manager.start_and_wait(
-            MarketStatePreloadedOneShotActor::new(self.provider.clone()).with_copied_accounts(address_vec).on_bc(&self.bc, &self.state),
-        )?;
+        self.actor_manager.start_and_wait(|| Box::new(MarketStatePreloadedOneShotActor::new(self.provider.clone()).with_copied_accounts(address_vec).on_bc(&self.bc, &self.state)))?;
         Ok(self)
     }
 
@@ -739,13 +737,13 @@ where
 
         self.mutlicaller_address = Some(loom_execution_multicaller::DEFAULT_VIRTUAL_ADDRESS);
 
-        self.actor_manager.start_and_wait(market_state_preloader.on_bc(&self.bc, &self.state))?;
+        self.actor_manager.start_and_wait(|| Box::new(market_state_preloader.on_bc(&self.bc, &self.state)))?;
         Ok(self)
     }
 
     /// Starts nonce and balance monitor
     pub fn with_nonce_and_balance_monitor(&mut self) -> Result<&mut Self> {
-        self.actor_manager.start(NonceAndBalanceMonitorActor::new(self.provider.clone()))?;
+        self.actor_manager.start(|| Box::new(NonceAndBalanceMonitorActor::new(self.provider.clone())))?;
         Ok(self)
     }
 
@@ -756,33 +754,33 @@ where
 
     /// Starts block history actor
     pub fn with_block_history(&mut self) -> Result<&mut Self> {
-        self.actor_manager.start(BlockHistoryActor::new(self.provider.clone()).on_bc(&self.bc, &self.state))?;
+        self.actor_manager.start(|| Box::new(BlockHistoryActor::new(self.provider.clone()).on_bc(&self.bc, &self.state)))?;
         Ok(self)
     }
 
     /// Starts token price calculator
     pub fn with_price_station(&mut self) -> Result<&mut Self> {
-        self.actor_manager.start(PriceActor::new(self.provider.clone()).on_bc(&self.bc))?;
+        self.actor_manager.start(|| Box::new(PriceActor::new(self.provider.clone()).on_bc(&self.bc)))?;
         Ok(self)
     }
 
     /// Starts receiving blocks events through RPC
     pub fn with_block_events(&mut self, config: NodeBlockActorConfig) -> Result<&mut Self> {
-        self.actor_manager.start(NodeBlockActor::new(self.provider.clone(), config).on_bc(&self.bc))?;
+        self.actor_manager.start(|| Box::new(NodeBlockActor::new(self.provider.clone(), config).on_bc(&self.bc)))?;
         Ok(self)
     }
 
     /// Starts receiving blocks events through direct Reth DB access
     #[cfg(feature = "db-access")]
     pub fn reth_node_with_blocks(&mut self, db_path: String, config: NodeBlockActorConfig) -> Result<&mut Self> {
-        self.actor_manager.start(RethDbAccessBlockActor::new(self.provider.clone(), config, db_path).on_bc(&self.bc))?;
+        self.actor_manager.start(|| Box::new(RethDbAccessBlockActor::new(self.provider.clone(), config, db_path).on_bc(&self.bc)))?;
         Ok(self)
     }
 
     /// Starts receiving blocks and mempool events through ExEx GRPC
     pub fn with_exex_events(&mut self) -> Result<&mut Self> {
         self.mempool()?;
-        self.actor_manager.start(NodeExExGrpcActor::new("http://[::1]:10000".to_string()).on_bc(&self.bc))?;
+        self.actor_manager.start(|| Box::new(NodeExExGrpcActor::new("http://[::1]:10000".to_string()).on_bc(&self.bc)))?;
         Ok(self)
     }
 
@@ -790,7 +788,7 @@ where
     pub fn mempool(&mut self) -> Result<&mut Self> {
         if !self.has_mempool {
             self.has_mempool = true;
-            self.actor_manager.start(MempoolActor::new().on_bc(&self.bc))?;
+        self.actor_manager.start(|| Box::new(MempoolActor::new().on_bc(&self.bc)))?;
         }
         Ok(self)
     }
@@ -798,7 +796,7 @@ where
     /// Starts local node pending tx provider
     pub fn with_local_mempool_events(&mut self) -> Result<&mut Self> {
         self.mempool()?;
-        self.actor_manager.start(NodeMempoolActor::new(self.provider.clone()).on_bc(&self.bc))?;
+        self.actor_manager.start(|| Box::new(NodeMempoolActor::new(self.provider.clone()).on_bc(&self.bc)))?;
         Ok(self)
     }
 
@@ -808,7 +806,7 @@ where
         PM: Provider<Ethereum> + Send + Sync + Clone + 'static,
     {
         self.mempool()?;
-        self.actor_manager.start(NodeMempoolActor::new(provider).on_bc(&self.bc))?;
+        self.actor_manager.start(|| Box::new(NodeMempoolActor::new(provider).on_bc(&self.bc)))?;
         Ok(self)
     }
 
@@ -830,7 +828,7 @@ where
 
     /// Starts pool health monitor
     pub fn with_health_monitor_pools(&mut self) -> Result<&mut Self> {
-        self.actor_manager.start(PoolHealthMonitorActor::new().on_bc(&self.bc))?;
+        self.actor_manager.start(|| Box::new(PoolHealthMonitorActor::new().on_bc(&self.bc)))?;
         Ok(self)
     }
 
@@ -838,7 +836,7 @@ where
     /*
     /// Starts state health monitor
     pub fn with_health_monitor_state(&mut self) -> Result<&mut Self> {
-        self.actor_manager.start(StateHealthMonitorActor::new(self.provider.clone()).on_bc(&self.bc))?;
+        self.actor_manager.start(|| Box::new(StateHealthMonitorActor::new(self.provider.clone()).on_bc(&self.bc)))?;
         Ok(self)
     }
 
@@ -846,35 +844,35 @@ where
 
     /// Starts stuffing tx monitor
     pub fn with_health_monitor_stuffing_tx(&mut self) -> Result<&mut Self> {
-        self.actor_manager.start(StuffingTxMonitorActor::new(self.provider.clone()).on_bc(&self.bc))?;
+        self.actor_manager.start(|| Box::new(StuffingTxMonitorActor::new(self.provider.clone()).on_bc(&self.bc)))?;
         Ok(self)
     }
 
     /// Start pool loader from new block events
     pub fn with_new_pool_loader(&mut self, pools_config: PoolsLoadingConfig) -> Result<&mut Self> {
         let pool_loader = Arc::new(PoolLoadersBuilder::default_pool_loaders(self.provider.clone(), pools_config));
-        self.actor_manager.start(NewPoolLoaderActor::new(pool_loader).on_bc(&self.bc))?;
+        self.actor_manager.start(|| Box::new(NewPoolLoaderActor::new(pool_loader).on_bc(&self.bc)))?;
         Ok(self)
     }
 
     /// Start pool loader for last 10000 blocks
     pub fn with_pool_history_loader(&mut self, pools_config: PoolsLoadingConfig) -> Result<&mut Self> {
         let pool_loaders = Arc::new(PoolLoadersBuilder::default_pool_loaders(self.provider.clone(), pools_config));
-        self.actor_manager.start(HistoryPoolLoaderOneShotActor::new(self.provider.clone(), pool_loaders).on_bc(&self.bc))?;
+        self.actor_manager.start(|| Box::new(HistoryPoolLoaderOneShotActor::new(self.provider.clone(), pool_loaders).on_bc(&self.bc)))?;
         Ok(self)
     }
 
     /// Start pool loader from new block events
     pub fn with_pool_loader(&mut self, pools_config: PoolsLoadingConfig) -> Result<&mut Self> {
         let pool_loaders = Arc::new(PoolLoadersBuilder::default_pool_loaders(self.provider.clone(), pools_config.clone()));
-        self.actor_manager.start(PoolLoaderActor::new(self.provider.clone(), pool_loaders, pools_config).on_bc(&self.bc, &self.state))?;
+        self.actor_manager.start(|| Box::new(PoolLoaderActor::new(self.provider.clone(), pool_loaders, pools_config).on_bc(&self.bc, &self.state)))?;
         Ok(self)
     }
 
     /// Start pool loader for curve + steth + wsteth
     pub fn with_curve_pool_protocol_loader(&mut self, pools_config: PoolsLoadingConfig) -> Result<&mut Self> {
         let pool_loaders = Arc::new(PoolLoadersBuilder::default_pool_loaders(self.provider.clone(), pools_config));
-        self.actor_manager.start(ProtocolPoolLoaderOneShotActor::new(self.provider.clone(), pool_loaders).on_bc(&self.bc))?;
+        self.actor_manager.start(|| Box::new(ProtocolPoolLoaderOneShotActor::new(self.provider.clone(), pool_loaders).on_bc(&self.bc)))?;
         Ok(self)
     }
 
@@ -910,24 +908,24 @@ where
     pub fn with_geth_estimator(&mut self) -> Result<&mut Self> {
         let flashbots = Flashbots::new(self.provider.clone(), "https://relay.flashbots.net", None).with_default_relays();
 
-        self.actor_manager.start(GethEstimatorActor::new(Arc::new(flashbots), self.encoder.clone().unwrap()).on_bc(&self.strategy))?;
+        self.actor_manager.start(|| Box::new(GethEstimatorActor::new(Arc::new(flashbots), self.encoder.clone().unwrap()).on_bc(&self.strategy)))?;
         Ok(self)
     }
 
     /// Starts EVM gas estimator and tips filler
     pub fn with_evm_estimator(&mut self) -> Result<&mut Self> {
-        self.actor_manager.start(
+        self.actor_manager.start(|| Box::new(
             EvmEstimatorActor::<RootProvider, Ethereum, E, DB>::new(self.encoder.clone().unwrap()).on_bc(&self.bc, &self.strategy),
-        )?;
+        ))?;
         Ok(self)
     }
 
     /// Starts EVM gas estimator and tips filler
     pub fn with_evm_estimator_and_provider(&mut self) -> Result<&mut Self> {
-        self.actor_manager.start(
+        self.actor_manager.start(|| Box::new(
             EvmEstimatorActor::new_with_provider(self.encoder.clone().unwrap(), Some(self.provider.clone()))
                 .on_bc(&self.bc, &self.strategy),
-        )?;
+        ))?;
         Ok(self)
     }
 
@@ -935,19 +933,19 @@ where
     pub fn with_swap_path_merger(&mut self) -> Result<&mut Self> {
         let mutlicaller_address = self.encoder.clone().ok_or(eyre!("NO_ENCODER"))?.address();
 
-        self.actor_manager.start(ArbSwapPathMergerActor::new(mutlicaller_address).on_bc(&self.bc, &self.strategy))?;
+        self.actor_manager.start(|| Box::new(ArbSwapPathMergerActor::new(mutlicaller_address).on_bc(&self.bc, &self.strategy)))?;
         Ok(self)
     }
 
     /// Start same path merger
     pub fn with_same_path_merger(&mut self) -> Result<&mut Self> {
-        self.actor_manager.start(SamePathMergerActor::new(self.provider.clone()).on_bc(&self.bc, &self.state, &self.strategy))?;
+        self.actor_manager.start(|| Box::new(SamePathMergerActor::new(self.provider.clone()).on_bc(&self.bc, &self.state, &self.strategy)))?;
         Ok(self)
     }
 
     /// Start diff path merger
     pub fn with_diff_path_merger(&mut self) -> Result<&mut Self> {
-        self.actor_manager.start(DiffPathMergerActor::<DB>::new().on_bc(&self.bc))?;
+        self.actor_manager.start(|| Box::new(DiffPathMergerActor::<DB>::new().on_bc(&self.bc)))?;
         Ok(self)
     }
 
