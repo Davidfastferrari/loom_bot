@@ -1018,17 +1018,7 @@ where
         })?;
         Ok(self)
     }
-// <<<<<<< SEARCH
-    pub fn with_swap_encoder(&mut self, swap_encoder: E) -> Result<&mut Self> {
-        self.mutlicaller_address = Some(swap_encoder.address());
-        self.encoder = Some(swap_encoder);
-        let signers = self.signers.clone();
-        let bc = self.bc.clone();
-        let strategy = self.strategy.clone();
-        self.actor_manager.start(move || Box::new(SwapRouterActor::<DB>::new().with_signers(signers).on_bc(&bc, &strategy)))?;
-        Ok(self)
-    }
-// =======
+
     pub fn with_swap_encoder(&mut self, swap_encoder: E) -> Result<&mut Self> {
         use std::sync::Arc;
         self.mutlicaller_address = Some(swap_encoder.address());
@@ -1043,6 +1033,7 @@ where
             move || Box::new(SwapRouterActor::<DB>::new().with_signers((*signers).clone()).on_bc(&bc, &strategy))
         })?;
         Ok(self)
+    }
 
     /// Wait for node sync
     pub fn with_wait_for_node_sync(&mut self) -> Result<&mut Self> {
