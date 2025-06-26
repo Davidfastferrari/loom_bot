@@ -987,7 +987,7 @@ where
 
     /// Start influxdb writer
     pub fn with_influxdb_writer(&mut self, url: String, database: String, tags: HashMap<String, String>) -> Result<&mut Self> {
-        self.actor_manager.start(|| Box::new(InfluxDbWriterActor::new(url, database, tags).on_bc(&self.bc)))?;
+        self.actor_manager.start(|| Box::new(InfluxDbWriterActor::new(url.clone(), database.clone(), tags.clone()).on_bc(&self.bc)))?;
         Ok(self)
     }
 
@@ -1003,7 +1003,7 @@ where
         S: Clone + Send + Sync + 'static,
         Router: From<Router<S>>,
     {
-        self.actor_manager.start(|| Box::new(WebServerActor::new(host, router, db_pool, CancellationToken::new()).on_bc(&self.bc, &self.state)))?;
+        self.actor_manager.start(|| Box::new(WebServerActor::new(host.clone(), router.clone(), db_pool.clone(), CancellationToken::new()).on_bc(&self.bc, &self.state)))?;
         Ok(self)
     }
 
