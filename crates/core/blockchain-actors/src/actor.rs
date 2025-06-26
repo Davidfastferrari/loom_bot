@@ -240,39 +240,64 @@ where
 
     /// Starts nonce and balance monitor
     pub fn with_nonce_and_balance_monitor(&mut self) -> Result<&mut Self> {
-        let provider = self.provider.clone();
-        self.actor_manager.start(move || Box::new(NonceAndBalanceMonitorActor::new(provider)))?;
+        use std::sync::Arc;
+        let provider = Arc::new(self.provider.clone());
+        self.actor_manager.start({
+            let provider = provider.clone();
+            move || Box::new(NonceAndBalanceMonitorActor::new((*provider).clone()))
+        })?;
         Ok(self)
     }
 
     pub fn with_nonce_and_balance_monitor_only_events(&mut self) -> Result<&mut Self> {
-        let provider = self.provider.clone();
-        self.actor_manager.start(move || Box::new(NonceAndBalanceMonitorActor::new(provider).only_once()))?;
+        use std::sync::Arc;
+        let provider = Arc::new(self.provider.clone());
+        self.actor_manager.start({
+            let provider = provider.clone();
+            move || Box::new(NonceAndBalanceMonitorActor::new((*provider).clone()).only_once())
+        })?;
         Ok(self)
     }
 
     /// Starts block history actor
     pub fn with_block_history(&mut self) -> Result<&mut Self> {
-        let provider = self.provider.clone();
-        let bc = self.bc.clone();
-        let state = self.state.clone();
-        self.actor_manager.start(move || Box::new(BlockHistoryActor::new(provider).on_bc(&bc, &state)))?;
+        use std::sync::Arc;
+        let provider = Arc::new(self.provider.clone());
+        let bc = Arc::new(self.bc.clone());
+        let state = Arc::new(self.state.clone());
+        self.actor_manager.start({
+            let provider = provider.clone();
+            let bc = bc.clone();
+            let state = state.clone();
+            move || Box::new(BlockHistoryActor::new((*provider).clone()).on_bc(&bc, &state))
+        })?;
         Ok(self)
     }
 
     /// Starts token price calculator
     pub fn with_price_station(&mut self) -> Result<&mut Self> {
-        let provider = self.provider.clone();
-        let bc = self.bc.clone();
-        self.actor_manager.start(move || Box::new(PriceActor::new(provider).on_bc(&bc)))?;
+        use std::sync::Arc;
+        let provider = Arc::new(self.provider.clone());
+        let bc = Arc::new(self.bc.clone());
+        self.actor_manager.start({
+            let provider = provider.clone();
+            let bc = bc.clone();
+            move || Box::new(PriceActor::new((*provider).clone()).on_bc(&bc))
+        })?;
         Ok(self)
     }
 
     /// Starts receiving blocks events through RPC
     pub fn with_block_events(&mut self, config: NodeBlockActorConfig) -> Result<&mut Self> {
-        let provider = self.provider.clone();
-        let bc = self.bc.clone();
-        self.actor_manager.start(move || Box::new(NodeBlockActor::new(provider, config).on_bc(&bc)))?;
+        use std::sync::Arc;
+        let provider = Arc::new(self.provider.clone());
+        let bc = Arc::new(self.bc.clone());
+        self.actor_manager.start({
+            let provider = provider.clone();
+            let bc = bc.clone();
+            let config = config.clone();
+            move || Box::new(NodeBlockActor::new((*provider).clone(), config).on_bc(&bc))
+        })?;
         Ok(self)
     }
 
@@ -306,9 +331,14 @@ where
     /// Starts local node pending tx provider
     pub fn with_local_mempool_events(&mut self) -> Result<&mut Self> {
         self.mempool()?;
-        let provider = self.provider.clone();
-        let bc = self.bc.clone();
-        self.actor_manager.start(move || Box::new(NodeMempoolActor::new(provider).on_bc(&bc)))?;
+        use std::sync::Arc;
+        let provider = Arc::new(self.provider.clone());
+        let bc = Arc::new(self.bc.clone());
+        self.actor_manager.start({
+            let provider = provider.clone();
+            let bc = bc.clone();
+            move || Box::new(NodeMempoolActor::new((*provider).clone()).on_bc(&bc))
+        })?;
         Ok(self)
     }
 
@@ -318,21 +348,32 @@ where
         PM: Provider<Ethereum> + Send + Sync + Clone + 'static,
     {
         self.mempool()?;
-        let bc = self.bc.clone();
-        self.actor_manager.start(move || Box::new(NodeMempoolActor::new(provider).on_bc(&bc)))?;
+        use std::sync::Arc;
+        let bc = Arc::new(self.bc.clone());
+        self.actor_manager.start({
+            let bc = bc.clone();
+            let provider = Arc::new(provider);
+            let provider = provider.clone();
+            move || Box::new(NodeMempoolActor::new((*provider).clone()).on_bc(&bc))
+        })?;
         Ok(self)
     }
 
     /// Starts flashbots broadcaster
     pub fn with_flashbots_broadcaster(&mut self, allow_broadcast: bool) -> Result<&mut Self> {
-        let provider = self.provider.clone();
-        let relays = self.relays.clone();
-        let flashbots = match relays.is_empty() {
-            true => Flashbots::new(provider.clone(), "https://relay.flashbots.net", None).with_default_relays(),
-            false => Flashbots::new(provider.clone(), "https://relay.flashbots.net", None).with_relays(relays),
+        use std::sync::Arc;
+        let provider = Arc::new(self.provider.clone());
+        let relays = Arc::new(self.relays.clone());
+        let flashbots = match (*relays).is_empty() {
+            true => Flashbots::new((*provider).clone(), "https://relay.flashbots.net", None).with_default_relays(),
+            false => Flashbots::new((*provider).clone(), "https://relay.flashbots.net", None).with_relays((*relays).clone()),
         };
 
-        self.actor_manager.start(move || Box::new(FlashbotsBroadcastActor::new(flashbots, allow_broadcast)))?;
+        self.actor_manager.start({
+            let flashbots = Arc::new(flashbots);
+            let flashbots = flashbots.clone();
+            move || Box::new(FlashbotsBroadcastActor::new((*flashbots).clone(), allow_broadcast))
+        })?;
         Ok(self)
     }
 
