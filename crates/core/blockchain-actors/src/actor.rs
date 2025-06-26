@@ -381,7 +381,7 @@ where
         let provider = self.provider.clone();
         let pool_loaders_clone = pool_loaders.clone();
         let bc = self.bc.clone();
-        self.actor_manager.start(move || Box::new(HistoryPoolLoaderOneShotActor::new(provider, pool_loaders_clone).on_bc(&bc)))?;
+        self.actor_manager.start(move || Box::new(HistoryPoolLoaderOneShotActor::new(provider.clone(), pool_loaders_clone.clone()).on_bc(&bc)))?;
         Ok(self)
     }
 
@@ -393,7 +393,7 @@ where
         let pools_config_clone = pools_config.clone();
         let bc = self.bc.clone();
         let state = self.state.clone();
-        self.actor_manager.start(move || Box::new(PoolLoaderActor::new(provider, pool_loaders_clone, pools_config_clone).on_bc(&bc, &state)))?;
+        self.actor_manager.start(move || Box::new(PoolLoaderActor::new(provider.clone(), pool_loaders_clone.clone(), pools_config_clone.clone()).on_bc(&bc, &state)))?;
         Ok(self)
     }
 
@@ -493,8 +493,8 @@ where
         let bc2 = bc.clone();
         let state2 = state.clone();
         let strategy2 = strategy.clone();
-        self.actor_manager.start(move || Box::new(SamePathMergerActor::new(provider).on_bc(&bc, &state, &strategy)))?;
-        self.actor_manager.start(move || Box::new(SamePathMergerActor::new(provider2).on_bc(&bc2, &state2, &strategy2)))?;
+        self.actor_manager.start(move || Box::new(SamePathMergerActor::new(provider.clone()).on_bc(&bc, &state, &strategy)))?;
+        self.actor_manager.start(move || Box::new(SamePathMergerActor::new(provider2.clone()).on_bc(&bc2, &state2, &strategy2)))?;
         Ok(self)
     }
 
