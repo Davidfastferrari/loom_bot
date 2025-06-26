@@ -33,8 +33,8 @@ impl ActorsManager {
                             Err(e) => error!("Actor worker join error: {:?}", e),
                         }
                     });
-                    // Move actor_factory into spawn_with_restart without cloning
-                    self.spawn_with_restart(actor_name.clone(), handle, &actor_factory);
+                    // Move actor_factory into spawn_with_restart by value
+                    self.spawn_with_restart(actor_name.clone(), handle, actor_factory);
                 }
                 Ok(())
             }
@@ -45,7 +45,7 @@ impl ActorsManager {
         }
     }
 
-    fn spawn_with_restart<F>(&mut self, name: String, mut handle: JoinHandle<()>, actor_factory: &F)
+    fn spawn_with_restart<F>(&mut self, name: String, mut handle: JoinHandle<()>, actor_factory: F)
     where
         F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
     {
