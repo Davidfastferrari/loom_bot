@@ -27,22 +27,6 @@ fn is_recoverable_deserialization_error(error_msg: &str) -> bool {
     error_msg.contains("BlockTransactions")
 }
 
-/// Check if the error is related to unknown transaction types that we should handle gracefully
-fn is_unknown_transaction_type_error(error_msg: &str) -> bool {
-    error_msg.contains("unknown variant") && 
-    (error_msg.contains("0x7e") || 
-     error_msg.contains("0x7f") || 
-     error_msg.contains("0x80") ||
-     error_msg.contains("deserialization error"))
-}
-
-/// Check if the error is a recoverable deserialization error
-fn is_recoverable_deserialization_error(error_msg: &str) -> bool {
-    error_msg.contains("deserialization error") || 
-    error_msg.contains("data did not match any variant") ||
-    error_msg.contains("BlockTransactions")
-}
-
 pub async fn new_block_with_tx_worker<P>(
     client: P,
     block_header_receiver: Broadcaster<Header>,
