@@ -75,16 +75,19 @@ where
                 match fetch_result {
                     Ok(Some(full_block)) => {
                         if let Err(e) = sender.send(Message::new_with_time(BlockUpdate { block: full_block })) {
-                    let err_msg = e.to_string();
-                        
-                        if is_unknown_transaction_type_error(&err_msg) {
-                            warn!("Unknown transaction type encountered in block {}: {}. This may be a Base-specific or newer transaction type. Attempting chunked fallback.", block_number, err_msg);
-                            // Don't retry standard approach, go directly to chunked fallback
-                            break        error!("Recoverable dBroadcaster error {}", e);
+                            let err_msg = e.to_string();
+                            
+                            if is_unknown_transaction_type_error(&err_msg) {
+                                warn!("Unknown transaction type encountered in block {}: {}. This may be a Base-specific or newer transaction type. Attempting chunked fallback.", block_number, err_msg);
+                                // Don't retry standard approach, go directly to chunked fallback
+                                break;
+                            } else {
+                                error!("Recoverable Broadcaster error {}", e);
+                            }
                         } else {
                             success = true;
                             debug!("BlockWithTx processing finished {} {}", block_number, block_hash);
-        Try chunked approach as fallback                }
+                        }
                         break;
                     }
                     Ok(None) => {
