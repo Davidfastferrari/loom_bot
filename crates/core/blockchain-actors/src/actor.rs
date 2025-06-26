@@ -704,7 +704,11 @@ where
             address_vec.push(loom_multicaller);
         }
 
-        self.actor_manager.start_and_wait(|| Box::new(MarketStatePreloadedOneShotActor::new(self.provider.clone()).with_copied_accounts(address_vec).on_bc(&self.bc, &self.state)))?;
+        let provider = self.provider.clone();
+        let bc = self.bc.clone();
+        let state = self.state.clone();
+
+        self.actor_manager.start_and_wait(move || Box::new(MarketStatePreloadedOneShotActor::new(provider).with_copied_accounts(address_vec).on_bc(&bc, &state)))?;
         Ok(self)
     }
 
@@ -740,7 +744,9 @@ where
 
         self.mutlicaller_address = Some(loom_execution_multicaller::DEFAULT_VIRTUAL_ADDRESS);
 
-        self.actor_manager.start_and_wait(|| Box::new(market_state_preloader.on_bc(&self.bc, &self.state)))?;
+        let bc = self.bc.clone();
+        let state = self.state.clone();
+        self.actor_manager.start_and_wait(move || Box::new(market_state_preloader.on_bc(&bc, &state)))?;
         Ok(self)
     }
 
@@ -757,7 +763,10 @@ where
 
     /// Starts block history actor
     pub fn with_block_history(&mut self) -> Result<&mut Self> {
-        self.actor_manager.start(|| Box::new(BlockHistoryActor::new(self.provider.clone()).on_bc(&self.bc, &self.state)))?;
+        let provider = self.provider.clone();
+        let bc = self.bc.clone();
+        let state = self.state.clone();
+        self.actor_manager.start(move || Box::new(BlockHistoryActor::new(provider).on_bc(&bc, &state)))?;
         Ok(self)
     }
 
@@ -854,31 +863,43 @@ where
     /// Start pool loader from new block events
     pub fn with_new_pool_loader(&mut self, pools_config: PoolsLoadingConfig) -> Result<&mut Self> {
         let pool_loader = Arc::new(PoolLoadersBuilder::default_pool_loaders(self.provider.clone(), pools_config));
-        self.actor_manager.start(|| Box::new(NewPoolLoaderActor::new(pool_loader).on_bc(&self.bc)))?;
+        let pool_loader_clone = pool_loader.clone();
+        let bc = self.bc.clone();
+        self.actor_manager.start(move || Box::new(NewPoolLoaderActor::new(pool_loader_clone).on_bc(&bc)))?;
         Ok(self)
     }
 
     /// Start pool loader for last 10000 blocks
     pub fn with_pool_history_loader(&mut self, pools_config: PoolsLoadingConfig) -> Result<&mut Self> {
         let pool_loaders = Arc::new(PoolLoadersBuilder::default_pool_loaders(self.provider.clone(), pools_config));
-        self.actor_manager.start(|| Box::new(HistoryPoolLoaderOneShotActor::new(self.provider.clone(), pool_loaders).on_bc(&self.bc)))?;
+        let provider = self.provider.clone();
+        let pool_loaders_clone = pool_loaders.clone();
+        let bc = self.bc.clone();
+        self.actor_manager.start(move || Box::new(HistoryPoolLoaderOneShotActor::new(provider, pool_loaders_clone).on_bc(&bc)))?;
         Ok(self)
     }
 
     /// Start pool loader from new block events
     pub fn with_pool_loader(&mut self, pools_config: PoolsLoadingConfig) -> Result<&mut Self> {
         let pool_loaders = Arc::new(PoolLoadersBuilder::default_pool_loaders(self.provider.clone(), pools_config.clone()));
-        self.actor_manager.start(|| Box::new(PoolLoaderActor::new(self.provider.clone(), pool_loaders, pools_config).on_bc(&self.bc, &self.state)))?;
+        let provider = self.provider.clone();
+        let pool_loaders_clone = pool_loaders.clone();
+        let pools_config_clone = pools_config.clone();
+        let bc = self.bc.clone();
+        let state = self.state.clone();
+        self.actor_manager.start(move || Box::new(PoolLoaderActor::new(provider, pool_loaders_clone, pools_config_clone).on_bc(&bc, &state)))?;
         Ok(self)
     }
 
     /// Start pool loader for curve + steth + wsteth
     pub fn with_curve_pool_protocol_loader(&mut self, pools_config: PoolsLoadingConfig) -> Result<&mut Self> {
         let pool_loaders = Arc::new(PoolLoadersBuilder::default_pool_loaders(self.provider.clone(), pools_config));
-        let pool_loaders = pool_loaders.clone();
+        let pool_loaders_clone = pool_loaders.clone();
+        let provider = self.provider.clone();
+        let bc = self.bc.clone();
         self.actor_manager.start(move || {
-            let pool_loaders = pool_loaders.clone();
-            Box::new(ProtocolPoolLoaderOneShotActor::new(self.provider.clone(), pool_loaders).on_bc(&self.bc))
+            let pool_loaders = pool_loaders_clone.clone();
+            Box::new(ProtocolPoolLoaderOneShotActor::new(provider, pool_loaders).on_bc(&bc))
         })?;
         Ok(self)
     }
@@ -950,7 +971,12 @@ where
         let bc = self.bc.clone();
         let state = self.state.clone();
         let strategy = self.strategy.clone();
+        let provider2 = provider.clone();
+        let bc2 = bc.clone();
+        let state2 = state.clone();
+        let strategy2 = strategy.clone();
         self.actor_manager.start(move || Box::new(SamePathMergerActor::new(provider).on_bc(&bc, &state, &strategy)))?;
+        self.actor_manager.start(move || Box::new(SamePathMergerActor::new(provider2).on_bc(&bc2, &state2, &strategy2)))?;
         Ok(self)
     }
 
@@ -971,7 +997,8 @@ where
         if !self.has_state_update {
             let bc = self.bc.clone();
             let strategy = self.strategy.clone();
-            self.actor_manager.start(move || Box::new(StateChangeArbSearcherActor::new(backrun_config).on_bc(&bc, &strategy)))?;
+            let backrun_config1 = backrun_config.clone();
+            self.actor_manager.start(move || Box::new(StateChangeArbSearcherActor::new(backrun_config1).on_bc(&bc, &strategy)))?;
             self.has_state_update = true
         }
         let bc = self.bc.clone();
@@ -986,7 +1013,8 @@ where
         if !self.has_state_update {
             let bc = self.bc.clone();
             let strategy = self.strategy.clone();
-            self.actor_manager.start(move || Box::new(StateChangeArbSearcherActor::new(backrun_config).on_bc(&bc, &strategy)))?;
+            let backrun_config1 = backrun_config.clone();
+            self.actor_manager.start(move || Box::new(StateChangeArbSearcherActor::new(backrun_config1).on_bc(&bc, &strategy)))?;
             self.has_state_update = true
         }
         let provider = self.provider.clone();
@@ -1011,13 +1039,16 @@ where
         let url = url.clone();
         let database = database.clone();
         let tags = tags.clone();
-        self.actor_manager.start(move || Box::new(InfluxDbWriterActor::new(url, database, tags).on_bc(&self.bc)))?;
+        let bc = self.bc.clone();
+        self.actor_manager.start(move || Box::new(InfluxDbWriterActor::new(url, database, tags).on_bc(&bc)))?;
         Ok(self)
     }
 
     /// Start block latency recorder
     pub fn with_block_latency_recorder(&mut self) -> Result<&mut Self> {
-        self.actor_manager.start(move || Box::new(MetricsRecorderActor::new().on_bc(&self.bc, &self.state)))?;
+        let bc = self.bc.clone();
+        let state = self.state.clone();
+        self.actor_manager.start(move || Box::new(MetricsRecorderActor::new().on_bc(&bc, &state)))?;
         Ok(self)
     }
 
@@ -1030,7 +1061,9 @@ where
         let host = host.clone();
         let router = router.clone();
         let db_pool = db_pool.clone();
-        self.actor_manager.start(move || Box::new(WebServerActor::new(host, router, db_pool, CancellationToken::new()).on_bc(&self.bc, &self.state)))?;
+        let bc = self.bc.clone();
+        let state = self.state.clone();
+        self.actor_manager.start(move || Box::new(WebServerActor::new(host, router, db_pool, CancellationToken::new()).on_bc(&bc, &state)))?;
         Ok(self)
     }
 
