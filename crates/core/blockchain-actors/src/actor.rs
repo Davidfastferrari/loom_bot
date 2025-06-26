@@ -167,7 +167,7 @@ where
         if !self.has_signers {
             self.has_signers = true;
             let signers = self.signers.clone();
-            self.actor_manager.start(move || Box::new(TxSignersActor::<LoomDataTypesEthereum>::new().with_signers(signers)))?;
+            self.actor_manager.start(move || Box::new(TxSignersActor::<LoomDataTypesEthereum>::new()))?;
         }
         Ok(self)
     }
@@ -179,7 +179,7 @@ where
         let signers = self.signers.clone();
         let bc = self.bc.clone();
         let strategy = self.strategy.clone();
-        self.actor_manager.start(move || Box::new(SwapRouterActor::<DB>::new().with_signers(signers).on_bc(&bc, &strategy)))?;
+        self.actor_manager.start(move || Box::new(SwapRouterActor::<DB>::new().on_bc(&bc, &strategy)))?;
         Ok(self)
     }
 
@@ -195,7 +195,7 @@ where
         let bc = self.bc.clone();
         let state = self.state.clone();
 
-        self.actor_manager.start_and_wait(move || Box::new(MarketStatePreloadedOneShotActor::new(provider).with_copied_accounts(address_vec).on_bc(&bc, &state)))?;
+        self.actor_manager.start_and_wait(move || Box::new(MarketStatePreloadedOneShotActor::new(provider).on_bc(&bc, &state)))?;
         Ok(self)
     }
 
@@ -361,19 +361,14 @@ where
 
     /// Starts flashbots broadcaster
     pub fn with_flashbots_broadcaster(&mut self, allow_broadcast: bool) -> Result<&mut Self> {
-        use std::sync::Arc;
-        let provider = Arc::new(self.provider.clone());
-        let relays = Arc::new(self.relays.clone());
-        let flashbots = match (*relays).is_empty() {
-            true => Flashbots::new((*provider).clone(), "https://relay.flashbots.net", None).with_default_relays(),
-            false => Flashbots::new((*provider).clone(), "https://relay.flashbots.net", None).with_relays((*relays).clone()),
+        let provider = self.provider.clone();
+        let relays = self.relays.clone();
+        let flashbots = match relays.is_empty() {
+            true => Flashbots::new(provider.clone(), "https://relay.flashbots.net", None).with_default_relays(),
+            false => Flashbots::new(provider.clone(), "https://relay.flashbots.net", None).with_relays(relays),
         };
 
-        self.actor_manager.start({
-            let flashbots = Arc::new(flashbots);
-            let flashbots = flashbots.clone();
-            move || Box::new(FlashbotsBroadcastActor::new(flashbots.clone(), allow_broadcast))
-        })?;
+        self.actor_manager.start(move || Box::new(FlashbotsBroadcastActor::new(flashbots, allow_broadcast)))?;
         Ok(self)
     }
 
@@ -407,3 +402,4 @@ where
         Ok(self)
     }
 }
+
