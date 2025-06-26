@@ -959,20 +959,20 @@ where
     /// Start backrun on block
     pub fn with_backrun_block(&mut self, backrun_config: BackrunConfig) -> Result<&mut Self> {
         if !self.has_state_update {
-        self.actor_manager.start(|| Box::new(StateChangeArbSearcherActor::new(backrun_config).on_bc(&self.bc, &self.strategy)))?;
+        self.actor_manager.start(move || Box::new(StateChangeArbSearcherActor::new(backrun_config).on_bc(&self.bc, &self.strategy)))?;
         self.has_state_update = true
     }
-    self.actor_manager.start(|| Box::new(BlockStateChangeProcessorActor::new().on_bc(&self.bc, &self.state, &self.strategy)))?;
+    self.actor_manager.start(move || Box::new(BlockStateChangeProcessorActor::new().on_bc(&self.bc, &self.state, &self.strategy)))?;
     Ok(self)
 }
 
     /// Start backrun for pending txs
     pub fn with_backrun_mempool(&mut self, backrun_config: BackrunConfig) -> Result<&mut Self> {
         if !self.has_state_update {
-        self.actor_manager.start(|| Box::new(StateChangeArbSearcherActor::new(backrun_config).on_bc(&self.bc, &self.strategy)))?;
+        self.actor_manager.start(move || Box::new(StateChangeArbSearcherActor::new(backrun_config).on_bc(&self.bc, &self.strategy)))?;
         self.has_state_update = true
     }
-    self.actor_manager.start(|| Box::new(PendingTxStateChangeProcessorActor::new(self.provider.clone()).on_bc(
+    self.actor_manager.start(move || Box::new(PendingTxStateChangeProcessorActor::new(self.provider.clone()).on_bc(
         &self.bc,
         &self.state,
         &self.strategy,
@@ -987,13 +987,16 @@ where
 
     /// Start influxdb writer
     pub fn with_influxdb_writer(&mut self, url: String, database: String, tags: HashMap<String, String>) -> Result<&mut Self> {
-        self.actor_manager.start(|| Box::new(InfluxDbWriterActor::new(url.clone(), database.clone(), tags.clone()).on_bc(&self.bc)))?;
+        let url = url.clone();
+        let database = database.clone();
+        let tags = tags.clone();
+        self.actor_manager.start(move || Box::new(InfluxDbWriterActor::new(url, database, tags).on_bc(&self.bc)))?;
         Ok(self)
     }
 
     /// Start block latency recorder
     pub fn with_block_latency_recorder(&mut self) -> Result<&mut Self> {
-        self.actor_manager.start(|| Box::new(MetricsRecorderActor::new().on_bc(&self.bc, &self.state)))?;
+        self.actor_manager.start(move || Box::new(MetricsRecorderActor::new().on_bc(&self.bc, &self.state)))?;
         Ok(self)
     }
 
@@ -1003,7 +1006,10 @@ where
         S: Clone + Send + Sync + 'static,
         Router: From<Router<S>>,
     {
-        self.actor_manager.start(|| Box::new(WebServerActor::new(host.clone(), router.clone(), db_pool.clone(), CancellationToken::new()).on_bc(&self.bc, &self.state)))?;
+        let host = host.clone();
+        let router = router.clone();
+        let db_pool = db_pool.clone();
+        self.actor_manager.start(move || Box::new(WebServerActor::new(host, router, db_pool, CancellationToken::new()).on_bc(&self.bc, &self.state)))?;
         Ok(self)
     }
 
