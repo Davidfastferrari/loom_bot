@@ -116,14 +116,9 @@ impl ActorsManager {
         while futures_counter > 0 {
             let (result, _index, remaining_futures) = futures::future::select_all(f_remaining_futures).await;
             match result {
-                Ok(work_result) => match work_result {
-                    Ok(_) => {
-                        info!("ActorWorker finished successfully")
-                    }
-                    Err(e) => {
-                        error!("ActorWorker finished with error : {e}")
-                    }
-                },
+                Ok(_) => {
+                    info!("ActorWorker finished successfully")
+                }
                 Err(e) => {
                     error!("ActorWorker join error : {e}")
                 }
