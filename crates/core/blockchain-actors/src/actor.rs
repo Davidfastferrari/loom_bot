@@ -872,7 +872,11 @@ where
     /// Start pool loader for curve + steth + wsteth
     pub fn with_curve_pool_protocol_loader(&mut self, pools_config: PoolsLoadingConfig) -> Result<&mut Self> {
         let pool_loaders = Arc::new(PoolLoadersBuilder::default_pool_loaders(self.provider.clone(), pools_config));
-        self.actor_manager.start(|| Box::new(ProtocolPoolLoaderOneShotActor::new(self.provider.clone(), pool_loaders).on_bc(&self.bc)))?;
+        let pool_loaders = pool_loaders.clone();
+        self.actor_manager.start(move || {
+            let pool_loaders = pool_loaders.clone();
+            Box::new(ProtocolPoolLoaderOneShotActor::new(self.provider.clone(), pool_loaders).on_bc(&self.bc))
+        })?;
         Ok(self)
     }
 
