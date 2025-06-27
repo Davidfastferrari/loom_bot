@@ -107,18 +107,15 @@ where
     /// Start a custom actor
     pub fn start<F>(&mut self, actor_factory: F) -> Result<&mut Self>
     where
-        F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
+        F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + Clone + 'static,
     {
         self.actor_manager.start(actor_factory)?;
         Ok(self)
     }
 
     /// Start a custom actor and wait for it to finish
-    pub fn start_and_wait<F>(&mut self, actor_factory: F) -> Result<&mut Self>
-    where
-        F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
-    {
-        self.actor_manager.start_and_wait(actor_factory)?;
+    pub fn start_and_wait(&mut self, actor: impl Actor + Send + Sync + 'static) -> Result<&mut Self> {
+        self.actor_manager.start_and_wait(actor)?;
         Ok(self)
     }
 
@@ -435,10 +432,8 @@ where
         let bc_arc = Arc::new(bc);
         let strategy_arc = Arc::new(strategy);
 
-        let closure = move || {
-            Box::new(EvmEstimatorActor::new_with_provider((*encoder_arc).clone(), Some((*provider_arc).clone())).on_bc(&(*bc_arc), &(*strategy_arc))) as Box<dyn Actor + Send + Sync>
-        };
-        self.actor_manager.start_and_wait(closure)?;
+        let actor = EvmEstimatorActor::new_with_provider((*encoder_arc).clone(), Some((*provider_arc).clone())).on_bc(&(*bc_arc), &(*strategy_arc));
+        self.actor_manager.start_and_wait(actor)?;
         Ok(self)
     }
 
