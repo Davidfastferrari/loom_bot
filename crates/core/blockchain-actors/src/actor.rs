@@ -138,12 +138,12 @@ where
     /// Initialize signers with the private key. Random key generated if param in None
     pub fn initialize_signers_with_key(&mut self, key: Option<Vec<u8>>) -> Result<&mut Self> {
         let signers_clone = self.signers.clone();
-            let closure = Arc::new({
+            let arc_closure = Arc::new({
                 let key = key.clone();
                 let signers = signers_clone.clone();
                 move || Box::new(InitializeSignersOneShotBlockingActor::new(key.clone()).with_signers(signers.clone())) as Box<dyn Actor + Send + Sync>
             });
-            self.actor_manager.start(closure)?;
+            self.actor_manager.start(move || arc_closure())?;
         self.with_signers()?;
         Ok(self)
     }
@@ -152,12 +152,12 @@ where
     pub fn initialize_signers_with_keys(&mut self, keys: Vec<Vec<u8>>) -> Result<&mut Self> {
         let signers_clone = self.signers.clone();
         for key in keys {
-                let closure = Arc::new({
-                    let key = key.clone();
-                    let signers = signers_clone.clone();
-                    move || Box::new(InitializeSignersOneShotBlockingActor::new(Some(key.clone())).with_signers(signers.clone())) as Box<dyn Actor + Send + Sync>
-                });
-                self.actor_manager.start(closure)?;
+            let arc_closure = Arc::new({
+                let key = key.clone();
+                let signers = signers_clone.clone();
+                move || Box::new(InitializeSignersOneShotBlockingActor::new(Some(key.clone())).with_signers(signers.clone())) as Box<dyn Actor + Send + Sync>
+            });
+            self.actor_manager.start(move || arc_closure())?;
         }
         self.with_signers()?;
         Ok(self)
@@ -166,7 +166,7 @@ where
     /// Initialize signers with encrypted private key
     pub fn initialize_signers_with_encrypted_key(&mut self, key: Vec<u8>) -> Result<&mut Self> {
         let signers_clone = self.signers.clone();
-            let closure = Arc::new({
+            let arc_closure = Arc::new({
                 let key = key.clone();
                 let signers = signers_clone.clone();
                 move || {
@@ -177,7 +177,7 @@ where
                     }
                 }
             });
-            self.actor_manager.start(closure)?;
+            self.actor_manager.start(move || arc_closure())?;
         self.with_signers()?;
         Ok(self)
     }
@@ -185,7 +185,7 @@ where
     /// Initializes signers with encrypted key form DATA env var
     pub fn initialize_signers_with_env(&mut self) -> Result<&mut Self> {
         let signers_clone = self.signers.clone();
-            let closure = Arc::new({
+            let arc_closure = Arc::new({
                 let signers = signers_clone.clone();
                 move || {
                     let actor = InitializeSignersOneShotBlockingActor::new_from_encrypted_env();
@@ -195,7 +195,7 @@ where
                     }
                 }
             });
-            self.actor_manager.start(closure)?;
+            self.actor_manager.start(move || arc_closure())?;
         self.with_signers()?;
         Ok(self)
     }
@@ -204,8 +204,8 @@ where
     pub fn with_signers(&mut self) -> Result<&mut Self> {
         if !self.has_signers {
             self.has_signers = true;
-            let closure = Arc::new(move || Box::new(TxSignersActor::<LoomDataTypesEthereum>::new()) as Box<dyn Actor + Send + Sync>);
-            self.actor_manager.start(closure)?;
+            let arc_closure = Arc::new(move || Box::new(TxSignersActor::<LoomDataTypesEthereum>::new()) as Box<dyn Actor + Send + Sync>);
+            self.actor_manager.start(move || arc_closure())?;
         }
         Ok(self)
     }
@@ -216,8 +216,8 @@ where
         self.encoder = Some(swap_encoder);
         let bc = self.bc.clone();
         let strategy = self.strategy.clone();
-        let closure = Arc::new(move || Box::new(SwapRouterActor::<DB>::new().on_bc(&bc, &strategy)) as Box<dyn Actor + Send + Sync>);
-        self.actor_manager.start(closure)?;
+        let arc_closure = Arc::new(move || Box::new(SwapRouterActor::<DB>::new().on_bc(&bc, &strategy)) as Box<dyn Actor + Send + Sync>);
+        self.actor_manager.start(move || arc_closure())?;
         Ok(self)
     }
 
@@ -234,8 +234,8 @@ where
         let state = self.state.clone();
 
         // Add explicit type parameters for MarketStatePreloadedOneShotActor::new
-        let closure = Arc::new(move || Box::new(MarketStatePreloadedOneShotActor::<P, Ethereum, DB>::new(provider.clone()).on_bc(&bc, &state)) as Box<dyn Actor + Send + Sync>);
-        self.actor_manager.start(closure)?;
+        let arc_closure = Arc::new(move || Box::new(MarketStatePreloadedOneShotActor::<P, Ethereum, DB>::new(provider.clone()).on_bc(&bc, &state)) as Box<dyn Actor + Send + Sync>);
+        self.actor_manager.start(move || arc_closure())?;
         Ok(self)
     }
 
@@ -273,13 +273,13 @@ where
 
         let bc = self.bc.clone();
         let state = self.state.clone();
-            let closure = Arc::new({
+            let arc_closure = Arc::new({
                 let preloader = market_state_preloader;
                 let bc = bc.clone();
                 let state = state.clone();
                 move || Box::new(MarketStatePreloadedOneShotActor::new(self.provider.clone()).on_bc(&bc, &state)) as Box<dyn Actor + Send + Sync>
             });
-            self.actor_manager.start(closure)?;
+            self.actor_manager.start(move || arc_closure())?;
         Ok(self)
     }
 
@@ -288,16 +288,16 @@ where
         use std::sync::Arc;
         let provider = Arc::new(self.provider.clone());
         let provider_clone = provider.clone();
-        let closure = Arc::new(move || Box::new(NonceAndBalanceMonitorActor::new(provider_clone.clone())) as Box<dyn Actor + Send + Sync>);
-        self.actor_manager.start(closure)?;
+        let arc_closure = Arc::new(move || Box::new(NonceAndBalanceMonitorActor::new(provider_clone.clone())) as Box<dyn Actor + Send + Sync>);
+        self.actor_manager.start(move || arc_closure())?;
         Ok(self)
     }
 
     pub fn with_nonce_and_balance_monitor_only_events(&mut self) -> Result<&mut Self> {
         use std::sync::Arc;
         let provider = Arc::new(self.provider.clone());
-        let closure = Arc::new(move || Box::new(NonceAndBalanceMonitorActor::new(provider.clone()).only_once()) as Box<dyn Actor + Send + Sync>);
-        self.actor_manager.start(closure)?;
+        let arc_closure = Arc::new(move || Box::new(NonceAndBalanceMonitorActor::new(provider.clone()).only_once()) as Box<dyn Actor + Send + Sync>);
+        self.actor_manager.start(move || arc_closure())?;
         Ok(self)
     }
 
@@ -307,8 +307,8 @@ where
         let provider = Arc::new(self.provider.clone());
         let bc = Arc::new(self.bc.clone());
         let state = Arc::new(self.state.clone());
-        let closure = Arc::new(move || Box::new(BlockHistoryActor::new((*provider).clone()).on_bc(&bc, &state)) as Box<dyn Actor + Send + Sync>);
-        self.actor_manager.start(closure)?;
+        let arc_closure = Arc::new(move || Box::new(BlockHistoryActor::new((*provider).clone()).on_bc(&bc, &state)) as Box<dyn Actor + Send + Sync>);
+        self.actor_manager.start(move || arc_closure())?;
         Ok(self)
     }
 
@@ -317,8 +317,8 @@ where
         use std::sync::Arc;
         let provider = Arc::new(self.provider.clone());
         let bc = Arc::new(self.bc.clone());
-        let closure = Arc::new(move || Box::new(PriceActor::new(provider.clone()).on_bc(&bc)) as Box<dyn Actor + Send + Sync>);
-        self.actor_manager.start(closure)?;
+        let arc_closure = Arc::new(move || Box::new(PriceActor::new(provider.clone()).on_bc(&bc)) as Box<dyn Actor + Send + Sync>);
+        self.actor_manager.start(move || arc_closure())?;
         Ok(self)
     }
 
@@ -332,12 +332,12 @@ where
         let provider_clone = provider.clone();
         let bc_clone = bc.clone();
         let config_clone = config.clone();
-        let closure = Arc::new(move || {
+        let arc_closure = Arc::new(move || {
             let actor = NodeBlockActor::new((*provider).clone(), config_clone.clone());
             let actor = actor.on_bc(&bc_clone);
             Box::new(actor) as Box<dyn Actor + Send + Sync>
         });
-        self.actor_manager.start(closure)?;
+        self.actor_manager.start(move || arc_closure())?;
         Ok(self)
     }
 
@@ -346,8 +346,8 @@ where
     pub fn reth_node_with_blocks(&mut self, db_path: String, config: NodeBlockActorConfig) -> Result<&mut Self> {
         let provider = self.provider.clone();
         let bc = self.bc.clone();
-        let closure = Arc::new(move || Box::new(RethDbAccessBlockActor::new(provider, config, db_path).on_bc(&bc)) as Box<dyn Actor + Send + Sync>);
-        self.actor_manager.start(closure)?;
+        let arc_closure = Arc::new(move || Box::new(RethDbAccessBlockActor::new(provider, config, db_path).on_bc(&bc)) as Box<dyn Actor + Send + Sync>);
+        self.actor_manager.start(move || arc_closure())?;
         Ok(self)
     }
 
@@ -355,8 +355,8 @@ where
     pub fn with_exex_events(&mut self) -> Result<&mut Self> {
         self.mempool()?;
         let bc = self.bc.clone();
-        let closure = Arc::new(move || Box::new(NodeExExGrpcActor::new("http://[::1]:10000".to_string()).on_bc(&bc)) as Box<dyn Actor + Send + Sync>);
-        self.actor_manager.start(closure)?;
+        let arc_closure = Arc::new(move || Box::new(NodeExExGrpcActor::new("http://[::1]:10000".to_string()).on_bc(&bc)) as Box<dyn Actor + Send + Sync>);
+        self.actor_manager.start(move || arc_closure())?;
         Ok(self)
     }
 
@@ -365,8 +365,8 @@ where
         if !self.has_mempool {
             self.has_mempool = true;
             let bc = self.bc.clone();
-            let closure = Arc::new(move || Box::new(MempoolActor::new().on_bc(&bc)) as Box<dyn Actor + Send + Sync>);
-            self.actor_manager.start(closure)?;
+            let arc_closure = Arc::new(move || Box::new(MempoolActor::new().on_bc(&bc)) as Box<dyn Actor + Send + Sync>);
+            self.actor_manager.start(move || arc_closure())?;
         }
         Ok(self)
     }
