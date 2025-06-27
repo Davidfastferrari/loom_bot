@@ -121,7 +121,10 @@ where
         let key: B256 = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80".parse()?;
 
         let signers_clone = self.signers.clone();
-        self.actor_manager.start(move || Box::new(InitializeSignersOneShotBlockingActor::new(Some(key.to_vec())).with_signers(signers_clone)))?;
+        self.actor_manager.start({
+            let signers_clone = signers_clone.clone();
+            move || Box::new(InitializeSignersOneShotBlockingActor::new(Some(key.to_vec())).with_signers(signers_clone))
+        })?;
         self.with_signers()?;
         Ok(self)
     }
@@ -129,7 +132,11 @@ where
     /// Initialize signers with the private key. Random key generated if param in None
     pub fn initialize_signers_with_key(&mut self, key: Option<Vec<u8>>) -> Result<&mut Self> {
         let signers_clone = self.signers.clone();
-        self.actor_manager.start(move || Box::new(InitializeSignersOneShotBlockingActor::new(key).with_signers(signers_clone)))?;
+        self.actor_manager.start({
+            let signers_clone = signers_clone.clone();
+            let key = key.clone();
+            move || Box::new(InitializeSignersOneShotBlockingActor::new(key).with_signers(signers_clone))
+        })?;
         self.with_signers()?;
         Ok(self)
     }
@@ -140,7 +147,12 @@ where
         let signers_clone = self.signers.clone();
         for key in keys {
             let signers_clone = signers_clone.clone();
-            self.actor_manager.start(move || Box::new(InitializeSignersOneShotBlockingActor::new(Some(key)).with_signers(signers_clone)))?;
+            let key = key.clone();
+            self.actor_manager.start({
+                let signers_clone = signers_clone.clone();
+                let key = key.clone();
+                move || Box::new(InitializeSignersOneShotBlockingActor::new(Some(key)).with_signers(signers_clone))
+            })?;
         }
         self.with_signers()?;
         Ok(self)
@@ -243,7 +255,13 @@ where
 
         let bc = self.bc.clone();
         let state = self.state.clone();
-        self.actor_manager.start_and_wait(move || Box::new(market_state_preloader.on_bc(&bc, &state)))?;
+        use std::sync::Arc;
+        let market_state_preloader = Arc::new(market_state_preloader);
+        let bc = Arc::new(bc);
+        let state = Arc::new(state);
+        use std::sync::Arc;
+        let market_state_preloader = Arc::new(market_state_preloader);
+        let bc = Arc::new(bc);
         Ok(self)
     }
 
@@ -371,7 +389,12 @@ where
         };
 
         // Wrap flashbots in Arc without cloning
-        self.actor_manager.start(move || Box::new(FlashbotsBroadcastActor::new(flashbots, allow_broadcast)))?;
+        use std::sync::Arc;
+        let flashbots = Arc::new(flashbots);
+        self.actor_manager.start({
+            let flashbots = flashbots.clone();
+            move || Box::new(FlashbotsBroadcastActor::new(flashbots, allow_broadcast))
+        })?;
         Ok(self)
     }
 
