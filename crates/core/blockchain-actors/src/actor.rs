@@ -8,6 +8,53 @@ use loom_broadcast_broadcaster::FlashbotsBroadcastActor;
 use loom_broadcast_flashbots::client::RelayConfig;
 use loom_broadcast_flashbots::Flashbots;
 use loom_core_actors::{Actor, ActorsManager, SharedState};
+use std::sync::Arc;
+
+#[derive(Clone)]
+struct CloneableClosure<F>
+where
+    F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
+{
+    inner: Arc<F>,
+}
+
+impl<F> CloneableClosure<F>
+where
+    F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
+{
+    fn new(f: F) -> Self {
+        Self { inner: Arc::new(f) }
+    }
+}
+
+impl<F> FnOnce<()> for CloneableClosure<F>
+where
+    F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
+{
+    type Output = Box<dyn Actor + Send + Sync>;
+
+    extern "rust-call" fn call_once(self, args: ()) -> Self::Output {
+        (self.inner)(args)
+    }
+}
+
+impl<F> FnMut<()> for CloneableClosure<F>
+where
+    F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
+{
+    extern "rust-call" fn call_mut(&mut self, args: ()) -> Self::Output {
+        (self.inner)(args)
+    }
+}
+
+impl<F> Fn<()> for CloneableClosure<F>
+where
+    F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
+{
+    extern "rust-call" fn call(&self, args: ()) -> Self::Output {
+        (self.inner)(args)
+    }
+}
 use loom_core_block_history_actor::BlockHistoryActor;
 use loom_core_blockchain::{Blockchain, BlockchainState, Strategy};
 use loom_core_mempool::MempoolActor;
@@ -107,18 +154,20 @@ where
     /// Start a custom actor
     pub fn start<F>(&mut self, actor_factory: F) -> Result<&mut Self>
     where
-        F: FnOnce() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
+        F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + Clone + 'static,
     {
-        self.actor_manager.start(actor_factory)?;
+        let closure = CloneableClosure::new(actor_factory);
+        self.actor_manager.start(closure)?;
         Ok(self)
     }
 
     /// Start a custom actor and wait for it to finish
     pub fn start_and_wait<F>(&mut self, actor_factory: F) -> Result<&mut Self>
     where
-        F: FnOnce() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
+        F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + Clone + 'static,
     {
-        self.actor_manager.start_and_wait(actor_factory)?;
+        let closure = CloneableClosure::new(actor_factory);
+        self.actor_manager.start_and_wait(closure)?;
         Ok(self)
     }
 
@@ -198,7 +247,8 @@ where
         if !self.has_signers {
             self.has_signers = true;
             // Removed call to non-existent with_signers method
-            self.actor_manager.start(move || Box::new(TxSignersActor::<LoomDataTypesEthereum>::new()))?;
+            let closure = CloneableClosure::new(move || Box::new(TxSignersActor::<LoomDataTypesEthereum>::new()));
+            self.actor_manager.start(closure)?;
         }
         Ok(self)
     }
@@ -209,7 +259,8 @@ where
         self.encoder = Some(swap_encoder);
         let bc = self.bc.clone();
         let strategy = self.strategy.clone();
-        self.actor_manager.start(move || Box::new(SwapRouterActor::<DB>::new().on_bc(&bc, &strategy)))?;
+        let closure = CloneableClosure::new(move || Box::new(SwapRouterActor::<DB>::new().on_bc(&bc, &strategy)));
+        self.actor_manager.start(closure)?;
         Ok(self)
     }
 
@@ -226,7 +277,8 @@ where
         let state = self.state.clone();
 
         // Add explicit type parameters for MarketStatePreloadedOneShotActor::new
-        self.actor_manager.start(move || Box::new(MarketStatePreloadedOneShotActor::<P, E, DB>::new(provider).on_bc(&bc, &state)))?;
+        let closure = CloneableClosure::new(move || Box::new(MarketStatePreloadedOneShotActor::<P, E, DB>::new(provider).on_bc(&bc, &state)));
+        self.actor_manager.start(closure)?;
         Ok(self)
     }
 
@@ -279,17 +331,19 @@ where
         use std::sync::Arc;
         let provider = Arc::new(self.provider.clone());
         let provider_clone = provider.clone();
-        self.actor_manager.start(move || Box::new(NonceAndBalanceMonitorActor::new(provider_clone.clone())))?;
+        let closure = CloneableClosure::new(move || Box::new(NonceAndBalanceMonitorActor::new(provider_clone.clone())));
+        self.actor_manager.start(closure)?;
         Ok(self)
     }
 
     pub fn with_nonce_and_balance_monitor_only_events(&mut self) -> Result<&mut Self> {
         use std::sync::Arc;
         let provider = Arc::new(self.provider.clone());
-        self.actor_manager.start({
+        let closure = {
             let provider = provider.clone();
-            move || Box::new(NonceAndBalanceMonitorActor::new(provider.clone()).only_once())
-        })?;
+            CloneableClosure::new(move || Box::new(NonceAndBalanceMonitorActor::new(provider.clone()).only_once()))
+        };
+        self.actor_manager.start(closure)?;
         Ok(self)
     }
 
@@ -299,7 +353,8 @@ where
         let provider = Arc::new(self.provider.clone());
         let bc = Arc::new(self.bc.clone());
         let state = Arc::new(self.state.clone());
-        self.actor_manager.start(move || Box::new(BlockHistoryActor::new((*provider).clone()).on_bc(&bc, &state)))?;
+        let closure = CloneableClosure::new(move || Box::new(BlockHistoryActor::new((*provider).clone()).on_bc(&bc, &state)));
+        self.actor_manager.start(closure)?;
         Ok(self)
     }
 
@@ -308,7 +363,8 @@ where
         use std::sync::Arc;
         let provider = Arc::new(self.provider.clone());
         let bc = Arc::new(self.bc.clone());
-        self.actor_manager.start(move || Box::new(PriceActor::new(provider.clone()).on_bc(&bc)))?;
+        let closure = CloneableClosure::new(move || Box::new(PriceActor::new(provider.clone()).on_bc(&bc)));
+        self.actor_manager.start(closure)?;
         Ok(self)
     }
 
@@ -322,11 +378,12 @@ where
         let provider_clone = provider.clone();
         let bc_clone = bc.clone();
         let config_clone = config.clone();
-        self.actor_manager.start(move || {
+        let closure = CloneableClosure::new(move || {
             let actor = NodeBlockActor::new((*provider).clone(), config_clone.clone());
             let actor = actor.on_bc(&bc_clone);
             Box::new(actor)
-        })?;
+        });
+        self.actor_manager.start(closure)?;
         Ok(self)
     }
 
@@ -335,7 +392,8 @@ where
     pub fn reth_node_with_blocks(&mut self, db_path: String, config: NodeBlockActorConfig) -> Result<&mut Self> {
         let provider = self.provider.clone();
         let bc = self.bc.clone();
-        self.actor_manager.start(move || Box::new(RethDbAccessBlockActor::new(provider, config, db_path).on_bc(&bc)))?;
+        let closure = CloneableClosure::new(move || Box::new(RethDbAccessBlockActor::new(provider, config, db_path).on_bc(&bc)));
+        self.actor_manager.start(closure)?;
         Ok(self)
     }
 
@@ -343,7 +401,8 @@ where
     pub fn with_exex_events(&mut self) -> Result<&mut Self> {
         self.mempool()?;
         let bc = self.bc.clone();
-        self.actor_manager.start(move || Box::new(NodeExExGrpcActor::new("http://[::1]:10000".to_string()).on_bc(&bc)))?;
+        let closure = CloneableClosure::new(move || Box::new(NodeExExGrpcActor::new("http://[::1]:10000".to_string()).on_bc(&bc)));
+        self.actor_manager.start(closure)?;
         Ok(self)
     }
 
@@ -352,7 +411,8 @@ where
         if !self.has_mempool {
             self.has_mempool = true;
             let bc = self.bc.clone();
-            self.actor_manager.start(move || Box::new(MempoolActor::new().on_bc(&bc)))?;
+            let closure = CloneableClosure::new(move || Box::new(MempoolActor::new().on_bc(&bc)));
+            self.actor_manager.start(closure)?;
         }
         Ok(self)
     }
@@ -363,11 +423,12 @@ where
         use std::sync::Arc;
         let provider = Arc::new(self.provider.clone());
         let bc = Arc::new(self.bc.clone());
-        self.actor_manager.start({
+        let closure = {
             let provider = provider.clone();
             let bc = bc.clone();
-            move || Box::new(NodeMempoolActor::new(provider.clone()).on_bc(&bc))
-        })?;
+            CloneableClosure::new(move || Box::new(NodeMempoolActor::new(provider.clone()).on_bc(&bc)))
+        };
+        self.actor_manager.start(closure)?;
         Ok(self)
     }
 
@@ -380,11 +441,12 @@ where
         use std::sync::Arc;
         let bc = Arc::new(self.bc.clone());
         let provider = Arc::new(provider);
-        self.actor_manager.start({
+        let closure = {
             let bc = bc.clone();
             let provider = provider.clone();
-            move || Box::new(NodeMempoolActor::new(provider.clone()).on_bc(&bc))
-        })?;
+            CloneableClosure::new(move || Box::new(NodeMempoolActor::new(provider.clone()).on_bc(&bc)))
+        };
+        self.actor_manager.start(closure)?;
         Ok(self)
     }
 
@@ -400,7 +462,8 @@ where
 
         // Wrap flashbots in Arc without cloning
         let flashbots = Arc::new(flashbots);
-        self.actor_manager.start(move || Box::new(FlashbotsBroadcastActor::new((*flashbots).clone(), allow_broadcast)))?;
+        let closure = CloneableClosure::new(move || Box::new(FlashbotsBroadcastActor::new((*flashbots).clone(), allow_broadcast)));
+        self.actor_manager.start(closure)?;
         Ok(self)
     }
 
@@ -428,7 +491,7 @@ where
             let encoder = encoder_arc.clone();
             let bc = bc_arc.clone();
             let strategy = strategy_arc.clone();
-            Box::new(EvmEstimatorActor::new_with_provider((*encoder).clone(), Some((*provider).clone())).on_bc(&(*bc), &(*strategy))) as Box<dyn Actor + Send + Sync>
+            Box::new(EvmEstimatorActor::new_with_provider((*encoder).clone(), Some((*provider).clone())).on_bc(&(*bc), &(*strategy)))
         };
         self.actor_manager.start_and_wait(closure)?;
         Ok(self)
