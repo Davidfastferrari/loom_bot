@@ -45,7 +45,6 @@ use revm::{Database, DatabaseCommit, DatabaseRef};
 use std::collections::HashMap;
 use tokio_util::sync::CancellationToken;
 
-// Helper wrapper to make closures cloneable
 #[derive(Clone)]
 pub struct CloneableClosure<F> {
     inner: Arc<F>,
@@ -60,34 +59,9 @@ where
             inner: Arc::new(f),
         }
     }
-}
 
-impl<F> Fn<()> for CloneableClosure<F>
-where
-    F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
-{
-    extern "rust-call" fn call(&self, _args: ()) -> Self::Output {
+    pub fn call(&self) -> Box<dyn Actor + Send + Sync> {
         (self.inner)()
-    }
-}
-
-impl<F> FnMut<()> for CloneableClosure<F>
-where
-    F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
-{
-    extern "rust-call" fn call_mut(&mut self, args: ()) -> Self::Output {
-        self.call(args)
-    }
-}
-
-impl<F> FnOnce<()> for CloneableClosure<F>
-where
-    F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
-{
-    type Output = Box<dyn Actor + Send + Sync>;
-
-    extern "rust-call" fn call_once(self, args: ()) -> Self::Output {
-        self.call(args)
     }
 }
 
@@ -150,22 +124,14 @@ where
     }
 
     /// Start a custom actor
-    pub fn start<F>(&mut self, actor_factory: F) -> Result<&mut Self>
-    where
-        F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
-    {
-        let closure: Arc<dyn Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync> = Arc::new(actor_factory);
-        self.actor_manager.start(closure)?;
+    pub fn start(&mut self, actor_factory: Arc<dyn Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync>) -> Result<&mut Self> {
+        self.actor_manager.start(actor_factory)?;
         Ok(self)
     }
 
     /// Start a custom actor and wait for it to finish
-    pub fn start_and_wait<F>(&mut self, actor_factory: F) -> Result<&mut Self>
-    where
-        F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
-    {
-        let closure: Arc<dyn Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync> = Arc::new(actor_factory);
-        self.actor_manager.start_and_wait(closure)?;
+    pub fn start_and_wait(&mut self, actor_factory: Arc<dyn Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync>) -> Result<&mut Self> {
+        self.actor_manager.start_and_wait(actor_factory)?;
         Ok(self)
     }
 
@@ -284,7 +250,7 @@ where
         let state = self.state.clone();
 
         // Add explicit type parameters for MarketStatePreloadedOneShotActor::new
-        let closure = CloneableClosure::new(move || Box::new(MarketStatePreloadedOneShotActor::<P, Ethereum, DB>::new(provider.clone()).on_bc(&bc, &state)) as Box<dyn Actor + Send + Sync>);
+        let closure = Arc::new(move || Box::new(MarketStatePreloadedOneShotActor::<P, Ethereum, DB>::new(provider.clone()).on_bc(&bc, &state)) as Box<dyn Actor + Send + Sync>);
         self.actor_manager.start(closure)?;
         Ok(self)
     }
@@ -329,7 +295,7 @@ where
             let state = state.clone();
             move || Box::new(preloader.clone().on_bc(&bc, &state)) as Box<dyn Actor + Send + Sync>
         };
-        self.actor_manager.start(CloneableClosure::new(closure))?;
+        self.actor_manager.start(Arc::new(closure))?;
         Ok(self)
     }
 
@@ -469,7 +435,7 @@ where
 
         // Wrap flashbots in Arc without cloning
         let flashbots = Arc::new(flashbots);
-        let closure = CloneableClosure::new(move || Box::new(FlashbotsBroadcastActor::new((*flashbots).clone(), allow_broadcast)));
+        let closure = Arc::new(move || Box::new(FlashbotsBroadcastActor::new(flashbots.clone(), allow_broadcast)));
         self.actor_manager.start(closure)?;
         Ok(self)
     }
@@ -493,13 +459,9 @@ where
         let bc_arc = Arc::new(bc);
         let strategy_arc = Arc::new(strategy);
 
-        let closure = {
-            let provider = provider_arc.clone();
-            let encoder = encoder_arc.clone();
-            let bc = bc_arc.clone();
-            let strategy = strategy_arc.clone();
-            Box::new(EvmEstimatorActor::new_with_provider((*encoder).clone(), Some((*provider).clone())).on_bc(&(*bc), &(*strategy)))
-        };
+        let closure = Arc::new(move || {
+            Box::new(EvmEstimatorActor::new_with_provider((*encoder_arc).clone(), Some((*provider_arc).clone())).on_bc(&(*bc_arc), &(*strategy_arc)))
+        });
         self.actor_manager.start_and_wait(closure)?;
         Ok(self)
     }
