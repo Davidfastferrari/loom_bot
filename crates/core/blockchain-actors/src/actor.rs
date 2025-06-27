@@ -24,6 +24,7 @@ use loom_evm_db::DatabaseLoomExt;
 use loom_evm_utils::NWETH;
 use loom_execution_estimator::{EvmEstimatorActor, GethEstimatorActor};
 use loom_execution_multicaller::MulticallerSwapEncoder;
+use std::sync::Arc;
 use loom_metrics::InfluxDbWriterActor;
 use loom_node_actor_config::NodeBlockActorConfig;
 #[cfg(feature = "db-access")]
@@ -262,12 +263,7 @@ where
         let provider = Arc::new(self.provider.clone());
         let bc = Arc::new(self.bc.clone());
         let state = Arc::new(self.state.clone());
-        self.actor_manager.start({
-            let provider = provider.clone();
-            let bc = bc.clone();
-            let state = state.clone();
-            move || Box::new(BlockHistoryActor::new(provider.clone()).on_bc(&bc, &state))
-        })?;
+        self.actor_manager.start(Arc::new(move || Box::new(BlockHistoryActor::new(provider.clone()).on_bc(&bc, &state))) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync + Clone>)?;
         Ok(self)
     }
 
@@ -276,11 +272,7 @@ where
         use std::sync::Arc;
         let provider = Arc::new(self.provider.clone());
         let bc = Arc::new(self.bc.clone());
-        self.actor_manager.start({
-            let provider = provider.clone();
-            let bc = bc.clone();
-            move || Box::new(PriceActor::new(provider.clone()).on_bc(&bc))
-        })?;
+        self.actor_manager.start(Arc::new(move || Box::new(PriceActor::new(provider.clone()).on_bc(&bc))) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync + Clone>)?;
         Ok(self)
     }
 
@@ -393,7 +385,7 @@ where
 
         // Start EvmEstimatorActor
         self.actor_manager.start_and_wait(move || {
-            Box::new(EvmEstimatorActor::new(provider.clone(), encoder.clone()).on_bc(&bc))
+            Box::new(EvmEstimatorActor::new_with_provider(encoder.clone(), Some(provider.clone())).on_bc(&bc))
         })?;
         Ok(self)
     }
