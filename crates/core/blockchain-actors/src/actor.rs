@@ -9,6 +9,7 @@ use loom_broadcast_flashbots::client::RelayConfig;
 use loom_broadcast_flashbots::Flashbots;
 use loom_core_actors::{Actor, ActorsManager, SharedState};
 use std::sync::Arc;
+use std::ops::{Fn, FnMut, FnOnce};
 
 #[derive(Clone)]
 struct CloneableClosure<F>
@@ -33,8 +34,8 @@ where
 {
     type Output = Box<dyn Actor + Send + Sync>;
 
-    extern "rust-call" fn call_once(self, args: ()) -> Self::Output {
-        (self.inner)(args)
+    extern "rust-call" fn call_once(self, _args: ()) -> Self::Output {
+        (self.inner)()
     }
 }
 
@@ -42,8 +43,8 @@ impl<F> FnMut<()> for CloneableClosure<F>
 where
     F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
 {
-    extern "rust-call" fn call_mut(&mut self, args: ()) -> Self::Output {
-        (self.inner)(args)
+    extern "rust-call" fn call_mut(&mut self, _args: ()) -> Self::Output {
+        (self.inner)()
     }
 }
 
@@ -51,8 +52,8 @@ impl<F> Fn<()> for CloneableClosure<F>
 where
     F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
 {
-    extern "rust-call" fn call(&self, args: ()) -> Self::Output {
-        (self.inner)(args)
+    extern "rust-call" fn call(&self, _args: ()) -> Self::Output {
+        (self.inner)()
     }
 }
 use loom_core_block_history_actor::BlockHistoryActor;
