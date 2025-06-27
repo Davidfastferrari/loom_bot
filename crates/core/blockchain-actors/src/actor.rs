@@ -247,30 +247,6 @@ where
         let provider_clone = provider.clone();
         self.actor_manager.start(Arc::new(move || Box::new(NonceAndBalanceMonitorActor::new(provider_clone.clone()))) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync>)?;
         Ok(self)
-<<<<<<< SEARCH
-        self.actor_manager.start(Arc::new(move || Box::new(BlockHistoryActor::new((*provider).clone()).on_bc(&bc, &state))) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync + Clone>)?;
-        Ok(self)
-=======
-        self.actor_manager.start(Arc::new(move || Box::new(BlockHistoryActor::new((*provider).clone()).on_bc(&bc, &state))) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync>)?;
-        Ok(self)
-<<<<<<< SEARCH
-        self.actor_manager.start(Arc::new(move || Box::new(PriceActor::new(provider.clone()).on_bc(&bc))) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync + Clone>)?;
-        Ok(self)
-=======
-        self.actor_manager.start(Arc::new(move || Box::new(PriceActor::new(provider.clone()).on_bc(&bc))) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync>)?;
-        Ok(self)
-<<<<<<< SEARCH
-        }) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync + Clone>)?;
-        Ok(self)
-=======
-        }) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync>)?;
-        Ok(self)
-<<<<<<< SEARCH
-        self.actor_manager.start(Arc::new(move || Box::new(PoolHealthMonitorActor::new().on_bc(&bc_clone))) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync + Clone>)?;
-        Ok(self)
-=======
-        self.actor_manager.start(Arc::new(move || Box::new(PoolHealthMonitorActor::new().on_bc(&bc_clone))) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync>)?;
-        Ok(self)
     }
 
     pub fn with_nonce_and_balance_monitor_only_events(&mut self) -> Result<&mut Self> {
