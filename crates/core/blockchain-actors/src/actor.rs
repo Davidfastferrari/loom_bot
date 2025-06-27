@@ -147,11 +147,12 @@ where
         let signers_clone = self.signers.clone();
         for key in keys {
             let signers_clone = signers_clone.clone();
-            let key = key.clone();
             self.actor_manager.start({
                 let signers_clone = signers_clone.clone();
-                let key = key.clone();
-                move || Box::new(InitializeSignersOneShotBlockingActor::new(Some(key)).with_signers(signers_clone))
+                move || {
+                    let key = key.clone();
+                    Box::new(InitializeSignersOneShotBlockingActor::new(Some(key)).with_signers(signers_clone))
+                }
             })?;
         }
         self.with_signers()?;
