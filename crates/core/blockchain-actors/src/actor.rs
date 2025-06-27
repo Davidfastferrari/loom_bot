@@ -25,7 +25,6 @@ use loom_evm_db::DatabaseLoomExt;
 use loom_evm_utils::NWETH;
 use loom_execution_estimator::{EvmEstimatorActor, GethEstimatorActor};
 use loom_execution_multicaller::MulticallerSwapEncoder;
-use std::sync::Arc;
 use loom_metrics::InfluxDbWriterActor;
 use loom_node_actor_config::NodeBlockActorConfig;
 #[cfg(feature = "db-access")]
@@ -44,8 +43,53 @@ use loom_types_entities::{BlockHistoryState, PoolClass, SwapEncoder, TxSigners};
 use loom_types_blockchain::loom_data_types_ethereum::LoomDataTypesEthereum;
 use revm::{Database, DatabaseCommit, DatabaseRef};
 use std::collections::HashMap;
-use std::sync::Arc;
 use tokio_util::sync::CancellationToken;
+
+// Helper wrapper to make closures cloneable
+#[derive(Clone)]
+pub struct CloneableClosure<F> {
+    inner: Arc<F>,
+}
+
+impl<F> CloneableClosure<F>
+where
+    F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
+{
+    pub fn new(f: F) -> Self {
+        Self {
+            inner: Arc::new(f),
+        }
+    }
+}
+
+impl<F> Fn<()> for CloneableClosure<F>
+where
+    F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
+{
+    extern "rust-call" fn call(&self, _args: ()) -> Self::Output {
+        (self.inner)()
+    }
+}
+
+impl<F> FnMut<()> for CloneableClosure<F>
+where
+    F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
+{
+    extern "rust-call" fn call_mut(&mut self, args: ()) -> Self::Output {
+        self.call(args)
+    }
+}
+
+impl<F> FnOnce<()> for CloneableClosure<F>
+where
+    F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
+{
+    type Output = Box<dyn Actor + Send + Sync>;
+
+    extern "rust-call" fn call_once(self, args: ()) -> Self::Output {
+        self.call(args)
+    }
+}
 
 pub struct BlockchainActors<P, DB: Clone + Send + Sync + 'static, E: Clone = MulticallerSwapEncoder> {
     provider: P,
@@ -127,39 +171,43 @@ where
 
     /// Initialize signers with the default anvil Private Key
     pub fn initialize_signers_with_anvil(&mut self) -> Result<&mut Self> {
-        use std::sync::Arc;
         let key: B256 = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80".parse()?;
 
         let signers_clone = self.signers.clone();
         let key_vec = key.to_vec();
-        let key_vec_clone = key_vec.clone();
-        let signers_clone2 = signers_clone.clone();
-        self.actor_manager.start(move || Box::new(InitializeSignersOneShotBlockingActor::new(Some(key_vec_clone)).with_signers(signers_clone2)))?;
+        let closure = {
+            let key_vec = key_vec.clone();
+            let signers = signers_clone.clone();
+            move || Box::new(InitializeSignersOneShotBlockingActor::new(Some(key_vec.clone())).with_signers(signers.clone())) as Box<dyn Actor + Send + Sync>
+        };
+        self.actor_manager.start(closure)?;
         self.with_signers()?;
         Ok(self)
     }
 
     /// Initialize signers with the private key. Random key generated if param in None
     pub fn initialize_signers_with_key(&mut self, key: Option<Vec<u8>>) -> Result<&mut Self> {
-        use std::sync::Arc;
         let signers_clone = self.signers.clone();
-        let key_clone = key.clone();
-        let key_clone2 = key_clone.clone();
-        let signers_clone2 = signers_clone.clone();
-        self.actor_manager.start(move || Box::new(InitializeSignersOneShotBlockingActor::new(key_clone2).with_signers(signers_clone2)))?;
+        let closure = {
+            let key = key.clone();
+            let signers = signers_clone.clone();
+            move || Box::new(InitializeSignersOneShotBlockingActor::new(key.clone()).with_signers(signers.clone())) as Box<dyn Actor + Send + Sync>
+        };
+        self.actor_manager.start(closure)?;
         self.with_signers()?;
         Ok(self)
     }
 
     /// Initialize signers with multiple private keys
     pub fn initialize_signers_with_keys(&mut self, keys: Vec<Vec<u8>>) -> Result<&mut Self> {
-        use std::sync::Arc;
         let signers_clone = self.signers.clone();
         for key in keys {
-            let signers_clone2 = signers_clone.clone();
-            let key_clone = key.clone();
-            let key_clone2 = key_clone.clone();
-            self.actor_manager.start(move || Box::new(InitializeSignersOneShotBlockingActor::new(Some(key_clone2)).with_signers(signers_clone2)))?;
+            let closure = {
+                let key = key.clone();
+                let signers = signers_clone.clone();
+                move || Box::new(InitializeSignersOneShotBlockingActor::new(Some(key.clone())).with_signers(signers.clone())) as Box<dyn Actor + Send + Sync>
+            };
+            self.actor_manager.start(closure)?;
         }
         self.with_signers()?;
         Ok(self)
@@ -167,31 +215,37 @@ where
 
     /// Initialize signers with encrypted private key
     pub fn initialize_signers_with_encrypted_key(&mut self, key: Vec<u8>) -> Result<&mut Self> {
-        use std::sync::Arc;
         let signers_clone = self.signers.clone();
-        let key_clone = key.clone();
-        self.actor_manager.start(move || {
-            let actor = InitializeSignersOneShotBlockingActor::new_from_encrypted_key(key_clone);
-            match actor {
-                Ok(a) => Box::new(a.with_signers(signers_clone.clone())),
-                Err(e) => panic!("Failed to create InitializeSignersOneShotBlockingActor: {:?}", e),
+        let closure = {
+            let key = key.clone();
+            let signers = signers_clone.clone();
+            move || {
+                let actor = InitializeSignersOneShotBlockingActor::new_from_encrypted_key(key.clone());
+                match actor {
+                    Ok(a) => Box::new(a.with_signers(signers.clone())) as Box<dyn Actor + Send + Sync>,
+                    Err(e) => panic!("Failed to create InitializeSignersOneShotBlockingActor: {:?}", e),
+                }
             }
-        })?;
+        };
+        self.actor_manager.start(closure)?;
         self.with_signers()?;
         Ok(self)
     }
 
     /// Initializes signers with encrypted key form DATA env var
     pub fn initialize_signers_with_env(&mut self) -> Result<&mut Self> {
-        use std::sync::Arc;
         let signers_clone = self.signers.clone();
-        self.actor_manager.start(move || {
-            let actor = InitializeSignersOneShotBlockingActor::new_from_encrypted_env();
-            match actor {
-                Ok(a) => Box::new(a.with_signers(signers_clone.clone())),
-                Err(e) => panic!("Failed to create InitializeSignersOneShotBlockingActor: {:?}", e),
+        let closure = {
+            let signers = signers_clone.clone();
+            move || {
+                let actor = InitializeSignersOneShotBlockingActor::new_from_encrypted_env();
+                match actor {
+                    Ok(a) => Box::new(a.with_signers(signers.clone())) as Box<dyn Actor + Send + Sync>,
+                    Err(e) => panic!("Failed to create InitializeSignersOneShotBlockingActor: {:?}", e),
+                }
             }
-        })?;
+        };
+        self.actor_manager.start(closure)?;
         self.with_signers()?;
         Ok(self)
     }
@@ -200,8 +254,7 @@ where
     pub fn with_signers(&mut self) -> Result<&mut Self> {
         if !self.has_signers {
             self.has_signers = true;
-            // Removed call to non-existent with_signers method
-            let closure = CloneableClosure::new(move || Box::new(TxSignersActor::<LoomDataTypesEthereum>::new()));
+            let closure = CloneableClosure::new(move || Box::new(TxSignersActor::<LoomDataTypesEthereum>::new()) as Box<dyn Actor + Send + Sync>);
             self.actor_manager.start(closure)?;
         }
         Ok(self)
@@ -213,7 +266,7 @@ where
         self.encoder = Some(swap_encoder);
         let bc = self.bc.clone();
         let strategy = self.strategy.clone();
-        let closure = CloneableClosure::new(move || Box::new(SwapRouterActor::<DB>::new().on_bc(&bc, &strategy)));
+        let closure = CloneableClosure::new(move || Box::new(SwapRouterActor::<DB>::new().on_bc(&bc, &strategy)) as Box<dyn Actor + Send + Sync>);
         self.actor_manager.start(closure)?;
         Ok(self)
     }
@@ -231,7 +284,7 @@ where
         let state = self.state.clone();
 
         // Add explicit type parameters for MarketStatePreloadedOneShotActor::new
-        let closure = CloneableClosure::new(move || Box::new(MarketStatePreloadedOneShotActor::<P, E, DB>::new(provider).on_bc(&bc, &state)));
+        let closure = CloneableClosure::new(move || Box::new(MarketStatePreloadedOneShotActor::<P, Ethereum, DB>::new(provider.clone()).on_bc(&bc, &state)) as Box<dyn Actor + Send + Sync>);
         self.actor_manager.start(closure)?;
         Ok(self)
     }
@@ -270,13 +323,13 @@ where
 
         let bc = self.bc.clone();
         let state = self.state.clone();
-        use std::sync::Arc;
-        let market_state_preloader = Arc::new(market_state_preloader);
-        let bc = Arc::new(bc);
-        let state = Arc::new(state);
-        use std::sync::Arc;
-        let market_state_preloader = Arc::new(market_state_preloader);
-        let bc = Arc::new(bc);
+        let closure = {
+            let preloader = market_state_preloader;
+            let bc = bc.clone();
+            let state = state.clone();
+            move || Box::new(preloader.clone().on_bc(&bc, &state)) as Box<dyn Actor + Send + Sync>
+        };
+        self.actor_manager.start(CloneableClosure::new(closure))?;
         Ok(self)
     }
 
