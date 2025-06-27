@@ -280,7 +280,7 @@ where
             let preloader = market_state_preloader;
             let bc = bc.clone();
             let state = state.clone();
-            move || Box::new(preloader.on_bc(&bc, &state)) as Box<dyn Actor + Send + Sync>
+            move || Box::new(MarketStatePreloadedOneShotActor::new(self.provider.clone()).on_bc(&bc, &state)) as Box<dyn Actor + Send + Sync>
         };
         self.actor_manager.start(closure)?;
         Ok(self)
@@ -291,7 +291,7 @@ where
         use std::sync::Arc;
         let provider = Arc::new(self.provider.clone());
         let provider_clone = provider.clone();
-        let closure = CloneableClosure::new(move || Box::new(NonceAndBalanceMonitorActor::new(provider_clone.clone())));
+        let closure = move || Box::new(NonceAndBalanceMonitorActor::new(provider_clone.clone())) as Box<dyn Actor + Send + Sync>;
         self.actor_manager.start(closure)?;
         Ok(self)
     }
@@ -299,10 +299,7 @@ where
     pub fn with_nonce_and_balance_monitor_only_events(&mut self) -> Result<&mut Self> {
         use std::sync::Arc;
         let provider = Arc::new(self.provider.clone());
-        let closure = {
-            let provider = provider.clone();
-            CloneableClosure::new(move || Box::new(NonceAndBalanceMonitorActor::new(provider.clone()).only_once()))
-        };
+        let closure = move || Box::new(NonceAndBalanceMonitorActor::new(provider.clone()).only_once()) as Box<dyn Actor + Send + Sync>;
         self.actor_manager.start(closure)?;
         Ok(self)
     }
@@ -313,7 +310,7 @@ where
         let provider = Arc::new(self.provider.clone());
         let bc = Arc::new(self.bc.clone());
         let state = Arc::new(self.state.clone());
-        let closure = CloneableClosure::new(move || Box::new(BlockHistoryActor::new((*provider).clone()).on_bc(&bc, &state)));
+        let closure = move || Box::new(BlockHistoryActor::new((*provider).clone()).on_bc(&bc, &state)) as Box<dyn Actor + Send + Sync>;
         self.actor_manager.start(closure)?;
         Ok(self)
     }
@@ -323,7 +320,7 @@ where
         use std::sync::Arc;
         let provider = Arc::new(self.provider.clone());
         let bc = Arc::new(self.bc.clone());
-        let closure = CloneableClosure::new(move || Box::new(PriceActor::new(provider.clone()).on_bc(&bc)));
+        let closure = move || Box::new(PriceActor::new(provider.clone()).on_bc(&bc)) as Box<dyn Actor + Send + Sync>;
         self.actor_manager.start(closure)?;
         Ok(self)
     }
@@ -338,11 +335,11 @@ where
         let provider_clone = provider.clone();
         let bc_clone = bc.clone();
         let config_clone = config.clone();
-        let closure = CloneableClosure::new(move || {
+        let closure = move || {
             let actor = NodeBlockActor::new((*provider).clone(), config_clone.clone());
             let actor = actor.on_bc(&bc_clone);
-            Box::new(actor)
-        });
+            Box::new(actor) as Box<dyn Actor + Send + Sync>
+        };
         self.actor_manager.start(closure)?;
         Ok(self)
     }
@@ -352,7 +349,7 @@ where
     pub fn reth_node_with_blocks(&mut self, db_path: String, config: NodeBlockActorConfig) -> Result<&mut Self> {
         let provider = self.provider.clone();
         let bc = self.bc.clone();
-        let closure = CloneableClosure::new(move || Box::new(RethDbAccessBlockActor::new(provider, config, db_path).on_bc(&bc)));
+        let closure = move || Box::new(RethDbAccessBlockActor::new(provider, config, db_path).on_bc(&bc)) as Box<dyn Actor + Send + Sync>;
         self.actor_manager.start(closure)?;
         Ok(self)
     }
@@ -361,7 +358,7 @@ where
     pub fn with_exex_events(&mut self) -> Result<&mut Self> {
         self.mempool()?;
         let bc = self.bc.clone();
-        let closure = CloneableClosure::new(move || Box::new(NodeExExGrpcActor::new("http://[::1]:10000".to_string()).on_bc(&bc)));
+        let closure = move || Box::new(NodeExExGrpcActor::new("http://[::1]:10000".to_string()).on_bc(&bc)) as Box<dyn Actor + Send + Sync>;
         self.actor_manager.start(closure)?;
         Ok(self)
     }
@@ -371,7 +368,7 @@ where
         if !self.has_mempool {
             self.has_mempool = true;
             let bc = self.bc.clone();
-            let closure = CloneableClosure::new(move || Box::new(MempoolActor::new().on_bc(&bc)));
+            let closure = move || Box::new(MempoolActor::new().on_bc(&bc)) as Box<dyn Actor + Send + Sync>;
             self.actor_manager.start(closure)?;
         }
         Ok(self)
@@ -383,11 +380,7 @@ where
         use std::sync::Arc;
         let provider = Arc::new(self.provider.clone());
         let bc = Arc::new(self.bc.clone());
-        let closure = {
-            let provider = provider.clone();
-            let bc = bc.clone();
-            CloneableClosure::new(move || Box::new(NodeMempoolActor::new(provider.clone()).on_bc(&bc)))
-        };
+        let closure = move || Box::new(NodeMempoolActor::new(provider.clone()).on_bc(&bc)) as Box<dyn Actor + Send + Sync>;
         self.actor_manager.start(closure)?;
         Ok(self)
     }
@@ -401,11 +394,7 @@ where
         use std::sync::Arc;
         let bc = Arc::new(self.bc.clone());
         let provider = Arc::new(provider);
-        let closure = {
-            let bc = bc.clone();
-            let provider = provider.clone();
-            CloneableClosure::new(move || Box::new(NodeMempoolActor::new(provider.clone()).on_bc(&bc)))
-        };
+        let closure = move || Box::new(NodeMempoolActor::new(provider.clone()).on_bc(&bc)) as Box<dyn Actor + Send + Sync>;
         self.actor_manager.start(closure)?;
         Ok(self)
     }
@@ -422,7 +411,7 @@ where
 
         // Wrap flashbots in Arc without cloning
         let flashbots = Arc::new(flashbots);
-        let closure = move || Box::new(FlashbotsBroadcastActor::new(flashbots.clone(), allow_broadcast));
+        let closure = move || Box::new(FlashbotsBroadcastActor::new(flashbots.clone(), allow_broadcast)) as Box<dyn Actor + Send + Sync>;
         self.actor_manager.start(closure)?;
         Ok(self)
     }
@@ -447,7 +436,7 @@ where
         let strategy_arc = Arc::new(strategy);
 
         let closure = move || {
-            Box::new(EvmEstimatorActor::new_with_provider((*encoder_arc).clone(), Some((*provider_arc).clone())).on_bc(&(*bc_arc), &(*strategy_arc)))
+            Box::new(EvmEstimatorActor::new_with_provider((*encoder_arc).clone(), Some((*provider_arc).clone())).on_bc(&(*bc_arc), &(*strategy_arc))) as Box<dyn Actor + Send + Sync>
         };
         self.actor_manager.start_and_wait(closure)?;
         Ok(self)
