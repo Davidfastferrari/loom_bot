@@ -121,9 +121,11 @@ where
         let key: B256 = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80".parse()?;
 
         let signers_clone = self.signers.clone();
+        let key_vec = key.to_vec();
         self.actor_manager.start({
             let signers_clone = signers_clone.clone();
-            move || Box::new(InitializeSignersOneShotBlockingActor::new(Some(key.to_vec())).with_signers(signers_clone))
+            let key_vec = key_vec.clone();
+            move || Box::new(InitializeSignersOneShotBlockingActor::new(Some(key_vec)).with_signers(signers_clone))
         })?;
         self.with_signers()?;
         Ok(self)
@@ -132,10 +134,11 @@ where
     /// Initialize signers with the private key. Random key generated if param in None
     pub fn initialize_signers_with_key(&mut self, key: Option<Vec<u8>>) -> Result<&mut Self> {
         let signers_clone = self.signers.clone();
+        let key_clone = key.clone();
         self.actor_manager.start({
             let signers_clone = signers_clone.clone();
-            let key = key.clone();
-            move || Box::new(InitializeSignersOneShotBlockingActor::new(key).with_signers(signers_clone))
+            let key_clone = key_clone.clone();
+            move || Box::new(InitializeSignersOneShotBlockingActor::new(key_clone).with_signers(signers_clone))
         })?;
         self.with_signers()?;
         Ok(self)
@@ -147,11 +150,12 @@ where
         let signers_clone = self.signers.clone();
         for key in keys {
             let signers_clone = signers_clone.clone();
+            let key_clone = key.clone();
             self.actor_manager.start({
                 let signers_clone = signers_clone.clone();
+                let key_clone = key_clone.clone();
                 move || {
-                    let key = key.clone();
-                    Box::new(InitializeSignersOneShotBlockingActor::new(Some(key)).with_signers(signers_clone))
+                    Box::new(InitializeSignersOneShotBlockingActor::new(Some(key_clone)).with_signers(signers_clone))
                 }
             })?;
         }
@@ -161,10 +165,11 @@ where
 
     /// Initialize signers with encrypted private key
     pub fn initialize_signers_with_encrypted_key(&mut self, key: Vec<u8>) -> Result<&mut Self> {
+        let signers_clone = self.signers.clone();
         self.actor_manager.start(move || {
             let actor = InitializeSignersOneShotBlockingActor::new_from_encrypted_key(key);
             match actor {
-                Ok(a) => Box::new(a.with_signers(self.signers.clone())),
+                Ok(a) => Box::new(a.with_signers(signers_clone.clone())),
                 Err(e) => panic!("Failed to create InitializeSignersOneShotBlockingActor: {:?}", e),
             }
         })?;
@@ -174,10 +179,11 @@ where
 
     /// Initializes signers with encrypted key form DATA env var
     pub fn initialize_signers_with_env(&mut self) -> Result<&mut Self> {
+        let signers_clone = self.signers.clone();
         self.actor_manager.start(move || {
             let actor = InitializeSignersOneShotBlockingActor::new_from_encrypted_env();
             match actor {
-                Ok(a) => Box::new(a.with_signers(self.signers.clone())),
+                Ok(a) => Box::new(a.with_signers(signers_clone.clone())),
                 Err(e) => panic!("Failed to create InitializeSignersOneShotBlockingActor: {:?}", e),
             }
         })?;
@@ -217,8 +223,8 @@ where
         let bc = self.bc.clone();
         let state = self.state.clone();
 
-        // Closure must implement Actor trait, ensure MarketStatePreloadedOneShotActor implements Actor
-        self.actor_manager.start(move || Box::new(MarketStatePreloadedOneShotActor::new(provider).on_bc(&bc, &state)))?;
+        // Add explicit type parameters for MarketStatePreloadedOneShotActor::new
+        self.actor_manager.start(move || Box::new(MarketStatePreloadedOneShotActor::<P, E, DB>::new(provider).on_bc(&bc, &state)))?;
         Ok(self)
     }
 
@@ -394,7 +400,7 @@ where
         let flashbots = Arc::new(flashbots);
         self.actor_manager.start({
             let flashbots = flashbots.clone();
-            move || Box::new(FlashbotsBroadcastActor::new(flashbots, allow_broadcast))
+            move || Box::new(FlashbotsBroadcastActor::new((*flashbots).clone(), allow_broadcast))
         })?;
         Ok(self)
     }
@@ -423,15 +429,10 @@ where
             let encoder = encoder_arc.clone();
             let bc = bc_arc.clone();
             let strategy = strategy_arc.clone();
-            move || Box::new(EvmEstimatorActor::new_with_provider((*encoder).clone(), Some((*provider).clone())).on_bc(&(*bc), &(*strategy)))
+            Box::new(EvmEstimatorActor::new_with_provider((*encoder).clone(), Some((*provider).clone())).on_bc(&(*bc), &(*strategy)))
         };
 
-        let closure_arc = Arc::new(closure);
-
-        self.actor_manager.start_and_wait({
-            let closure = closure_arc.clone();
-            move || closure()
-        })?;
+        self.actor_manager.start_and_wait(closure)?;
         Ok(self)
     }
 
