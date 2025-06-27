@@ -138,12 +138,12 @@ where
     /// Initialize signers with the private key. Random key generated if param in None
     pub fn initialize_signers_with_key(&mut self, key: Option<Vec<u8>>) -> Result<&mut Self> {
         let signers_clone = self.signers.clone();
-        let closure = {
-            let key = key.clone();
-            let signers = signers_clone.clone();
-            move || Box::new(InitializeSignersOneShotBlockingActor::new(key.clone()).with_signers(signers.clone())) as Box<dyn Actor + Send + Sync>
-        };
-        self.actor_manager.start(closure)?;
+            let closure = Arc::new({
+                let key = key.clone();
+                let signers = signers_clone.clone();
+                move || Box::new(InitializeSignersOneShotBlockingActor::new(key.clone()).with_signers(signers.clone())) as Box<dyn Actor + Send + Sync>
+            });
+            self.actor_manager.start(closure)?;
         self.with_signers()?;
         Ok(self)
     }
