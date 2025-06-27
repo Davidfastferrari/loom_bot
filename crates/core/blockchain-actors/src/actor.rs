@@ -289,7 +289,7 @@ where
         let provider = Arc::new(self.provider.clone());
         let bc = Arc::new(self.bc.clone());
         let state = Arc::new(self.state.clone());
-        self.actor_manager.start(Arc::new(move || Box::new(BlockHistoryActor::new((*provider).clone()).on_bc(&bc, &state))) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync + Clone>)?;
+        self.actor_manager.start(Arc::new(move || Box::new(BlockHistoryActor::new((*provider).clone()).on_bc(&bc, &state))) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync>)?;
         Ok(self)
     }
 
@@ -298,7 +298,7 @@ where
         use std::sync::Arc;
         let provider = Arc::new(self.provider.clone());
         let bc = Arc::new(self.bc.clone());
-        self.actor_manager.start(Arc::new(move || Box::new(PriceActor::new(provider.clone()).on_bc(&bc))) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync + Clone>)?;
+        self.actor_manager.start(Arc::new(move || Box::new(PriceActor::new(provider.clone()).on_bc(&bc))) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync>)?;
         Ok(self)
     }
 
@@ -316,7 +316,7 @@ where
             let actor = NodeBlockActor::new((*provider).clone(), config_clone.clone());
             let actor = actor.on_bc(&bc_clone);
             Box::new(actor)
-        }) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync + Clone>)?;
+        }) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync>)?;
         Ok(self)
     }
 
@@ -422,7 +422,7 @@ where
         use std::sync::Arc;
         let bc = Arc::new(self.bc.clone());
         let bc_clone = bc.clone();
-        self.actor_manager.start(Arc::new(move || Box::new(PoolHealthMonitorActor::new().on_bc(&bc_clone))) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync + Clone>)?;
+        self.actor_manager.start(Arc::new(move || Box::new(PoolHealthMonitorActor::new().on_bc(&bc_clone))) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync>)?;
         Ok(self)
     }
 
