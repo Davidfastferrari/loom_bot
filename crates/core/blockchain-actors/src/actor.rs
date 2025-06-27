@@ -243,7 +243,7 @@ where
     pub fn with_market_state_preloader_virtual(&mut self, address_to_copy: Vec<Address>) -> Result<&mut Self> {
         let address_vec = self.signers.inner().try_read()?.get_address_vec();
 
-        let mut market_state_preloader = MarketStatePreloadedOneShotActor::new(self.provider.clone());
+        let mut market_state_preloader = MarketStatePreloadedOneShotActor::<P, Ethereum, DB>::new(self.provider.clone());
 
         for address in address_vec {
             //            market_state_preloader = market_state_preloader.with_new_account(address, 0, NWETH::from_float(10.0), None);
@@ -277,7 +277,7 @@ where
                 let preloader = market_state_preloader;
                 let bc = bc.clone();
                 let state = state.clone();
-                move || Box::new(MarketStatePreloadedOneShotActor::new(self.provider.clone()).on_bc(&bc, &state)) as Box<dyn Actor + Send + Sync>
+                move || Box::new(MarketStatePreloadedOneShotActor::<P, Ethereum, DB>::new(self.provider.clone()).on_bc(&bc, &state)) as Box<dyn Actor + Send + Sync>
             });
             self.actor_manager.start(move || arc_closure())?;
         Ok(self)
