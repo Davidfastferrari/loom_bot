@@ -273,13 +273,10 @@ where
 
         let bc = self.bc.clone();
         let state = self.state.clone();
-            let arc_closure = Arc::new({
-                let preloader = market_state_preloader;
-                let bc = bc.clone();
-                let state = state.clone();
-                move || Box::new(MarketStatePreloadedOneShotActor::<P, Ethereum, DB>::new(self.provider.clone()).on_bc(&bc, &state)) as Box<dyn Actor + Send + Sync>
-            });
-            self.actor_manager.start(move || arc_closure())?;
+        let provider_clone = self.provider.clone();
+        let preloader_clone = market_state_preloader.clone();
+        let arc_closure = Arc::new(move || Box::new(preloader_clone.on_bc(&bc, &state)) as Box<dyn Actor + Send + Sync>);
+        self.actor_manager.start(move || arc_closure())?;
         Ok(self)
     }
 
