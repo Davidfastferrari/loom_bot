@@ -9,53 +9,6 @@ use loom_broadcast_flashbots::client::RelayConfig;
 use loom_broadcast_flashbots::Flashbots;
 use loom_core_actors::{Actor, ActorsManager, SharedState};
 use std::sync::Arc;
-use std::ops::{Fn, FnMut, FnOnce};
-
-#[derive(Clone)]
-struct CloneableClosure<F>
-where
-    F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
-{
-    inner: Arc<F>,
-}
-
-impl<F> CloneableClosure<F>
-where
-    F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
-{
-    fn new(f: F) -> Self {
-        Self { inner: Arc::new(f) }
-    }
-}
-
-impl<F> FnOnce<()> for CloneableClosure<F>
-where
-    F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
-{
-    type Output = Box<dyn Actor + Send + Sync>;
-
-    extern "rust-call" fn call_once(self, _args: ()) -> Self::Output {
-        (self.inner)()
-    }
-}
-
-impl<F> FnMut<()> for CloneableClosure<F>
-where
-    F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
-{
-    extern "rust-call" fn call_mut(&mut self, _args: ()) -> Self::Output {
-        (self.inner)()
-    }
-}
-
-impl<F> Fn<()> for CloneableClosure<F>
-where
-    F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
-{
-    extern "rust-call" fn call(&self, _args: ()) -> Self::Output {
-        (self.inner)()
-    }
-}
 use loom_core_block_history_actor::BlockHistoryActor;
 use loom_core_blockchain::{Blockchain, BlockchainState, Strategy};
 use loom_core_mempool::MempoolActor;
@@ -155,9 +108,9 @@ where
     /// Start a custom actor
     pub fn start<F>(&mut self, actor_factory: F) -> Result<&mut Self>
     where
-        F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + Clone + 'static,
+        F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
     {
-        let closure = CloneableClosure::new(actor_factory);
+        let closure: Arc<dyn Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync> = Arc::new(actor_factory);
         self.actor_manager.start(closure)?;
         Ok(self)
     }
@@ -165,9 +118,9 @@ where
     /// Start a custom actor and wait for it to finish
     pub fn start_and_wait<F>(&mut self, actor_factory: F) -> Result<&mut Self>
     where
-        F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + Clone + 'static,
+        F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + 'static,
     {
-        let closure = CloneableClosure::new(actor_factory);
+        let closure: Arc<dyn Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync> = Arc::new(actor_factory);
         self.actor_manager.start_and_wait(closure)?;
         Ok(self)
     }
