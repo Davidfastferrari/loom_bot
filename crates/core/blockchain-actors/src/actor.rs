@@ -120,26 +120,28 @@ where
     pub fn initialize_signers_with_anvil(&mut self) -> Result<&mut Self> {
         let key: B256 = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80".parse()?;
 
-        self.actor_manager.start_and_wait(
-            InitializeSignersOneShotBlockingActor::new(Some(key.to_vec())).with_signers(self.signers.clone()),
-        )?;
+        use std::sync::Arc;
+        let actor = Arc::new(InitializeSignersOneShotBlockingActor::new(Some(key.to_vec())).with_signers(self.signers.clone()));
+        self.actor_manager.start(move || Box::new(actor.clone()))?;
         self.with_signers()?;
         Ok(self)
     }
 
     /// Initialize signers with the private key. Random key generated if param in None
     pub fn initialize_signers_with_key(&mut self, key: Option<Vec<u8>>) -> Result<&mut Self> {
-        self.actor_manager
-            .start_and_wait(InitializeSignersOneShotBlockingActor::new(key).with_signers(self.signers.clone()))?;
+        use std::sync::Arc;
+        let actor = Arc::new(InitializeSignersOneShotBlockingActor::new(key).with_signers(self.signers.clone()));
+        self.actor_manager.start(move || Box::new(actor.clone()))?;
         self.with_signers()?;
         Ok(self)
     }
 
     /// Initialize signers with multiple private keys
     pub fn initialize_signers_with_keys(&mut self, keys: Vec<Vec<u8>>) -> Result<&mut Self> {
+        use std::sync::Arc;
         for key in keys {
-            self.actor_manager
-                .start_and_wait(InitializeSignersOneShotBlockingActor::new(Some(key)).with_signers(self.signers.clone()))?;
+            let actor = Arc::new(InitializeSignersOneShotBlockingActor::new(Some(key)).with_signers(self.signers.clone()));
+            self.actor_manager.start(move || Box::new(actor.clone()))?;
         }
         self.with_signers()?;
         Ok(self)
@@ -147,7 +149,7 @@ where
 
     /// Initialize signers with encrypted private key
     pub fn initialize_signers_with_encrypted_key(&mut self, key: Vec<u8>) -> Result<&mut Self> {
-        self.actor_manager.start_and_wait(
+        self.actor_manager.start(
             InitializeSignersOneShotBlockingActor::new_from_encrypted_key(key)?.with_signers(self.signers.clone()),
         )?;
         self.with_signers()?;
@@ -156,7 +158,7 @@ where
 
     /// Initializes signers with encrypted key form DATA env var
     pub fn initialize_signers_with_env(&mut self) -> Result<&mut Self> {
-        self.actor_manager.start_and_wait(
+        self.actor_manager.start(
             InitializeSignersOneShotBlockingActor::new_from_encrypted_env()?.with_signers(self.signers.clone()),
         )?;
         self.with_signers()?;
@@ -196,7 +198,7 @@ where
         let state = self.state.clone();
 
         // Closure must implement Actor trait, ensure MarketStatePreloadedOneShotActor implements Actor
-        self.actor_manager.start_and_wait(move || Box::new(MarketStatePreloadedOneShotActor::new(provider).on_bc(&bc, &state)))?;
+        self.actor_manager.start(move || Box::new(MarketStatePreloadedOneShotActor::new(provider).on_bc(&bc, &state)))?;
         Ok(self)
     }
 
@@ -243,7 +245,31 @@ where
         use std::sync::Arc;
         let provider = Arc::new(self.provider.clone());
         let provider_clone = provider.clone();
-        self.actor_manager.start(Arc::new(move || Box::new(NonceAndBalanceMonitorActor::new(provider_clone.clone()))) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync + Clone>)?;
+        self.actor_manager.start(Arc::new(move || Box::new(NonceAndBalanceMonitorActor::new(provider_clone.clone()))) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync>)?;
+        Ok(self)
+<<<<<<< SEARCH
+        self.actor_manager.start(Arc::new(move || Box::new(BlockHistoryActor::new((*provider).clone()).on_bc(&bc, &state))) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync + Clone>)?;
+        Ok(self)
+=======
+        self.actor_manager.start(Arc::new(move || Box::new(BlockHistoryActor::new((*provider).clone()).on_bc(&bc, &state))) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync>)?;
+        Ok(self)
+<<<<<<< SEARCH
+        self.actor_manager.start(Arc::new(move || Box::new(PriceActor::new(provider.clone()).on_bc(&bc))) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync + Clone>)?;
+        Ok(self)
+=======
+        self.actor_manager.start(Arc::new(move || Box::new(PriceActor::new(provider.clone()).on_bc(&bc))) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync>)?;
+        Ok(self)
+<<<<<<< SEARCH
+        }) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync + Clone>)?;
+        Ok(self)
+=======
+        }) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync>)?;
+        Ok(self)
+<<<<<<< SEARCH
+        self.actor_manager.start(Arc::new(move || Box::new(PoolHealthMonitorActor::new().on_bc(&bc_clone))) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync + Clone>)?;
+        Ok(self)
+=======
+        self.actor_manager.start(Arc::new(move || Box::new(PoolHealthMonitorActor::new().on_bc(&bc_clone))) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync>)?;
         Ok(self)
     }
 
@@ -368,7 +394,7 @@ where
         let flashbots_arc = Arc::new(flashbots_clone);
         let flashbots_arc_clone = flashbots_arc.clone();
 
-        self.actor_manager.start(Arc::new(move || Box::new(FlashbotsBroadcastActor::new((*flashbots_arc_clone).clone(), allow_broadcast))) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync + Clone>)?;
+        self.actor_manager.start(Arc::new(move || Box::new(FlashbotsBroadcastActor::new((*flashbots_arc_clone).clone(), allow_broadcast))) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync>)?;
         Ok(self)
     }
 
@@ -412,9 +438,10 @@ where
 
     /// Starts stuffing tx monitor
     pub fn with_health_monitor_stuffing_tx(&mut self) -> Result<&mut Self> {
-        let provider = self.provider.clone();
-        let bc = self.bc.clone();
-        self.actor_manager.start(move || Box::new(StuffingTxMonitorActor::new(provider).on_bc(&bc)))?;
+        use std::sync::Arc;
+        let provider = Arc::new(self.provider.clone());
+        let bc = Arc::new(self.bc.clone());
+        self.actor_manager.start(Arc::new(move || Box::new(StuffingTxMonitorActor::new(provider.clone()).on_bc(&bc.clone()))) as Arc<dyn Fn() -> Box<dyn Actor + Send + Sync + 'static> + Send + Sync>)?;
         Ok(self)
     }
 }
