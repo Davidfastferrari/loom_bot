@@ -105,14 +105,20 @@ where
     }
 
     /// Start a custom actor
-    pub fn start(&mut self, actor: impl Actor + 'static) -> Result<&mut Self> {
-        self.actor_manager.start(actor)?;
+    pub fn start<F>(&mut self, actor_factory: F) -> Result<&mut Self>
+    where
+        F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + Clone + 'static,
+    {
+        self.actor_manager.start(actor_factory)?;
         Ok(self)
     }
 
     /// Start a custom actor and wait for it to finish
-    pub fn start_and_wait(&mut self, actor: impl Actor + Send + Sync + 'static) -> Result<&mut Self> {
-        self.actor_manager.start_and_wait(actor)?;
+    pub fn start_and_wait<F>(&mut self, actor_factory: F) -> Result<&mut Self>
+    where
+        F: Fn() -> Box<dyn Actor + Send + Sync> + Send + Sync + Clone + 'static,
+    {
+        self.actor_manager.start_and_wait(actor_factory)?;
         Ok(self)
     }
 
