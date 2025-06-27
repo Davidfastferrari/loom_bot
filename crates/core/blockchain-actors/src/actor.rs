@@ -122,11 +122,9 @@ where
 
         let signers_clone = self.signers.clone();
         let key_vec = key.to_vec();
-        self.actor_manager.start({
-            let signers_clone = signers_clone.clone();
-            let key_vec = key_vec.clone();
-            move || Box::new(InitializeSignersOneShotBlockingActor::new(Some(key_vec)).with_signers(signers_clone))
-        })?;
+        let key_vec_moved = key_vec.clone();
+        let signers_moved = signers_clone.clone();
+        self.actor_manager.start(move || Box::new(InitializeSignersOneShotBlockingActor::new(Some(key_vec_moved)).with_signers(signers_moved)))?;
         self.with_signers()?;
         Ok(self)
     }
@@ -135,11 +133,9 @@ where
     pub fn initialize_signers_with_key(&mut self, key: Option<Vec<u8>>) -> Result<&mut Self> {
         let signers_clone = self.signers.clone();
         let key_clone = key.clone();
-        self.actor_manager.start({
-            let signers_clone = signers_clone.clone();
-            let key_clone = key_clone.clone();
-            move || Box::new(InitializeSignersOneShotBlockingActor::new(key_clone).with_signers(signers_clone))
-        })?;
+        let key_moved = key_clone.clone();
+        let signers_moved = signers_clone.clone();
+        self.actor_manager.start(move || Box::new(InitializeSignersOneShotBlockingActor::new(key_moved).with_signers(signers_moved)))?;
         self.with_signers()?;
         Ok(self)
     }
@@ -151,13 +147,9 @@ where
         for key in keys {
             let signers_clone = signers_clone.clone();
             let key_clone = key.clone();
-            self.actor_manager.start({
-                let signers_clone = signers_clone.clone();
-                let key_clone = key_clone.clone();
-                move || {
-                    Box::new(InitializeSignersOneShotBlockingActor::new(Some(key_clone)).with_signers(signers_clone))
-                }
-            })?;
+            let key_moved = key_clone.clone();
+            let signers_moved = signers_clone.clone();
+            self.actor_manager.start(move || Box::new(InitializeSignersOneShotBlockingActor::new(Some(key_moved)).with_signers(signers_moved)))?;
         }
         self.with_signers()?;
         Ok(self)
@@ -429,7 +421,7 @@ where
             let encoder = encoder_arc.clone();
             let bc = bc_arc.clone();
             let strategy = strategy_arc.clone();
-            Box::new(EvmEstimatorActor::new_with_provider((*encoder).clone(), Some((*provider).clone())).on_bc(&(*bc), &(*strategy)))
+            Box::new(EvmEstimatorActor::new_with_provider((*encoder).clone(), Some((*provider).clone())).on_bc(&(*bc), &(*strategy))) as Box<dyn Actor + Send + Sync>
         };
 
         self.actor_manager.start_and_wait(closure)?;
