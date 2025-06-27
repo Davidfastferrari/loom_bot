@@ -120,18 +120,14 @@ where
     pub fn initialize_signers_with_anvil(&mut self) -> Result<&mut Self> {
         let key: B256 = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80".parse()?;
 
-        use std::sync::Arc;
-        let actor = Arc::new(InitializeSignersOneShotBlockingActor::new(Some(key.to_vec())).with_signers(self.signers.clone()));
-        self.actor_manager.start(move || Box::new(actor.clone()))?;
+        self.actor_manager.start(move || Box::new(InitializeSignersOneShotBlockingActor::new(Some(key.to_vec())).with_signers(self.signers.clone())))?;
         self.with_signers()?;
         Ok(self)
     }
 
     /// Initialize signers with the private key. Random key generated if param in None
     pub fn initialize_signers_with_key(&mut self, key: Option<Vec<u8>>) -> Result<&mut Self> {
-        use std::sync::Arc;
-        let actor = Arc::new(InitializeSignersOneShotBlockingActor::new(key).with_signers(self.signers.clone()));
-        self.actor_manager.start(move || Box::new(actor.clone()))?;
+        self.actor_manager.start(move || Box::new(InitializeSignersOneShotBlockingActor::new(key).with_signers(self.signers.clone())))?;
         self.with_signers()?;
         Ok(self)
     }
@@ -140,8 +136,7 @@ where
     pub fn initialize_signers_with_keys(&mut self, keys: Vec<Vec<u8>>) -> Result<&mut Self> {
         use std::sync::Arc;
         for key in keys {
-            let actor = Arc::new(InitializeSignersOneShotBlockingActor::new(Some(key)).with_signers(self.signers.clone()));
-            self.actor_manager.start(move || Box::new(actor.clone()))?;
+            self.actor_manager.start(move || Box::new(InitializeSignersOneShotBlockingActor::new(Some(key)).with_signers(self.signers.clone())))?;
         }
         self.with_signers()?;
         Ok(self)
@@ -149,18 +144,14 @@ where
 
     /// Initialize signers with encrypted private key
     pub fn initialize_signers_with_encrypted_key(&mut self, key: Vec<u8>) -> Result<&mut Self> {
-        use std::sync::Arc;
-        let actor = Arc::new(InitializeSignersOneShotBlockingActor::new_from_encrypted_key(key)?.with_signers(self.signers.clone()));
-        self.actor_manager.start(move || Box::new(actor.clone()))?;
+        self.actor_manager.start(move || Box::new(InitializeSignersOneShotBlockingActor::new_from_encrypted_key(key)?.with_signers(self.signers.clone())))?;
         self.with_signers()?;
         Ok(self)
     }
 
     /// Initializes signers with encrypted key form DATA env var
     pub fn initialize_signers_with_env(&mut self) -> Result<&mut Self> {
-        use std::sync::Arc;
-        let actor = Arc::new(InitializeSignersOneShotBlockingActor::new_from_encrypted_env()?.with_signers(self.signers.clone()));
-        self.actor_manager.start(move || Box::new(actor.clone()))?;
+        self.actor_manager.start(move || Box::new(InitializeSignersOneShotBlockingActor::new_from_encrypted_env()?.with_signers(self.signers.clone())))?;
         self.with_signers()?;
         Ok(self)
     }
@@ -236,7 +227,17 @@ where
 
         let bc = self.bc.clone();
         let state = self.state.clone();
-        self.actor_manager.start_and_wait(move || Box::new(market_state_preloader.on_bc(&bc, &state)))?;
+        use std::sync::Arc;
+        let market_state_preloader_arc = Arc::new(market_state_preloader);
+        let bc_arc = Arc::new(bc);
+        let state_arc = Arc::new(state);
+
+        self.actor_manager.start_and_wait({
+            let market_state_preloader = market_state_preloader_arc.clone();
+            let bc = bc_arc.clone();
+            let state = state_arc.clone();
+            move || Box::new(market_state_preloader.on_bc(&bc, &state))
+        })?;
         Ok(self)
     }
 
@@ -368,7 +369,7 @@ where
         let flashbots_arc = Arc::new(flashbots);
         let flashbots_arc_clone = flashbots_arc.clone();
 
-        self.actor_manager.start(move || Box::new(FlashbotsBroadcastActor::new((*flashbots_arc_clone).clone(), allow_broadcast)))?;
+        self.actor_manager.start(move || Box::new(FlashbotsBroadcastActor::new(flashbots_arc_clone.as_ref(), allow_broadcast)))?;
         Ok(self)
     }
 
@@ -385,12 +386,25 @@ where
         let encoder = self.encoder.clone().ok_or_else(|| eyre!("Encoder not initialized"))?;
 
         // Start EvmEstimatorActor
-        self.actor_manager.start_and_wait(move || {
-            let provider_clone = provider.clone();
-            let encoder_clone = encoder.clone();
-            let bc_clone = bc.clone();
-            let strategy_clone = strategy.clone();
-            Box::new(EvmEstimatorActor::new_with_provider(encoder_clone, Some(provider_clone)).on_bc(&bc_clone, &strategy_clone))
+        use std::sync::Arc;
+        let provider_arc = Arc::new(provider);
+        let encoder_arc = Arc::new(encoder);
+        let bc_arc = Arc::new(bc);
+        let strategy_arc = Arc::new(strategy);
+
+        let closure = {
+            let provider = provider_arc.clone();
+            let encoder = encoder_arc.clone();
+            let bc = bc_arc.clone();
+            let strategy = strategy_arc.clone();
+            move || Box::new(EvmEstimatorActor::new_with_provider((*encoder).clone(), Some((*provider).clone())).on_bc(&(*bc), &(*strategy)))
+        };
+
+        let closure_arc = Arc::new(closure);
+
+        self.actor_manager.start_and_wait({
+            let closure = closure_arc.clone();
+            move || closure()
         })?;
         Ok(self)
     }
