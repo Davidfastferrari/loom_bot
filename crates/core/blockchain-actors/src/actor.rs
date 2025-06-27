@@ -149,18 +149,18 @@ where
 
     /// Initialize signers with encrypted private key
     pub fn initialize_signers_with_encrypted_key(&mut self, key: Vec<u8>) -> Result<&mut Self> {
-        self.actor_manager.start(
-            InitializeSignersOneShotBlockingActor::new_from_encrypted_key(key)?.with_signers(self.signers.clone()),
-        )?;
+        use std::sync::Arc;
+        let actor = Arc::new(InitializeSignersOneShotBlockingActor::new_from_encrypted_key(key)?.with_signers(self.signers.clone()));
+        self.actor_manager.start(move || Box::new(actor.clone()))?;
         self.with_signers()?;
         Ok(self)
     }
 
     /// Initializes signers with encrypted key form DATA env var
     pub fn initialize_signers_with_env(&mut self) -> Result<&mut Self> {
-        self.actor_manager.start(
-            InitializeSignersOneShotBlockingActor::new_from_encrypted_env()?.with_signers(self.signers.clone()),
-        )?;
+        use std::sync::Arc;
+        let actor = Arc::new(InitializeSignersOneShotBlockingActor::new_from_encrypted_env()?.with_signers(self.signers.clone()));
+        self.actor_manager.start(move || Box::new(actor.clone()))?;
         self.with_signers()?;
         Ok(self)
     }
@@ -368,7 +368,7 @@ where
         let flashbots_arc = Arc::new(flashbots);
         let flashbots_arc_clone = flashbots_arc.clone();
 
-        self.actor_manager.start(move || Box::new(FlashbotsBroadcastActor::new(flashbots_arc_clone.clone(), allow_broadcast)))?;
+        self.actor_manager.start(move || Box::new(FlashbotsBroadcastActor::new((*flashbots_arc_clone).clone(), allow_broadcast)))?;
         Ok(self)
     }
 
@@ -386,7 +386,11 @@ where
 
         // Start EvmEstimatorActor
         self.actor_manager.start_and_wait(move || {
-            Box::new(EvmEstimatorActor::new_with_provider(encoder.clone(), Some(provider.clone())).on_bc(&bc, &strategy))
+            let provider_clone = provider.clone();
+            let encoder_clone = encoder.clone();
+            let bc_clone = bc.clone();
+            let strategy_clone = strategy.clone();
+            Box::new(EvmEstimatorActor::new_with_provider(encoder_clone, Some(provider_clone)).on_bc(&bc_clone, &strategy_clone))
         })?;
         Ok(self)
     }
