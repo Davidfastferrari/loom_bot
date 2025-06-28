@@ -128,7 +128,7 @@ where
 }
 
 #[allow(dead_code)]
-#[derive(Accessor)]
+#[derive(Clone, Accessor)]
 pub struct MarketStatePreloadedOneShotActor<P, N, DB> {
     name: &'static str,
     client: P,
