@@ -406,7 +406,7 @@ where
 
         // Wrap flashbots in Arc without cloning
         let flashbots = Arc::new(flashbots);
-        let closure = move || Box::new(FlashbotsBroadcastActor::new((*flashbots).clone(), allow_broadcast)) as Box<dyn Actor + Send + Sync>;
+        let closure = move || Box::new(FlashbotsBroadcastActor::new(flashbots.clone(), allow_broadcast)) as Box<dyn Actor + Send + Sync>;
         self.actor_manager.start(closure)?;
         Ok(self)
     }
