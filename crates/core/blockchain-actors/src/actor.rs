@@ -309,9 +309,8 @@ where
 
         // Wrap flashbots in Arc without cloning
         let flashbots = Arc::new(flashbots);
-        let flashbots_clone = flashbots.clone();
+        let flashbots_inner = Arc::try_unwrap(flashbots).unwrap_or_else(|_| panic!("Failed to unwrap Arc<Flashbots>"));
         let closure = move || {
-            let flashbots_inner = Arc::try_unwrap(flashbots_clone).unwrap_or_else(|_| panic!("Failed to unwrap Arc<Flashbots>"));
             Box::new(FlashbotsBroadcastActor::new(flashbots_inner, allow_broadcast)) as Box<dyn Actor + Send + Sync>
         };
         self.actor_manager.start(closure)?;
