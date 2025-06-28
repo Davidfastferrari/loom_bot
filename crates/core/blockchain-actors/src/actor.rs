@@ -307,10 +307,8 @@ where
             Flashbots::new(provider.clone(), "https://relay.flashbots.net", None).with_relays(relays)
         };
 
-        // Wrap flashbots in Arc without cloning
-        let flashbots = Arc::new(flashbots);
         let closure = {
-            let flashbots = flashbots.clone();
+            let flashbots = flashbots;
             move || Box::new(FlashbotsBroadcastActor::new(flashbots.clone(), allow_broadcast)) as Box<dyn Actor + Send + Sync>
         };
         self.actor_manager.start(closure)?;
