@@ -674,7 +674,7 @@ impl<
                         let client = self.get_client(params.client.as_ref())?;
                         let blockchain = self.get_blockchain(params.blockchain.as_ref())?;
                         let flashbots_client = Flashbots::new(client, "https://relay.flashbots.net", None).with_default_relays();
-                        let mut flashbots_actor = FlashbotsBroadcastActor::new(flashbots_client, true);
+                        let mut flashbots_actor = FlashbotsBroadcastActor::new(flashbots_client.into(), true);
                         match flashbots_actor.consume(blockchain.tx_compose_channel()).start() {
                             Ok(r) => {
                                 tasks.extend(r);
