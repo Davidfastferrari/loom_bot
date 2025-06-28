@@ -121,8 +121,8 @@ impl<P> FlashbotsBroadcastActor<P>
 where
     P: Provider<Ethereum> + Send + Sync + Clone + 'static,
 {
-    pub fn new(client: Flashbots<P>, allow_broadcast: bool) -> FlashbotsBroadcastActor<P> {
-        FlashbotsBroadcastActor { client: Arc::new(client), tx_compose_channel_rx: None, allow_broadcast }
+    pub fn new(client: Arc<Flashbots<P>>, allow_broadcast: bool) -> FlashbotsBroadcastActor<P> {
+        FlashbotsBroadcastActor { client, tx_compose_channel_rx: None, allow_broadcast }
     }
 
     pub fn with_compose_channel(self, tx_compose_channel_rx: Broadcaster<MessageTxCompose>) -> Self {
