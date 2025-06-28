@@ -311,10 +311,10 @@ where
         let flashbots = Arc::new(flashbots);
         let flashbots_clone = flashbots.clone();
         let closure = move || {
-            let flashbots_inner = Arc::try_unwrap(flashbots_clone).map_err(|_| eyre!("Failed to unwrap Arc<Flashbots>"))?;
-            Ok(Box::new(FlashbotsBroadcastActor::new(flashbots_inner, allow_broadcast)) as Box<dyn Actor + Send + Sync>)
+            let flashbots_inner = Arc::try_unwrap(flashbots_clone).unwrap_or_else(|_| panic!("Failed to unwrap Arc<Flashbots>"));
+            Box::new(FlashbotsBroadcastActor::new(flashbots_inner, allow_broadcast)) as Box<dyn Actor + Send + Sync>
         };
-        self.actor_manager.start(move || closure().unwrap())?;
+        self.actor_manager.start(closure)?;
         Ok(self)
     }
 }
