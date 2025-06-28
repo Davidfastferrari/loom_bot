@@ -284,8 +284,8 @@ where
     pub fn with_nonce_and_balance_monitor(&mut self) -> Result<&mut Self> {
         use std::sync::Arc;
         let provider = Arc::new(self.provider.clone());
-        let provider_clone = provider.clone();
-        let arc_closure = Arc::new(move || Box::new(NonceAndBalanceMonitorActor::new(provider_clone.clone())) as Box<dyn Actor + Send + Sync>);
+        let _provider_clone = provider.clone();
+        let arc_closure = Arc::new(move || Box::new(NonceAndBalanceMonitorActor::new(provider.clone())) as Box<dyn Actor + Send + Sync>);
         self.actor_manager.start(move || arc_closure())?;
         Ok(self)
     }
@@ -326,7 +326,7 @@ where
         let bc = Arc::new(self.bc.clone());
         // Dereference config to avoid Arc
         let config = config.clone();
-        let provider_clone = provider.clone();
+        let _provider_clone = provider.clone();
         let bc_clone = bc.clone();
         let config_clone = config.clone();
         let arc_closure = Arc::new(move || {
@@ -398,14 +398,15 @@ where
         use std::sync::Arc;
         let provider = self.provider.clone();
         let relays = self.relays.clone();
-        let flashbots = match relays.is_empty() {
-            true => Flashbots::new(provider.clone(), "https://relay.flashbots.net", None).with_default_relays(),
-            false => Flashbots::new(provider.clone(), "https://relay.flashbots.net", None).with_relays(relays),
+        let flashbots = if relays.is_empty() {
+            Flashbots::new(provider.clone(), "https://relay.flashbots.net", None).with_default_relays()
+        } else {
+            Flashbots::new(provider.clone(), "https://relay.flashbots.net", None).with_relays(relays)
         };
 
         // Wrap flashbots in Arc without cloning
         let flashbots = Arc::new(flashbots);
-        let closure = move || Box::new(FlashbotsBroadcastActor::new(flashbots.clone(), allow_broadcast)) as Box<dyn Actor + Send + Sync>;
+        let closure = move || Box::new(FlashbotsBroadcastActor::new((*flashbots).clone(), allow_broadcast)) as Box<dyn Actor + Send + Sync>;
         self.actor_manager.start(closure)?;
         Ok(self)
     }
