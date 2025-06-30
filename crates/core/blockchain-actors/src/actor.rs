@@ -315,4 +315,11 @@ where
         self.actor_manager.start(closure)?;
         Ok(self)
     }
+
+    /// Starts EVM estimator actor
+    pub fn with_evm_estimator(&mut self) -> Result<&mut Self> {
+        let closure = move || Box::new(EvmEstimatorActor::new()) as Box<dyn Actor + Send + Sync>;
+        self.actor_manager.start(closure)?;
+        Ok(self)
+    }
 }
