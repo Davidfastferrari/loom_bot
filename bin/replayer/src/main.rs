@@ -87,7 +87,7 @@ async fn main() -> Result<()> {
     let mut bc_actors =
         BlockchainActors::new(provider.clone(), swap_encoder.clone(), bc.clone(), bc_state.clone(), strategy.clone(), vec![]);
     bc_actors
-        .with_nonce_and_balance_monitor_only_events()?
+        .with_nonce_and_balance_monitor()?
         .initialize_signers_with_anvil()?
         .with_market_state_preloader_virtual(vec![])?
         .with_preloaded_state(vec![(UniswapV3PoolAddress::USDC_WETH_500, PoolClass::UniswapV3)], Some(required_state))?
