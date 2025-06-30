@@ -100,7 +100,7 @@ where
         .initialize_signers_with_encrypted_key(private_key_encrypted)? // initialize signer with encrypted key
         .with_block_history()? // collect blocks
         .with_price_station()? // calculate price fo tokens
-        .with_health_monitor_pools()? // monitor pools health to disable empty
+        //.with_health_monitor_pools()? // monitor pools health to disable empty
         //.with_health_monitor_state()? // monitor state health
         .with_health_monitor_stuffing_tx()? // collect stuffing tx information
         .with_swap_encoder(swap_encoder)? // convert swaps to opcodes and passes to estimator
