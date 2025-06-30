@@ -93,7 +93,7 @@ async fn main() -> Result<()> {
         //.with_preloaded_state(vec![(UniswapV3PoolAddress::USDC_WETH_500, PoolClass::UniswapV3)], Some(required_state))?
         .with_block_history()?
         .with_swap_encoder(swap_encoder)?
-        .with_evm_estimator()?;
+        //.with_evm_estimator()?;
 
     //Start node block player actor
     if let Err(e) =
