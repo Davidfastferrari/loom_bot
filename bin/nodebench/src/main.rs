@@ -240,7 +240,7 @@ async fn collect_stat_task(
     if grps {
         bc_actors.with_exex_events()?;
     } else {
-        bc_actors.with_block_events(NodeBlockActorConfig::all_enabled())?.with_local_mempool_events()?;
+        bc_actors.with_block_events(NodeBlockActorConfig::all_enabled())?; //.with_local_mempool_events()?;
     }
 
     let mut blocks_counter: usize = 0;

@@ -508,7 +508,7 @@ async fn main() -> Result<()> {
     if test_config.modules.flashbots {
         let relays = vec![RelayConfig { id: 1, url: mock_server.as_ref().unwrap().uri(), name: "relay".to_string(), no_sign: Some(false) }];
         let flashbots = Flashbots::new(client.clone(), "https://unused", None).with_relays(relays);
-        let mut flashbots_broadcast_actor = FlashbotsBroadcastActor::new(flashbots, true);
+        let mut flashbots_broadcast_actor = FlashbotsBroadcastActor::new(flashbots.into(), true);
         match flashbots_broadcast_actor.consume(tx_compose_channel.clone()).start() {
             Err(e) => {
                 error!("{}", e)
