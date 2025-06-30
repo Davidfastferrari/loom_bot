@@ -97,7 +97,7 @@ async fn main() -> Result<()> {
 
     //Start node block player actor
     if let Err(e) =
-        bc_actors.start(NodeBlockPlayerActor::new(provider.clone(), start_block_number, start_block_number + 200).on_bc(&bc, &bc_state))
+        bc_actors.start(|| Box::new(NodeBlockPlayerActor::new(provider.clone(), start_block_number, start_block_number + 200).on_bc(&bc, &bc_state)))
     {
         panic!("Cannot start block player : {}", e);
     }

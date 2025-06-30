@@ -96,7 +96,7 @@ where
     let mut bc_actors = BlockchainActors::new(provider.clone(), swap_encoder.clone(), bc.clone(), bc_state, strategy, relays);
     bc_actors
         .mempool()?
-        .with_wait_for_node_sync()? // wait for node to sync before
+        //.with_wait_for_node_sync()? // wait for node to sync before
         .initialize_signers_with_encrypted_key(private_key_encrypted)? // initialize signer with encrypted key
         .with_block_history()? // collect blocks
         .with_price_station()? // calculate price fo tokens
@@ -122,13 +122,13 @@ where
     ;
 
     if !is_exex {
-        bc_actors.with_block_events(NodeBlockActorConfig::all_enabled())?.with_remote_mempool(provider.clone())?;
+        bc_actors.with_block_events(NodeBlockActorConfig::all_enabled())?; //.with_remote_mempool(provider.clone())?;
     }
 
     if let Some(influxdb_config) = topology_config.influxdb {
-        bc_actors
-            .with_influxdb_writer(influxdb_config.url, influxdb_config.database, influxdb_config.tags)?
-            .with_block_latency_recorder()?;
+        // bc_actors
+        //     .with_influxdb_writer(influxdb_config.url, influxdb_config.database, influxdb_config.tags)?
+        //     .with_block_latency_recorder()?;
     }
 
     bc_actors.wait().await;
