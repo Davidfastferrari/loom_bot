@@ -319,7 +319,7 @@ where
     /// Starts EVM estimator actor
     pub fn with_evm_estimator(&mut self) -> Result<&mut Self> {
         let encoder = self.encoder.clone().expect("Encoder must be set before starting EvmEstimatorActor");
-        let closure = move || Box::new(EvmEstimatorActor::new(encoder.clone())) as Box<dyn Actor + Send + Sync>;
+        let closure = move || Box::new(EvmEstimatorActor::<P, Ethereum, E, DB>::new(encoder.clone())) as Box<dyn Actor + Send + Sync>;
         self.actor_manager.start(closure)?;
         Ok(self)
     }
