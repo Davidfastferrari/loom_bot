@@ -102,7 +102,7 @@ where
         .with_price_station()? // calculate price fo tokens
         //.with_health_monitor_pools()? // monitor pools health to disable empty
         //.with_health_monitor_state()? // monitor state health
-        .with_health_monitor_stuffing_tx()? // collect stuffing tx information
+        //.with_health_monitor_stuffing_tx()? // collect stuffing tx information
         .with_swap_encoder(swap_encoder)? // convert swaps to opcodes and passes to estimator
         .with_evm_estimator()? // estimate gas, add tips
         .with_signers()? // start signer actor that signs transactions before broadcasting
