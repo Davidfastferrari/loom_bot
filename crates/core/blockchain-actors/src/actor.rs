@@ -101,18 +101,37 @@ where
     }
 
     pub fn with_preloaded_state(&mut self, pools: Vec<(PoolId, PoolClass)>, required_state: Option<RequiredState>) -> Result<&mut Self> {
-        use loom_defi_pools::PoolLoadersBuilder;
+        use loom_defi_pools::{PoolLoadersBuilder, PoolClass};
         use loom_defi_preloader::preload_market_state;
         use tokio::runtime::Runtime;
+        use std::collections::HashSet;
 
         let provider = self.provider.clone();
-        let bc = self.bc.clone();
         let state = self.state.clone();
 
-        // Build pool loaders for the specified pools
-        let pool_loaders = PoolLoadersBuilder::new()
-            .with_pools(pools)
-            .build();
+        // Collect unique pool classes from input pools
+        let mut pool_classes = HashSet::new();
+        for (_, pool_class) in &pools {
+            pool_classes.insert(*pool_class);
+        }
+
+        // Build pool loaders builder with provider
+        let mut builder = PoolLoadersBuilder::new().with_provider(provider.clone());
+
+        // Add loaders for each pool class
+        for pool_class in pool_classes {
+            builder = builder.add_loader(pool_class, match pool_class {
+                PoolClass::UniswapV3 => loom_defi_pools::uniswap3::UniswapV3PoolLoader::new().with_provider(provider.clone()),
+                PoolClass::UniswapV2 => loom_defi_pools::uniswap2::UniswapV2PoolLoader::new().with_provider(provider.clone()),
+                PoolClass::Curve => loom_defi_pools::curve::CurvePoolLoader::new().with_provider(provider.clone()),
+                PoolClass::Maverick => loom_defi_pools::maverick::MaverickPoolLoader::new().with_provider(provider.clone()),
+                _ => continue,
+            });
+        }
+
+        let pool_loaders = builder.build();
+
+        // TODO: Filter pools by address if needed (not implemented here)
 
         // Create a runtime to run async preload synchronously
         let rt = Runtime::new()?;
