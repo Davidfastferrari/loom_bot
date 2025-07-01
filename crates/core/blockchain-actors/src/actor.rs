@@ -18,9 +18,8 @@ use loom_defi_health_monitor::{MetricsRecorderActor, PoolHealthMonitorActor, Stu
 use loom_defi_market::{
     HistoryPoolLoaderOneShotActor, NewPoolLoaderActor, PoolLoaderActor, ProtocolPoolLoaderOneShotActor, RequiredPoolLoaderActor,
 };
-use loom_defi_pools::{PoolLoadersBuilder, PoolsLoadingConfig, UniswapV2PoolLoader, UniswapV3PoolLoader};
+use loom_defi_pools::{PoolLoadersBuilder, PoolsLoadingConfig, UniswapV2PoolLoader, UniswapV3PoolLoader, MaverickPoolLoader};
 use loom_defi_pools::curve::CurvePoolLoader;
-use loom_defi_pools::maverickpool::MaverickPoolLoader;
 use loom_defi_preloader::MarketStatePreloadedOneShotActor;
 use loom_types_entities::{PoolId, PoolClass};
 use tokio::runtime::Runtime;
@@ -128,10 +127,10 @@ where
         // Add loaders for each pool class
         for pool_class in pool_classes {
             builder = builder.add_loader(pool_class, match pool_class {
-                PoolClass::UniswapV3 => loom_defi_pools::uniswap3::UniswapV3PoolLoader::new().with_provider(provider.clone()),
-                PoolClass::UniswapV2 => loom_defi_pools::uniswap2::UniswapV2PoolLoader::new().with_provider(provider.clone()),
-                PoolClass::Curve => loom_defi_pools::curve::CurvePoolLoader::new().with_provider(provider.clone()),
-                PoolClass::Maverick => loom_defi_pools::maverick::MaverickPoolLoader::new().with_provider(provider.clone()),
+                PoolClass::UniswapV3 => UniswapV3PoolLoader::new().with_provider(provider.clone()),
+                PoolClass::UniswapV2 => UniswapV2PoolLoader::new().with_provider(provider.clone()),
+                PoolClass::Curve => CurvePoolLoader::new().with_provider(provider.clone()),
+                PoolClass::Maverick => MaverickPoolLoader::new().with_provider(provider.clone()),
                 _ => continue,
             });
         }
