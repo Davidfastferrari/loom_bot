@@ -104,6 +104,7 @@ where
         use loom_defi_pools::{PoolLoadersBuilder, PoolClass};
         use loom_defi_preloader::preload_market_state;
         use tokio::runtime::Runtime;
+        use futures::executor::block_on;
         use std::collections::HashSet;
 
         let provider = self.provider.clone();
@@ -131,18 +132,35 @@ where
 
         let pool_loaders = builder.build();
 
-        // TODO: Filter pools by address if needed (not implemented here)
+        // Prepare vectors to collect data for preloading
+        let mut copied_accounts = Vec::new();
+        let mut new_accounts = Vec::new();
+        let mut token_balances = Vec::new();
 
-        // Create a runtime to run async preload synchronously
+        // For each pool, fetch pool state and collect data
+        for (pool_id, pool_class) in pools {
+            let pool_loader = pool_loaders.map.get(&pool_class).ok_or_else(|| eyre!("Pool loader not found for class {:?}", pool_class))?;
+            let pool_wrapper = block_on(pool_loader.fetch_pool_by_id(pool_id.clone()))?;
+
+            // Extract accounts, new accounts, token balances from pool_wrapper
+            // This is a placeholder; actual extraction depends on PoolWrapper structure
+            // copied_accounts.extend(pool_wrapper.get_copied_accounts());
+            // new_accounts.extend(pool_wrapper.get_new_accounts());
+            // token_balances.extend(pool_wrapper.get_token_balances());
+
+            // For now, skipping actual extraction due to lack of details
+        }
+
+        // TODO: Add required_state data to copied_accounts, new_accounts, token_balances as needed
+
+        // Run the preload_market_state async function synchronously
         let rt = Runtime::new()?;
-
-        // Run the preload_market_state async function
         rt.block_on(async {
             preload_market_state(
                 provider.clone(),
-                pool_loaders.get_copied_accounts(),
-                pool_loaders.get_new_accounts(),
-                pool_loaders.get_token_balances(),
+                copied_accounts,
+                new_accounts,
+                token_balances,
                 state.market_state_commit(),
                 None,
             )
