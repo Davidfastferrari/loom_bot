@@ -20,6 +20,9 @@ use loom_defi_market::{
 };
 use loom_defi_pools::{PoolLoadersBuilder, PoolsLoadingConfig, UniswapV2PoolLoader, UniswapV3PoolLoader, MaverickPoolLoader};
 use loom_defi_preloader::MarketStatePreloadedOneShotActor;
+extern crate tokio;
+extern crate futures;
+
 use loom_types_entities::{PoolId, PoolClass};
 use tokio::runtime::Runtime;
 use futures::executor::block_on;
@@ -131,7 +134,8 @@ where
             builder = builder.add_loader(PoolClass::UniswapV2, UniswapV2PoolLoader::with_provider(provider.clone()));
         }
         if pool_classes.contains(&PoolClass::Curve) {
-            builder = builder.add_loader(PoolClass::Curve, CurvePoolLoader::with_provider(provider.clone()));
+            // CurvePoolLoader is not defined, so skip adding loader for Curve pools or replace with correct loader if available
+            // builder = builder.add_loader(PoolClass::Curve, CurvePoolLoader::with_provider(provider.clone()));
         }
         if pool_classes.contains(&PoolClass::Maverick) {
             builder = builder.add_loader(PoolClass::Maverick, MaverickPoolLoader::with_provider(provider.clone()));
