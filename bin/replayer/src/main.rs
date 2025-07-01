@@ -95,8 +95,10 @@ async fn main() -> Result<()> {
         .with_swap_encoder(swap_encoder)?;
 
     //Start node block player actor
+    let bc_clone = bc.clone();
+    let bc_state_clone = bc_state.clone();
     if let Err(e) =
-        bc_actors.start(move || Box::new(NodeBlockPlayerActor::new(provider.clone(), start_block_number, start_block_number + 200).on_bc(&bc.clone(), &bc_state.clone())))
+        bc_actors.start(move || Box::new(NodeBlockPlayerActor::new(provider.clone(), start_block_number, start_block_number + 200).on_bc(&bc_clone, &bc_state_clone)))
     {
         panic!("Cannot start block player : {}", e);
     }
