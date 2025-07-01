@@ -42,9 +42,6 @@ use loom_strategy_backrun::{
     BackrunConfig, BlockStateChangeProcessorActor, PendingTxStateChangeProcessorActor, StateChangeArbSearcherActor,
 };
 use loom_strategy_merger::{ArbSwapPathMergerActor, DiffPathMergerActor, SamePathMergerActor};
-use loom_types_entities::required_state::RequiredState;
-use loom_types_entities::{BlockHistoryState, PoolClass, SwapEncoder, TxSigners};
-use loom_types_blockchain::loom_data_types_ethereum::LoomDataTypesEthereum;
 use revm::{Database, DatabaseCommit, DatabaseRef};
 use std::collections::HashMap;
 use tokio_util::sync::CancellationToken;
