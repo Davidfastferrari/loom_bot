@@ -18,7 +18,9 @@ use loom_defi_health_monitor::{MetricsRecorderActor, PoolHealthMonitorActor, Stu
 use loom_defi_market::{
     HistoryPoolLoaderOneShotActor, NewPoolLoaderActor, PoolLoaderActor, ProtocolPoolLoaderOneShotActor, RequiredPoolLoaderActor,
 };
-use loom_defi_pools::{PoolLoadersBuilder, PoolsLoadingConfig, UniswapV2PoolLoader, UniswapV3PoolLoader, CurvePoolLoader, MaverickPoolLoader};
+use loom_defi_pools::{PoolLoadersBuilder, PoolsLoadingConfig, UniswapV2PoolLoader, UniswapV3PoolLoader};
+use loom_defi_pools::curve::CurvePoolLoader;
+use loom_defi_pools::maverick::MaverickPoolLoader;
 use loom_defi_preloader::MarketStatePreloadedOneShotActor;
 use loom_types_entities::PoolId;
 use tokio::runtime::Runtime;
