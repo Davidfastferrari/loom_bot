@@ -106,7 +106,7 @@ use loom_defi_pools::PoolLoadersBuilder;
 use loom_defi_preloader::preload_market_state;
 use loom_types_entities::PoolClass;
 use loom_types_entities::required_state::RequiredState;
-use loom_types_entities::loom_data_types_ethereum::LoomDataTypesEthereum;
+use loom_types_blockchain::loom_data_types_ethereum::LoomDataTypesEthereum;
 use tokio::runtime::Runtime;
 use futures::executor::block_on;
 use std::collections::HashSet;
