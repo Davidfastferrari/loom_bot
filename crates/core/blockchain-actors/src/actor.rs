@@ -114,7 +114,7 @@ use std::collections::HashSet;
         let provider = self.provider.clone();
         let state = self.state.clone();
 
-        // Collect unique pool classes from input pools
+        // Collect unique pool classes from input poolss
         let mut pool_classes = HashSet::new();
         for (_, pool_class) in &pools {
             pool_classes.insert(*pool_class);
