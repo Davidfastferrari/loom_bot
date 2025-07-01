@@ -21,6 +21,8 @@ use loom_defi_market::{
 use loom_defi_pools::{PoolLoadersBuilder, PoolsLoadingConfig, UniswapV2PoolLoader, UniswapV3PoolLoader, MaverickPoolLoader};
 use loom_defi_preloader::MarketStatePreloadedOneShotActor;
 use loom_types_entities::{PoolId, PoolClass, BlockHistoryState, SwapEncoder, TxSigners};
+use loom_types_entities::required_state::RequiredState;
+use loom_types_blockchain::loom_data_types_ethereum::LoomDataTypesEthereum;
 use tokio::runtime::Runtime;
 use futures::executor::block_on;
 use futures::Stream;
