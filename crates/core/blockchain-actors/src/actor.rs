@@ -125,14 +125,17 @@ where
         let mut builder = PoolLoadersBuilder::new().with_provider(provider.clone());
 
         // Add loaders for each pool class
-        for pool_class in pool_classes {
-            builder = builder.add_loader(pool_class, match pool_class {
-                PoolClass::UniswapV3 => UniswapV3PoolLoader::with_provider(provider.clone()),
-                PoolClass::UniswapV2 => UniswapV2PoolLoader::with_provider(provider.clone()),
-                PoolClass::Curve => CurvePoolLoader::with_provider(provider.clone()),
-                PoolClass::Maverick => MaverickPoolLoader::with_provider(provider.clone()),
-                _ => continue,
-            });
+        if pool_classes.contains(&PoolClass::UniswapV3) {
+            builder = builder.add_loader(PoolClass::UniswapV3, UniswapV3PoolLoader::with_provider(provider.clone()));
+        }
+        if pool_classes.contains(&PoolClass::UniswapV2) {
+            builder = builder.add_loader(PoolClass::UniswapV2, UniswapV2PoolLoader::with_provider(provider.clone()));
+        }
+        if pool_classes.contains(&PoolClass::Curve) {
+            builder = builder.add_loader(PoolClass::Curve, CurvePoolLoader::with_provider(provider.clone()));
+        }
+        if pool_classes.contains(&PoolClass::Maverick) {
+            builder = builder.add_loader(PoolClass::Maverick, MaverickPoolLoader::with_provider(provider.clone()));
         }
 
         let pool_loaders = builder.build();
