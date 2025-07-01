@@ -22,8 +22,10 @@ use loom_defi_pools::{PoolLoadersBuilder, PoolsLoadingConfig, UniswapV2PoolLoade
 use loom_defi_pools::curve::CurvePoolLoader;
 use loom_defi_pools::maverickpool::MaverickPoolLoader;
 use loom_defi_preloader::MarketStatePreloadedOneShotActor;
-use loom_types_entities::PoolId;
+use loom_types_entities::{PoolId, PoolClass};
 use tokio::runtime::Runtime;
+use futures::executor::block_on;
+use futures::Stream;
 use loom_defi_price::PriceActor;
 use loom_evm_db::DatabaseLoomExt;
 use loom_evm_utils::NWETH;
