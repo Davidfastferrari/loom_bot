@@ -19,9 +19,8 @@ use loom_defi_market::{
     HistoryPoolLoaderOneShotActor, NewPoolLoaderActor, PoolLoaderActor, ProtocolPoolLoaderOneShotActor, RequiredPoolLoaderActor,
 };
 use loom_defi_pools::{PoolLoadersBuilder, PoolsLoadingConfig, UniswapV2PoolLoader, UniswapV3PoolLoader, MaverickPoolLoader};
-use loom_defi_pools::curve::CurvePoolLoader;
 use loom_defi_preloader::MarketStatePreloadedOneShotActor;
-use loom_types_entities::{PoolId, PoolClass};
+use loom_types_entities::PoolId;
 use tokio::runtime::Runtime;
 use futures::executor::block_on;
 use futures::Stream;
@@ -44,7 +43,7 @@ use loom_strategy_backrun::{
 };
 use loom_strategy_merger::{ArbSwapPathMergerActor, DiffPathMergerActor, SamePathMergerActor};
 use loom_types_entities::required_state::RequiredState;
-use loom_types_entities::{BlockHistoryState, PoolClass, SwapEncoder, TxSigners};
+use loom_types_entities::{BlockHistoryState, SwapEncoder, TxSigners};
 use loom_types_blockchain::loom_data_types_ethereum::LoomDataTypesEthereum;
 use revm::{Database, DatabaseCommit, DatabaseRef};
 use std::collections::HashMap;
