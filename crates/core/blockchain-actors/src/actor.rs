@@ -20,7 +20,7 @@ use loom_defi_market::{
 };
 use loom_defi_pools::{PoolLoadersBuilder, PoolsLoadingConfig, UniswapV2PoolLoader, UniswapV3PoolLoader};
 use loom_defi_pools::curve::CurvePoolLoader;
-use loom_defi_pools::maverick::MaverickPoolLoader;
+use loom_defi_pools::maverickpool::MaverickPoolLoader;
 use loom_defi_preloader::MarketStatePreloadedOneShotActor;
 use loom_types_entities::PoolId;
 use tokio::runtime::Runtime;
