@@ -5113,6 +5113,7 @@ dependencies = [
  "alloy-transport",
  "axum",
  "eyre",
+ "futures",
  "loom-broadcast-accounts",
  "loom-broadcast-broadcaster",
  "loom-broadcast-flashbots",
@@ -5145,6 +5146,7 @@ dependencies = [
  "loom-types-blockchain",
  "loom-types-entities",
  "revm",
+ "tokio",
  "tokio-util",
 ]
 

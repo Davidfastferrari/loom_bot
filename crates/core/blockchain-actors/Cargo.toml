@@ -44,6 +44,8 @@ loom-types-blockchain = { workspace = true }
 axum.workspace = true
 eyre.workspace = true
 tokio-util.workspace = true
+tokio = { workspace = true }
+futures = { workspace = true }
 
 # alloy
 alloy-network.workspace = true
