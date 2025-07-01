@@ -127,10 +127,10 @@ where
         // Add loaders for each pool class
         for pool_class in pool_classes {
             builder = builder.add_loader(pool_class, match pool_class {
-                PoolClass::UniswapV3 => UniswapV3PoolLoader::new().with_provider(provider.clone()),
-                PoolClass::UniswapV2 => UniswapV2PoolLoader::new().with_provider(provider.clone()),
-                PoolClass::Curve => CurvePoolLoader::new().with_provider(provider.clone()),
-                PoolClass::Maverick => MaverickPoolLoader::new().with_provider(provider.clone()),
+                PoolClass::UniswapV3 => UniswapV3PoolLoader::with_provider(provider.clone()),
+                PoolClass::UniswapV2 => UniswapV2PoolLoader::with_provider(provider.clone()),
+                PoolClass::Curve => CurvePoolLoader::with_provider(provider.clone()),
+                PoolClass::Maverick => MaverickPoolLoader::with_provider(provider.clone()),
                 _ => continue,
             });
         }
