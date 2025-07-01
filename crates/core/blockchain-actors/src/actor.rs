@@ -20,10 +20,7 @@ use loom_defi_market::{
 };
 use loom_defi_pools::{PoolLoadersBuilder, PoolsLoadingConfig, UniswapV2PoolLoader, UniswapV3PoolLoader, MaverickPoolLoader};
 use loom_defi_preloader::MarketStatePreloadedOneShotActor;
-extern crate tokio;
-extern crate futures;
-
-use loom_types_entities::{PoolId, PoolClass};
+use loom_types_entities::{PoolId, PoolClass, BlockHistoryState, SwapEncoder, TxSigners};
 use tokio::runtime::Runtime;
 use futures::executor::block_on;
 use futures::Stream;
