@@ -100,6 +100,39 @@ where
         }
     }
 
+    pub fn with_preloaded_state(&mut self, pools: Vec<(PoolId, PoolClass)>, required_state: Option<RequiredState>) -> Result<&mut Self> {
+        use loom_defi_pools::PoolLoadersBuilder;
+        use loom_defi_preloader::preload_market_state;
+        use tokio::runtime::Runtime;
+
+        let provider = self.provider.clone();
+        let bc = self.bc.clone();
+        let state = self.state.clone();
+
+        // Build pool loaders for the specified pools
+        let pool_loaders = PoolLoadersBuilder::new()
+            .with_pools(pools)
+            .build();
+
+        // Create a runtime to run async preload synchronously
+        let rt = Runtime::new()?;
+
+        // Run the preload_market_state async function
+        rt.block_on(async {
+            preload_market_state(
+                provider.clone(),
+                pool_loaders.get_copied_accounts(),
+                pool_loaders.get_new_accounts(),
+                pool_loaders.get_token_balances(),
+                state.market_state_commit(),
+                None,
+            )
+            .await
+        })?;
+
+        Ok(self)
+    }
+
     pub async fn wait(self) {
         self.actor_manager.wait().await
     }
