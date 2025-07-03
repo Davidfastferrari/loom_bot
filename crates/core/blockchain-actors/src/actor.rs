@@ -461,9 +461,8 @@ let mut builder = PoolLoadersBuilder::<P, Ethereum, LoomDataTypesEthereum>::new(
         );
 
         let closure = {
-            let provider = provider.clone();
             let pool_loaders = pool_loaders.clone();
-            move || Box::new(NewPoolLoaderActor::new(provider.clone(), pool_loaders.clone())) as Box<dyn Actor + Send + Sync>
+            move || Box::new(NewPoolLoaderActor::new(pool_loaders.clone())) as Box<dyn Actor + Send + Sync>
         };
         self.actor_manager.start(closure)?;
         Ok(self)
