@@ -177,7 +177,7 @@ let mut builder = PoolLoadersBuilder::<P, Ethereum, LoomDataTypesEthereum>::new(
 
         if let Some(_required_state) = required_state {
             // RequiredState fields do not match copied_accounts, new_accounts, token_balances
-            // So no data added here
+            // So no data added here.
         }
 
         // Run the preload_market_state async function synchronously
