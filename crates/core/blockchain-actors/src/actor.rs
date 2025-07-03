@@ -126,7 +126,7 @@ use std::collections::HashSet;
         }
 
         // Build pool loaders builder with provider
-        let mut builder = PoolLoadersBuilder::new().with_provider(provider.clone());
+let mut builder = PoolLoadersBuilder::<P, Ethereum, LoomDataTypesEthereum>::new().with_provider(provider.clone());
 
         // Add loaders for each pool class
         if pool_classes.contains(&PoolClass::UniswapV3) {
