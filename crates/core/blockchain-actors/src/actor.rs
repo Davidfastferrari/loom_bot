@@ -449,7 +449,7 @@ let mut builder = PoolLoadersBuilder::<P, Ethereum, LoomDataTypesEthereum>::new(
 
         let provider = Arc::new(self.provider.clone());
         let pool_loaders = Arc::new(
-            PoolLoadersBuilder::new()
+            PoolLoadersBuilder::<P, alloy_network::Ethereum, LoomDataTypesEthereum>::new()
                 .with_provider(self.provider.clone())
                 .with_config(pools_config.clone())
                 .build(),
