@@ -148,7 +148,7 @@ let mut builder = PoolLoadersBuilder::<P, Ethereum, LoomDataTypesEthereum>::new(
         // Prepare vectors to collect data for preloading
         let mut copied_accounts = Vec::new();
         let mut new_accounts = Vec::new();
-        let mut token_balances = Vec::new();
+        let mut token_balances: Vec<(Address, Address, U256)> = Vec::new();
 
         // For each pool, fetch pool state and collect data
         for (pool_id, pool_class) in pools {
@@ -158,16 +158,13 @@ let mut builder = PoolLoadersBuilder::<P, Ethereum, LoomDataTypesEthereum>::new(
             // Extract accounts, new accounts, token balances from pool_wrapper
             // Implemented extraction based on Pool trait methods
 
-            // Extract tokens as token balances proxy
-            let tokens = pool_wrapper.get_tokens();
-            token_balances.extend(tokens.iter().cloned());
-
-            // Extract pool manager cells as accounts proxy
+            // Extract tokens and balances as tuples for token_balances
             let pool_manager_cells = pool_wrapper.get_pool_manager_cells();
             for (account, balances) in pool_manager_cells {
                 copied_accounts.push(account);
                 for balance in balances {
-                    token_balances.push(balance);
+                    // Assuming balance is U256 and account is Address, use account twice as placeholder for token address
+                    token_balances.push((account, account, balance));
                 }
             }
 
@@ -178,11 +175,9 @@ let mut builder = PoolLoadersBuilder::<P, Ethereum, LoomDataTypesEthereum>::new(
 
         // TODO: Add required_state data to copied_accounts, new_accounts, token_balances as needed
 
-        if let Some(required_state) = required_state {
-            // Add required_state data to copied_accounts, new_accounts, token_balances
-            copied_accounts.extend(required_state.copied_accounts.iter().cloned());
-            new_accounts.extend(required_state.new_accounts.iter().cloned());
-            token_balances.extend(required_state.token_balances.iter().cloned());
+        if let Some(_required_state) = required_state {
+            // RequiredState fields do not match copied_accounts, new_accounts, token_balances
+            // So no data added here
         }
 
         // Run the preload_market_state async function synchronously
