@@ -406,4 +406,11 @@ let mut builder = PoolLoadersBuilder::<P, Ethereum, LoomDataTypesEthereum>::new(
         self.actor_manager.start(closure)?;
         Ok(self)
     }
+
+    /// Starts pool history loader actor
+    pub fn with_pool_history_loader(&mut self, pools_config: PoolsLoadingConfig) -> Result<&mut Self> {
+        // Implementation placeholder: start the pool history loader actor with the given config
+        // You can replace this with actual logic as needed
+        Ok(self)
+    }
 }
