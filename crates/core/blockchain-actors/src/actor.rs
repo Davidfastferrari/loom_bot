@@ -428,9 +428,20 @@ let mut builder = PoolLoadersBuilder::<P, Ethereum, LoomDataTypesEthereum>::new(
 
     /// Starts pool history loader actor
     pub fn with_pool_history_loader(&mut self, pools_config: PoolsLoadingConfig) -> Result<&mut Self> {
+        use std::sync::Arc;
+        use loom_defi_pools::PoolLoadersBuilder;
+
+        let provider = Arc::new(self.provider.clone());
+        let pool_loaders = Arc::new(
+            PoolLoadersBuilder::new()
+                .with_provider(self.provider.clone())
+                .build(),
+        );
+
         let closure = {
-            let pools_config = pools_config.clone();
-            move || Box::new(HistoryPoolLoaderOneShotActor::new(pools_config.clone())) as Box<dyn Actor + Send + Sync>
+            let provider = provider.clone();
+            let pool_loaders = pool_loaders.clone();
+            move || Box::new(HistoryPoolLoaderOneShotActor::new(provider.clone(), pool_loaders.clone())) as Box<dyn Actor + Send + Sync>
         };
         self.actor_manager.start(closure)?;
         Ok(self)
@@ -438,9 +449,21 @@ let mut builder = PoolLoadersBuilder::<P, Ethereum, LoomDataTypesEthereum>::new(
 
     /// Starts new pool loader actor
     pub fn with_new_pool_loader(&mut self, pools_config: PoolsLoadingConfig) -> Result<&mut Self> {
+        use std::sync::Arc;
+        use loom_defi_pools::PoolLoadersBuilder;
+
+        let provider = Arc::new(self.provider.clone());
+        let pool_loaders = Arc::new(
+            PoolLoadersBuilder::new()
+                .with_provider(self.provider.clone())
+                .with_config(pools_config.clone())
+                .build(),
+        );
+
         let closure = {
-            let pools_config = pools_config.clone();
-            move || Box::new(NewPoolLoaderActor::new(pools_config.clone())) as Box<dyn Actor + Send + Sync>
+            let provider = provider.clone();
+            let pool_loaders = pool_loaders.clone();
+            move || Box::new(NewPoolLoaderActor::new(provider.clone(), pool_loaders.clone())) as Box<dyn Actor + Send + Sync>
         };
         self.actor_manager.start(closure)?;
         Ok(self)
