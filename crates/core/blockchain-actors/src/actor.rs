@@ -178,6 +178,13 @@ let mut builder = PoolLoadersBuilder::<P, Ethereum, LoomDataTypesEthereum>::new(
 
         // TODO: Add required_state data to copied_accounts, new_accounts, token_balances as needed
 
+        if let Some(required_state) = required_state {
+            // Add required_state data to copied_accounts, new_accounts, token_balances
+            copied_accounts.extend(required_state.copied_accounts.iter().cloned());
+            new_accounts.extend(required_state.new_accounts.iter().cloned());
+            token_balances.extend(required_state.token_balances.iter().cloned());
+        }
+
         // Run the preload_market_state async function synchronously
         let rt = Runtime::new()?;
         rt.block_on(async {
@@ -421,15 +428,21 @@ let mut builder = PoolLoadersBuilder::<P, Ethereum, LoomDataTypesEthereum>::new(
 
     /// Starts pool history loader actor
     pub fn with_pool_history_loader(&mut self, pools_config: PoolsLoadingConfig) -> Result<&mut Self> {
-        // Implementation placeholder: start the pool history loader actor with the given config
-        // You can replace this with actual logic as needed
+        let closure = {
+            let pools_config = pools_config.clone();
+            move || Box::new(HistoryPoolLoaderOneShotActor::new(pools_config.clone())) as Box<dyn Actor + Send + Sync>
+        };
+        self.actor_manager.start(closure)?;
         Ok(self)
     }
 
     /// Starts new pool loader actor
     pub fn with_new_pool_loader(&mut self, pools_config: PoolsLoadingConfig) -> Result<&mut Self> {
-        // Implementation placeholder: start the new pool loader actor with the given config
-        // You can replace this with actual logic as needed
+        let closure = {
+            let pools_config = pools_config.clone();
+            move || Box::new(NewPoolLoaderActor::new(pools_config.clone())) as Box<dyn Actor + Send + Sync>
+        };
+        self.actor_manager.start(closure)?;
         Ok(self)
     }
 }
