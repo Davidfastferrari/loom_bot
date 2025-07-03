@@ -156,10 +156,22 @@ let mut builder = PoolLoadersBuilder::<P, Ethereum, LoomDataTypesEthereum>::new(
             let pool_wrapper = block_on(pool_loader.fetch_pool_by_id(pool_id.clone()))?;
 
             // Extract accounts, new accounts, token balances from pool_wrapper
-            // This is a placeholder; actual extraction depends on PoolWrapper structure
-            // copied_accounts.extend(pool_wrapper.get_copied_accounts());
-            // new_accounts.extend(pool_wrapper.get_new_accounts());
-            // token_balances.extend(pool_wrapper.get_token_balances());
+            // Implemented extraction based on Pool trait methods
+
+            // Extract tokens as token balances proxy
+            let tokens = pool_wrapper.get_tokens();
+            token_balances.extend(tokens.iter().cloned());
+
+            // Extract pool manager cells as accounts proxy
+            let pool_manager_cells = pool_wrapper.get_pool_manager_cells();
+            for (account, balances) in pool_manager_cells {
+                copied_accounts.push(account);
+                for balance in balances {
+                    token_balances.push(balance);
+                }
+            }
+
+            // For new accounts, no direct method, so leave empty or implement as needed
 
             // For now, skipping actual extraction due to lack of details
         }
@@ -410,6 +422,13 @@ let mut builder = PoolLoadersBuilder::<P, Ethereum, LoomDataTypesEthereum>::new(
     /// Starts pool history loader actor
     pub fn with_pool_history_loader(&mut self, pools_config: PoolsLoadingConfig) -> Result<&mut Self> {
         // Implementation placeholder: start the pool history loader actor with the given config
+        // You can replace this with actual logic as needed
+        Ok(self)
+    }
+
+    /// Starts new pool loader actor
+    pub fn with_new_pool_loader(&mut self, pools_config: PoolsLoadingConfig) -> Result<&mut Self> {
+        // Implementation placeholder: start the new pool loader actor with the given config
         // You can replace this with actual logic as needed
         Ok(self)
     }
