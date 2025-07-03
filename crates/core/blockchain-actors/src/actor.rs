@@ -1,3 +1,6 @@
+extern crate loom_types_entities;
+extern crate loom_types_blockchain;
+
 use alloy_network::Ethereum;
 use alloy_primitives::{Address, B256, U256};
 use alloy_provider::{Provider, RootProvider};
