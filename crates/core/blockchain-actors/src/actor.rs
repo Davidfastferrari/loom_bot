@@ -519,4 +519,20 @@ where
 
         Ok(self)
     }
+
+    /// Starts backrun block actor
+    pub fn with_backrun_block(&mut self, backrun_config: BackrunConfig) -> Result<&mut Self> {
+        let bc = self.bc.clone();
+        let state = self.state.clone();
+        let strategy = self.strategy.clone();
+
+        let closure = {
+            let bc = bc.clone();
+            let state = state.clone();
+            let strategy = strategy.clone();
+            move || Box::new(BlockStateChangeProcessorActor::new().on_bc(&bc, &state, &strategy)) as Box<dyn LoomActor + Send + Sync>
+        };
+        self.actor_manager.start(closure)?;
+        Ok(self)
+    }
 }
