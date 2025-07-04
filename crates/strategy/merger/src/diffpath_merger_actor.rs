@@ -10,11 +10,58 @@ use tracing::Level;
 use loom_core_actors::{subscribe, Accessor, Actor, ActorResult, Broadcaster, Consumer, Producer, SharedState, WorkerResult};
 use loom_core_actors_macros::{Accessor, Consumer, Producer};
 use loom_core_blockchain::{Blockchain, Strategy};
-use loom_types_entities::{LatestBlock, Swap};
+use loom_types_entities::{LatestBlock, Swap, SwapStep};
 use loom_types_events::{MarketEvents, MessageSwapCompose, SwapComposeData, SwapComposeMessage};
+use revm::{DatabaseRef, primitives::Env};
+use tokio::sync::broadcast::error::RecvError;
+use eyre::{eyre, ErrReport, Result};
+#[macro_use]
+extern crate lazy_static;
+
+use std::collections::HashMap;
 
 lazy_static! {
     static ref COINBASE: Address = "0x1f9090aaE28b8a3dCeaDf281B0F12828e676c326".parse().unwrap();
+}
+
+async fn arb_swap_steps_optimizer_task<DB: DatabaseRef + Send + Sync + Clone>(
+    compose_channel_tx: Broadcaster<MessageSwapCompose<DB>>,
+    state_db: &(dyn DatabaseRef<Error = ErrReport> + Send + Sync + 'static),
+    evm_env: Env,
+    request: SwapComposeData<DB>,
+) -> Result<()> {
+    json_log(Level::DEBUG, "Step Simulation started", &[
+        ("swap", &request.swap),
+    ]);
+
+    if let Swap::BackrunSwapSteps((sp0, sp1)) = request.swap {
+        let start_time = chrono::Local::now();
+        match SwapStep::optimize_swap_steps(&state_db, evm_env, &sp0, &sp1, None) {
+            Ok((s0, s1)) => {
+                let encode_request = MessageSwapCompose::prepare(SwapComposeData {
+                    origin: Some("merger_searcher".to_string()),
+                    tips_pct: None,
+                    swap: Swap::BackrunSwapSteps((s0, s1)),
+                    ..request
+                });
+                compose_channel_tx.send(encode_request).map_err(|_| eyre!("CANNOT_SEND"))?;
+            }
+            Err(e) => {
+                json_log(Level::ERROR, "Optimization error", &[("error", &e)]);
+                return Err(eyre!("OPTIMIZATION_ERROR"));
+            }
+        }
+        json_log(Level::DEBUG, "Step Optimization finished", &[
+            ("sp0", &sp0),
+            ("sp1", &sp1),
+            ("duration", &(chrono::Local::now() - start_time)),
+        ]);
+    } else {
+        json_log(Level::ERROR, "Incorrect swap_type", &[]);
+        return Err(eyre!("INCORRECT_SWAP_TYPE"));
+    }
+
+    Ok(())
 }
 
 async fn diff_path_merger_worker<DB: DatabaseRef<Error = ErrReport> + Send + Sync + Clone + 'static>(
@@ -140,6 +187,7 @@ pub struct DiffPathMergerActor<DB: Send + Sync + Clone + 'static> {
     market_events: Option<Broadcaster<MarketEvents>>,
     #[consumer]
     compose_channel_rx: Option<Broadcaster<MessageSwapCompose<DB>>>,
+
     #[producer]
     compose_channel_tx: Option<Broadcaster<MessageSwapCompose<DB>>>,
 }
