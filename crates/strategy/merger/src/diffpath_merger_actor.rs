@@ -2,7 +2,7 @@ use alloy_primitives::{Address, U256};
 use eyre::{eyre, ErrReport, Result};
 use revm::primitives::Env;
 use revm::DatabaseRef;
-use crate::core::utils::json_logger::json_log;
+use crate::utils::json_logger::json_log;
 use tokio::sync::broadcast::error::RecvError;
 
 use tracing::{debug, error, info};
