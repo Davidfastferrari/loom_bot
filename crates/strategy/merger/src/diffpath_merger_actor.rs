@@ -2,9 +2,7 @@ use alloy_primitives::{Address, U256};
 use eyre::{eyre, ErrReport, Result};
 use revm::primitives::Env;
 use revm::DatabaseRef;
-use tokio::sync::broadcast::error::RecvError;
 use tracing::{debug, error, info};
-use crate::core::utils::json_logger::json_log;
 use tracing::Level;
 
 use loom_core_actors::{subscribe, Accessor, Actor, ActorResult, Broadcaster, Consumer, Producer, SharedState, WorkerResult};
@@ -12,9 +10,6 @@ use loom_core_actors_macros::{Accessor, Consumer, Producer};
 use loom_core_blockchain::{Blockchain, Strategy};
 use loom_types_entities::{LatestBlock, Swap, SwapStep};
 use loom_types_events::{MarketEvents, MessageSwapCompose, SwapComposeData, SwapComposeMessage};
-use revm::{DatabaseRef, primitives::Env};
-use tokio::sync::broadcast::error::RecvError;
-use eyre::{eyre, ErrReport, Result};
 #[macro_use]
 extern crate lazy_static;
 
@@ -47,7 +42,7 @@ async fn arb_swap_steps_optimizer_task<DB: DatabaseRef + Send + Sync + Clone>(
                 compose_channel_tx.send(encode_request).map_err(|_| eyre!("CANNOT_SEND"))?;
             }
             Err(e) => {
-                json_log(Level::ERROR, "Optimization error", &[("error", &e)]);
+                json_log(Level::ERROR, "Optimization error", &[("error", &format!("{}", e))]);
                 return Err(eyre!("OPTIMIZATION_ERROR"));
             }
         }
@@ -129,42 +124,42 @@ async fn diff_path_merger_worker<DB: DatabaseRef<Error = ErrReport> + Send + Syn
                                 continue
                             };
 
-                            match SwapStep::merge_swap_paths( req_swap.clone(), swap_path.clone() ){
-                                Ok((sp0, sp1)) => {
-                                    let latest_block_guard = latest_block.read().await;
-                                    let block_header = latest_block_guard.block_header.clone().unwrap();
-                                    drop(latest_block_guard);
+                        match SwapStep::merge_swap_paths( req_swap.clone(), swap_path.clone(), *COINBASE ){
+                            Ok((sp0, sp1)) => {
+                                let latest_block_guard = latest_block.read().await;
+                                let block_header = latest_block_guard.block_header.clone().unwrap();
+                                drop(latest_block_guard);
 
-                                    let request = SwapComposeData{
-                                        swap : Swap::BackrunSwapSteps((sp0,sp1)),
-                                        ..compose_data.clone()
-                                    };
+                                let request = SwapComposeData{
+                                    swap : Swap::BackrunSwapSteps((sp0,sp1)),
+                                    ..compose_data.clone()
+                                };
 
-                                    let mut evm_env = Env::default();
-                                    evm_env.block.number = U256::from(block_header.number + 1);
-                                    evm_env.block.timestamp = U256::from(block_header.timestamp + 12);
+                                let mut evm_env = Env::default();
+                                evm_env.block.number = U256::from(block_header.number + 1);
+                                evm_env.block.timestamp = U256::from(block_header.timestamp + 12);
 
-                                    if let Some(db) = compose_data.poststate.clone() {
-                                        let db_clone = db.clone();
-                                        let compose_channel_clone = compose_channel_tx.clone();
-                                        tokio::task::spawn( async move {
-                                                arb_swap_steps_optimizer_task(
-                                                compose_channel_clone,
-                                                &db_clone,
-                                                evm_env,
-                                                request
-                                            ).await
-                                        });
-                                    }
-                                    break; // only first
+                                if let Some(db) = compose_data.poststate.clone() {
+                                    let db_clone = db.clone();
+                                    let compose_channel_clone = compose_channel_tx.clone();
+                                    tokio::task::spawn( async move {
+                                            arb_swap_steps_optimizer_task(
+                                            compose_channel_clone,
+                                            &db_clone,
+                                            evm_env,
+                                            request
+                                        ).await
+                                    });
                                 }
-                                Err(e)=>{
-                                    json_log(Level::ERROR, "SwapPath merge error", &[
-                                        ("ready_requests_len", &ready_requests.len()),
-                                        ("error", &format!("{}", e)),
-                                    ]);
-                                }
+                                break; // only first
                             }
+                            Err(e)=>{
+                                json_log(Level::ERROR, "SwapPath merge error", &[
+                                    ("ready_requests_len", &ready_requests.len()),
+                                    ("error", &format!("{}", e)),
+                                ]);
+                            }
+                        }
                         }
                         ready_requests.push(compose_data.clone());
                         ready_requests.sort_by(|r0,r1| r1.swap.abs_profit().cmp(&r0.swap.abs_profit())  )
