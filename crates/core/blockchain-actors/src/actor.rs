@@ -485,4 +485,38 @@ where
         self.actor_manager.start(closure)?;
         Ok(self)
     }
+
+    /// Starts swap path merger actor(s)
+    pub fn with_swap_path_merger(&mut self) -> Result<&mut Self> {
+        let bc = self.bc.clone();
+        let state = self.state.clone();
+        let strategy = self.strategy.clone();
+        let multicaller_address = self.mutlicaller_address.ok_or_else(|| eyre::eyre!("Multicaller address not set"))?;
+
+        let closure_arb = {
+            let multicaller_address = multicaller_address.clone();
+            let bc = bc.clone();
+            let strategy = strategy.clone();
+            move || Box::new(ArbSwapPathMergerActor::new(multicaller_address).on_bc(&bc, &strategy)) as Box<dyn LoomActor + Send + Sync>
+        };
+        self.actor_manager.start(closure_arb)?;
+
+        let closure_diff = {
+            let bc = bc.clone();
+            let strategy = strategy.clone();
+            move || Box::new(DiffPathMergerActor::new().on_bc(&bc).on_strategy(&strategy)) as Box<dyn LoomActor + Send + Sync>
+        };
+        self.actor_manager.start(closure_diff)?;
+
+        let closure_same = {
+            let bc = bc.clone();
+            let state = state.clone();
+            let strategy = strategy.clone();
+            let provider = self.provider.clone();
+            move || Box::new(SamePathMergerActor::new(provider.clone()).on_bc(&bc, &state, &strategy)) as Box<dyn LoomActor + Send + Sync>
+        };
+        self.actor_manager.start(closure_same)?;
+
+        Ok(self)
+    }
 }
