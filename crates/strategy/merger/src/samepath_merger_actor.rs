@@ -30,6 +30,7 @@ use loom_node_debug_provider::DebugProviderExt;
 use loom_types_blockchain::{debug_trace_call_pre_state, GethStateUpdate, GethStateUpdateVec, TRACING_CALL_OPTS};
 use loom_types_entities::{DataFetcher, FetchState, LatestBlock, MarketState, Swap};
 use loom_types_events::{MarketEvents, MessageSwapCompose, SwapComposeData, SwapComposeMessage};
+use loom_types_entities::SwapStep;
 
 lazy_static! {
     static ref COINBASE: Address = "0x1f9090aaE28b8a3dCeaDf281B0F12828e676c326".parse().unwrap();
@@ -434,4 +435,4 @@ where
         "SamePathMergerActor"
     }
 }
-//</create_file>
+</create_file>
