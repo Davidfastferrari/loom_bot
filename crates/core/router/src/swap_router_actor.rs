@@ -9,7 +9,7 @@ use revm::DatabaseRef;
 use tokio::sync::broadcast::error::RecvError;
 use tokio::sync::broadcast::Receiver;
 use tracing::{debug, error, info};
-use crate::utils::json_logger::json_log;
+use crate::core::utils::json_logger::json_log;
 use tracing::Level;
 
 /// encoder task performs initial routing for swap request
@@ -21,7 +21,7 @@ async fn router_task_prepare<DB: DatabaseRef + Send + Sync + Clone + 'static>(
 ) -> Result<()> {
     json_log(Level::DEBUG, "router_task_prepare started", &[
         ("swap", &format!("{}", route_request.swap)),
-        ("tx_compose", &route_request.tx_compose),
+        ("tx_compose", &format!("{:?}", route_request.tx_compose)),
     ]);
 
     let signer = match route_request.tx_compose.eoa {
@@ -60,8 +60,8 @@ async fn router_task_broadcast<DB: DatabaseRef + Send + Sync + Clone + 'static>(
 ) -> Result<()> {
     json_log(Level::DEBUG, "router_task_broadcast started", &[
         ("swap", &format!("{}", route_request.swap)),
-        ("tips", &route_request.tips),
-        ("tx_compose", &route_request.tx_compose),
+        ("tips", &format!("{:?}", route_request.tips)),
+        ("tx_compose", &format!("{:?}", route_request.tx_compose)),
     ]);
 
     let tx_compose = TxComposeData { swap: Some(route_request.swap), tips: route_request.tips, ..route_request.tx_compose };
