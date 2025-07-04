@@ -17,6 +17,8 @@ use revm::{Database, DatabaseCommit, DatabaseRef, Evm};
 use tokio::sync::broadcast::error::RecvError;
 use tokio::sync::RwLock;
 use tracing::{debug, error, info, trace};
+use crate::json_logger::json_log;
+use tracing::Level;
 
 use loom_core_actors::{subscribe, Accessor, Actor, ActorResult, Broadcaster, Consumer, Producer, SharedState, WorkerResult};
 use loom_core_actors_macros::{Accessor, Consumer, Producer};
@@ -37,7 +39,6 @@ fn get_merge_list<'a, DB: Clone + 'static>(
     request: &SwapComposeData<DB>,
     swap_paths: &'a HashMap<TxHash, Vec<SwapComposeData<DB>>>,
 ) -> Vec<&'a SwapComposeData<DB>> {
-    //let mut ret : Vec<&TxComposeData> = Vec::new();
     let swap_line = if let Swap::BackrunSwapLine(swap_line) = &request.swap {
         swap_line
     } else {
@@ -76,7 +77,7 @@ where
     P: Provider<N> + DebugProviderExt<N> + Send + Sync + Clone + 'static,
     DB: Database<Error = ErrReport> + DatabaseRef<Error = ErrReport> + DatabaseCommit + Send + Sync + Clone + 'static,
 {
-    debug!("same_path_merger_task stuffing_txs len {}", stuffing_txes.len());
+    json_log(Level::DEBUG, "same_path_merger_task stuffing_txs len", &[("len", &stuffing_txes.len())]);
 
     let mut prestate_guard = pre_states.write().await;
 
@@ -93,7 +94,7 @@ where
     };
 
     for tx in stuffing_txes.into_iter() {
-        let client_clone = client.clone(); //Pin::new(Box::new(client.clone()));
+        let client_clone = client.clone();
         let tx_clone = tx.clone();
         let tx_hash: TxHash = tx.tx_hash();
         let call_opts_clone = call_opts.clone();
@@ -145,7 +146,6 @@ where
         let mut evm = Evm::builder().with_spec_id(CANCUN).with_db(db).with_env(Box::new(env.clone())).build();
 
         for (idx, tx_idx) in tx_order.clone().iter().enumerate() {
-            // set tx context for evm
             let tx = &stuffing_states[*tx_idx].0;
             let tx_env = tx_to_evm_tx(tx);
             evm.context.evm.env.tx = tx_env;
@@ -155,7 +155,11 @@ where
                     trace!("Transaction {} committed successfully {:?}", idx, tx.tx_hash());
                 }
                 Err(e) => {
-                    error!("Transaction {} {:?} commit error: {}", idx, tx.tx_hash(), e);
+                    json_log(Level::ERROR, "Transaction commit error", &[
+                        ("idx", &idx),
+                        ("tx_hash", &format!("{:?}", tx.tx_hash())),
+                        ("error", &format!("{}", e)),
+                    ]);
                     match changing {
                         Some(changing_idx) => {
                             if (changing_idx == idx && idx == 0) || (changing_idx == idx - 1) {
@@ -218,12 +222,12 @@ where
                     });
 
                     if let Err(e) = swap_request_tx.send(encode_request) {
-                        error!("{}", e)
+                        json_log(Level::ERROR, "Swap request send error", &[("error", &format!("{}", e))]);
                     }
-                    info!("+++ Calculation finished {swap_line}");
+                    json_log(Level::INFO, "Calculation finished", &[("swap_line", &format!("{:?}", swap_line))]);
                 }
                 Err(e) => {
-                    error!("optimization error : {e:?}")
+                    json_log(Level::ERROR, "Optimization error", &[("error", &format!("{:?}", e))]);
                 }
             }
         }
@@ -253,8 +257,6 @@ async fn same_path_merger_worker<
 
     let prestate = Arc::new(RwLock::new(DataFetcher::<TxHash, GethStateUpdate>::new()));
 
-    //let mut affecting_tx: HashMap<TxHash, bool> = HashMap::new();
-    //let mut cur_base_fee: u128 = 0;
     let mut cur_next_base_fee: u64 = 0;
     let mut cur_block_number: Option<alloy_primitives::BlockNumber> = None;
     let mut cur_block_time: Option<u64> = None;
@@ -266,11 +268,14 @@ async fn same_path_merger_worker<
                 if let Ok(msg) = msg {
                     let market_event_msg : MarketEvents = msg;
                     if let MarketEvents::BlockHeaderUpdate{block_number, block_hash,  base_fee, next_base_fee, timestamp} =  market_event_msg {
-                        debug!("Block header update {} {} base_fee {} ", block_number, block_hash, base_fee);
+                        json_log(Level::DEBUG, "Block header update", &[
+                            ("block_number", &block_number),
+                            ("block_hash", &format!("{}", block_hash)),
+                            ("base_fee", &base_fee),
+                        ]);
                         cur_block_number = Some( block_number + 1);
                         cur_block_time = Some(timestamp + 12 );
                         cur_next_base_fee = next_base_fee;
-                        //cur_base_fee = base_fee;
                         *prestate.write().await = DataFetcher::<TxHash, GethStateUpdate>::new();
                         swap_paths = HashMap::new();
 
@@ -280,7 +285,10 @@ async fn same_path_merger_worker<
                             if let Ok(MarketEvents::BlockStateUpdate{block_hash}) = market_events_rx.recv().await {
                                 if new_block_hash == block_hash {
                                     cur_state_override = latest_block.read().await.node_state_override();
-                                    debug!("Block state update received {} {}", block_number, block_hash);
+                                    json_log(Level::DEBUG, "Block state update received", &[
+                                        ("block_number", &block_number),
+                                        ("block_hash", &format!("{}", block_hash)),
+                                    ]);
                                     break;
                                 }
                             }
@@ -288,7 +296,6 @@ async fn same_path_merger_worker<
                     }
                 }
             }
-
 
             msg = compose_channel_rx.recv() => {
                 let msg : Result<MessageSwapCompose<DB>, RecvError> = msg;
@@ -341,7 +348,7 @@ async fn same_path_merger_worker<
                         }
                     },
                     Err(e)=>{
-                        error!("{e}")
+                        json_log(Level::ERROR, "Compose channel receive error", &[("error", &format!("{}", e))]);
                     }
                 }
             }
@@ -352,7 +359,6 @@ async fn same_path_merger_worker<
 #[derive(Consumer, Producer, Accessor)]
 pub struct SamePathMergerActor<P, N, DB: Send + Sync + Clone + 'static> {
     client: P,
-    //encoder: SwapStepEncoder,
     #[accessor]
     market_state: Option<SharedState<MarketState<DB>>>,
     #[accessor]
@@ -370,7 +376,7 @@ impl<P, N, DB> SamePathMergerActor<P, N, DB>
 where
     N: Network,
     P: Provider<N> + DebugProviderExt<N> + Send + Sync + Clone + 'static,
-    DB: DatabaseRef + DatabaseCommit + Send + Sync + Clone + 'static,
+    DB: DatabaseRef<Error = ErrReport> + Database<Error = ErrReport> + DatabaseCommit + Send + Sync + Clone + 'static,
 {
     pub fn new(client: P) -> Self {
         Self {
@@ -429,3 +435,4 @@ where
         "SamePathMergerActor"
     }
 }
+//</edit_file>

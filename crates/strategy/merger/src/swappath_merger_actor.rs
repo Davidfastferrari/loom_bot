@@ -4,6 +4,8 @@ use revm::primitives::Env;
 use revm::DatabaseRef;
 use tokio::sync::broadcast::error::RecvError;
 use tracing::{debug, error, info};
+use crate::json_logger::json_log;
+use tracing::Level;
 
 use loom_core_actors::{subscribe, Accessor, Actor, ActorResult, Broadcaster, Consumer, Producer, SharedState, WorkerResult};
 use loom_core_actors_macros::{Accessor, Consumer, Producer};
@@ -17,7 +19,9 @@ async fn arb_swap_steps_optimizer_task<DB: DatabaseRef + Send + Sync + Clone>(
     evm_env: Env,
     request: SwapComposeData<DB>,
 ) -> Result<()> {
-    debug!("Step Simulation started");
+    json_log(Level::DEBUG, "Step Simulation started", &[
+        ("swap", &format!("{}", request.swap)),
+    ]);
 
     if let Swap::BackrunSwapSteps((sp0, sp1)) = request.swap {
         let start_time = chrono::Local::now();
@@ -32,13 +36,17 @@ async fn arb_swap_steps_optimizer_task<DB: DatabaseRef + Send + Sync + Clone>(
                 compose_channel_tx.send(encode_request).map_err(|_| eyre!("CANNOT_SEND"))?;
             }
             Err(e) => {
-                error!("Optimization error:{}", e);
+                json_log(Level::ERROR, "Optimization error", &[("error", &format!("{}", e))]);
                 return Err(eyre!("OPTIMIZATION_ERROR"));
             }
         }
-        debug!("Step Optimization finished {} + {} {}", &sp0, &sp1, chrono::Local::now() - start_time);
+        json_log(Level::DEBUG, "Step Optimization finished", &[
+            ("sp0", &format!("{}", &sp0)),
+            ("sp1", &format!("{}", &sp1)),
+            ("duration", &(chrono::Local::now() - start_time).to_string()),
+        ]);
     } else {
-        error!("Incorrect swap_type");
+        json_log(Level::ERROR, "Incorrect swap_type", &[]);
         return Err(eyre!("INCORRECT_SWAP_TYPE"));
     }
 
@@ -65,17 +73,19 @@ async fn arb_swap_path_merger_worker<DB: DatabaseRef<Error = ErrReport> + Send +
                     Ok(event) => {
                         match event {
                             MarketEvents::BlockHeaderUpdate{..} =>{
-                                debug!("Cleaning ready requests");
+                                json_log(Level::DEBUG, "Cleaning ready requests", &[]);
                                 ready_requests = Vec::new();
                             }
                             MarketEvents::BlockStateUpdate{..}=>{
-                                debug!("State updated");
+                                json_log(Level::DEBUG, "State updated", &[]);
                                 //state_db = market_state.read().await.state_db.clone();
                             }
                             _=>{}
                         }
                     }
-                    Err(e)=>{error!("{}", e)}
+                    Err(e)=>{
+                        json_log(Level::ERROR, "Market event error", &[("error", &format!("{}", e))]);
+                    }
                 }
 
             },
@@ -94,8 +104,10 @@ async fn arb_swap_path_merger_worker<DB: DatabaseRef<Error = ErrReport> + Send +
                             _=>continue,
                         };
 
-
-                        info!("MessageSwapPathEncodeRequest received. stuffing: {:?} swap: {}", compose_data.tx_compose.stuffing_txs_hashes, compose_data.swap);
+                        json_log(Level::INFO, "MessageSwapPathEncodeRequest received", &[
+                            ("stuffing_txs_hashes", &compose_data.tx_compose.stuffing_txs_hashes),
+                            ("swap", &format!("{}", compose_data.swap)),
+                        ]);
 
                         for req in ready_requests.iter() {
 
@@ -108,7 +120,6 @@ async fn arb_swap_path_merger_worker<DB: DatabaseRef<Error = ErrReport> + Send +
                             if !compose_data.same_stuffing(&req.tx_compose.stuffing_txs_hashes) {
                                 continue
                             };
-
 
                             match SwapStep::merge_swap_paths( req_swap.clone(), swap_path.clone(), multicaller_address ){
                                 Ok((sp0, sp1)) => {
@@ -125,7 +136,6 @@ async fn arb_swap_path_merger_worker<DB: DatabaseRef<Error = ErrReport> + Send +
                                     evm_env.block.number = U256::from(block_header.number + 1);
                                     evm_env.block.timestamp = U256::from(block_header.timestamp + 12);
 
-
                                     if let Some(db) = compose_data.poststate.clone() {
                                         let db_clone = db.clone();
                                         let compose_channel_clone = compose_channel_tx.clone();
@@ -141,7 +151,10 @@ async fn arb_swap_path_merger_worker<DB: DatabaseRef<Error = ErrReport> + Send +
                                     break; // only first
                                 }
                                 Err(e)=>{
-                                    error!("SwapPath merge error : {} {}", ready_requests.len(), e);
+                                    json_log(Level::ERROR, "SwapPath merge error", &[
+                                        ("ready_requests_len", &ready_requests.len()),
+                                        ("error", &format!("{}", e)),
+                                    ]);
                                 }
                             }
                         }
@@ -149,7 +162,9 @@ async fn arb_swap_path_merger_worker<DB: DatabaseRef<Error = ErrReport> + Send +
                         ready_requests.sort_by(|r0,r1| r1.swap.abs_profit().cmp(&r0.swap.abs_profit())  )
 
                     }
-                    Err(e)=>{error!("{}",e)}
+                    Err(e)=>{
+                        json_log(Level::ERROR, "Compose channel receive error", &[("error", &format!("{}", e))]);
+                    }
                 }
             }
         }

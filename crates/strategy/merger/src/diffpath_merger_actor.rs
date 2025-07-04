@@ -7,6 +7,8 @@ use revm::{Database, DatabaseCommit, DatabaseRef};
 use tokio::sync::broadcast::error::RecvError;
 use tokio::sync::broadcast::Receiver;
 use tracing::{debug, error, info};
+use crate::json_logger::json_log;
+use tracing::Level;
 
 use loom_core_actors::{Actor, ActorResult, Broadcaster, Consumer, Producer, WorkerResult};
 use loom_core_actors_macros::{Accessor, Consumer, Producer};
@@ -54,38 +56,29 @@ where
                 if let Ok(msg) = msg {
                     let market_event_msg : MarketEvents = msg;
                     if let MarketEvents::BlockHeaderUpdate{block_number, block_hash, timestamp, base_fee, next_base_fee} =  market_event_msg {
-                        debug!("Block header update {} {} ts {} base_fee {} next {} ", block_number, block_hash, timestamp, base_fee, next_base_fee);
-                        //cur_block_number = Some( block_number + 1);
-                        //cur_block_time = Some(timestamp + 12 );
-                        //cur_next_base_fee = next_base_fee;
-                        //cur_base_fee = base_fee;
+                        json_log(Level::DEBUG, "Block header update", &[
+                            ("block_number", &block_number),
+                            ("block_hash", &format!("{}", block_hash)),
+                            ("timestamp", &timestamp),
+                            ("base_fee", &base_fee),
+                            ("next_base_fee", &next_base_fee),
+                        ]);
                         swap_paths = Vec::new();
-
-                        // for _counter in 0..5  {
-                        //     if let Ok(msg) = market_events_rx.recv().await {
-                        //         if matches!(msg, MarketEvents::BlockStateUpdate{ block_hash } ) {
-                        //             cur_state_override = latest_block.read().await.node_state_override();
-                        //             debug!("Block state update received {} {}", block_number, block_hash);
-                        //             break;
-                        //         }
-                        //     }
-                        // }
                     }
                 }
             }
 
-
             msg = compose_channel_rx.recv() => {
                 let msg : Result<MessageSwapCompose<DB>, RecvError> = msg;
                 match msg {
-                    Ok(compose_request)=>{
+                    Ok(compose_request)=> {
                         if let SwapComposeMessage::Ready(sign_request) = compose_request.inner() {
                             if matches!( sign_request.swap, Swap::BackrunSwapLine(_)) || matches!( sign_request.swap, Swap::BackrunSwapSteps(_)) {
                                 let mut merge_list = get_merge_list(sign_request, &swap_paths);
 
                                 if !merge_list.is_empty() {
                                     let swap_vec : Vec<Swap> = merge_list.iter().map(|x|x.swap.clone()).collect();
-                                    info!("Merging started {:?}", swap_vec );
+                                    json_log(Level::INFO, "Merging started", &[("swap_vec", &format!("{:?}", swap_vec))]);
 
                                     let mut state = MarketState::new(sign_request.poststate.clone().unwrap().clone());
 
@@ -121,10 +114,13 @@ where
                                             ..sign_request.clone()
                                         }
                                     );
-                                    info!("+++ Calculation finished. Merge list : {} profit : {}",merge_list.len(), NWETH::to_float(encode_request.inner.swap.abs_profit_eth())  );
+                                    json_log(Level::INFO, "Calculation finished", &[
+                                        ("merge_list_len", &merge_list.len()),
+                                        ("profit", &NWETH::to_float(encode_request.inner.swap.abs_profit_eth())),
+                                    ]);
 
                                     if let Err(e) = compose_channel_tx.send(encode_request) {
-                                       error!("{}",e)
+                                       json_log(Level::ERROR, "Compose channel send error", &[("error", &format!("{}", e))]);
                                     }
                                 }
 
@@ -133,12 +129,12 @@ where
                             }
                         }
                     }
-                    Err(e)=>{error!("{e}")}
+                    Err(e)=>{
+                        json_log(Level::ERROR, "Compose channel receive error", &[("error", &format!("{}", e))]);
+                    }
                 }
 
             }
-
-
         }
     }
 }
@@ -198,3 +194,4 @@ where
         "DiffPathMergerActor"
     }
 }
+//</create_file>

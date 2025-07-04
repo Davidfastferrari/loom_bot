@@ -9,6 +9,8 @@ use revm::DatabaseRef;
 use tokio::sync::broadcast::error::RecvError;
 use tokio::sync::broadcast::Receiver;
 use tracing::{debug, error, info};
+use crate::json_logger::json_log;
+use tracing::Level;
 
 /// encoder task performs initial routing for swap request
 async fn router_task_prepare<DB: DatabaseRef + Send + Sync + Clone + 'static>(
@@ -17,7 +19,10 @@ async fn router_task_prepare<DB: DatabaseRef + Send + Sync + Clone + 'static>(
     signers: SharedState<TxSigners>,
     account_monitor: SharedState<AccountNonceAndBalanceState>,
 ) -> Result<()> {
-    debug!("router_task_prepare started {}", route_request.swap);
+    json_log(Level::DEBUG, "router_task_prepare started", &[
+        ("swap", &format!("{}", route_request.swap)),
+        ("tx_compose", &route_request.tx_compose),
+    ]);
 
     let signer = match route_request.tx_compose.eoa {
         Some(eoa) => signers.read().await.get_signer_by_address(&eoa)?,
@@ -28,7 +33,7 @@ async fn router_task_prepare<DB: DatabaseRef + Send + Sync + Clone + 'static>(
     let eth_balance = account_monitor.read().await.get_account(&signer.address()).unwrap().get_eth_balance();
 
     if route_request.tx_compose.next_block_base_fee == 0 {
-        error!("Block base fee is not set");
+        json_log(Level::ERROR, "Block base fee is not set", &[]);
         return Err(eyre!("NO_BLOCK_GAS_FEE"));
     }
 
@@ -42,7 +47,7 @@ async fn router_task_prepare<DB: DatabaseRef + Send + Sync + Clone + 'static>(
 
     match compose_channel_tx.send(estimate_request) {
         Err(_) => {
-            error!("compose_channel_tx.send(estimate_request)");
+            json_log(Level::ERROR, "compose_channel_tx.send(estimate_request) failed", &[]);
             Err(eyre!("ERROR_SENDING_REQUEST"))
         }
         Ok(_) => Ok(()),
@@ -53,13 +58,17 @@ async fn router_task_broadcast<DB: DatabaseRef + Send + Sync + Clone + 'static>(
     route_request: SwapComposeData<DB>,
     tx_compose_channel_tx: Broadcaster<MessageTxCompose>,
 ) -> Result<()> {
-    debug!("router_task_broadcast started {}", route_request.swap);
+    json_log(Level::DEBUG, "router_task_broadcast started", &[
+        ("swap", &format!("{}", route_request.swap)),
+        ("tips", &route_request.tips),
+        ("tx_compose", &route_request.tx_compose),
+    ]);
 
     let tx_compose = TxComposeData { swap: Some(route_request.swap), tips: route_request.tips, ..route_request.tx_compose };
 
     match tx_compose_channel_tx.send(MessageTxCompose::sign(tx_compose)) {
         Err(_) => {
-            error!("compose_channel_tx.send(estimate_request)");
+            json_log(Level::ERROR, "compose_channel_tx.send(estimate_request) failed", &[]);
             Err(eyre!("ERROR_SENDING_REQUEST"))
         }
         Ok(_) => Ok(()),
