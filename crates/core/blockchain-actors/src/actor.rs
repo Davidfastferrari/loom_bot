@@ -480,7 +480,7 @@ where
         let closure = {
             let pool_loaders = pool_loaders.clone();
             let provider = self.provider.clone();
-            move || Box::new(PoolLoaderActor::new(provider.clone(), pool_loaders.clone(), pools_config.clone())) as Box<dyn LoomActor + Send + Sync>
+            move || Box::new(PoolLoaderActor::<P, P, alloy_network::Ethereum, DB>::new(provider.clone(), pool_loaders.clone(), pools_config.clone())) as Box<dyn LoomActor + Send + Sync>
         };
         self.actor_manager.start(closure)?;
         Ok(self)
