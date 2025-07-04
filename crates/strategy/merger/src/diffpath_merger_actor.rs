@@ -29,7 +29,7 @@ async fn arb_swap_steps_optimizer_task<DB: DatabaseRef + Send + Sync + Clone>(
     request: SwapComposeData<DB>,
 ) -> Result<()> {
     json_log(Level::DEBUG, "Step Simulation started", &[
-        ("swap", &request.swap),
+        ("swap", &format!("{:?}", request.swap)),
     ]);
 
     if let Swap::BackrunSwapSteps((sp0, sp1)) = request.swap {
@@ -45,14 +45,14 @@ async fn arb_swap_steps_optimizer_task<DB: DatabaseRef + Send + Sync + Clone>(
                 compose_channel_tx.send(encode_request).map_err(|_| eyre!("CANNOT_SEND"))?;
             }
             Err(e) => {
-                json_log(Level::ERROR, "Optimization error", &[("error", &format!("{}", e))]);
+                json_log(Level::ERROR, "Optimization error", &[("error", &format!("{:?}", e))]);
                 return Err(eyre!("OPTIMIZATION_ERROR"));
             }
         }
         json_log(Level::DEBUG, "Step Optimization finished", &[
-            ("sp0", &sp0),
-            ("sp1", &sp1),
-            ("duration", &(chrono::Local::now() - start_time)),
+            ("sp0", &format!("{:?}", sp0)),
+            ("sp1", &format!("{:?}", sp1)),
+            ("duration", &format!("{:?}", chrono::Local::now() - start_time)),
         ]);
     } else {
         json_log(Level::ERROR, "Incorrect swap_type", &[]);
@@ -91,7 +91,7 @@ async fn diff_path_merger_worker<DB: DatabaseRef<Error = ErrReport> + Send + Syn
                         }
                     }
                     Err(e)=>{
-                        json_log(Level::ERROR, "Market event error", &[("error", &format!("{}", e))]);
+                        json_log(Level::ERROR, "Market event error", &[("error", &format!("{:?}", e))]);
                     }
                 }
 
@@ -112,8 +112,8 @@ async fn diff_path_merger_worker<DB: DatabaseRef<Error = ErrReport> + Send + Syn
                         };
 
                         json_log(Level::INFO, "MessageSwapPathEncodeRequest received", &[
-                            ("stuffing_txs_hashes", &compose_data.tx_compose.stuffing_txs_hashes),
-                            ("swap", &compose_data.swap),
+                            ("stuffing_txs_hashes", &format!("{:?}", compose_data.tx_compose.stuffing_txs_hashes)),
+                            ("swap", &format!("{:?}", compose_data.swap)),
                         ]);
 
                         for req in ready_requests.iter() {
@@ -159,7 +159,7 @@ async fn diff_path_merger_worker<DB: DatabaseRef<Error = ErrReport> + Send + Syn
                             Err(e)=>{
                                 json_log(Level::ERROR, "SwapPath merge error", &[
                                     ("ready_requests_len", &ready_requests.len()),
-                                    ("error", &format!("{}", e)),
+                                    ("error", &format!("{:?}", e)),
                                 ]);
                             }
                         }
@@ -169,7 +169,7 @@ async fn diff_path_merger_worker<DB: DatabaseRef<Error = ErrReport> + Send + Syn
 
                     }
                     Err(e)=>{
-                        json_log(Level::ERROR, "Compose channel receive error", &[("error", &format!("{}", e))]);
+                        json_log(Level::ERROR, "Compose channel receive error", &[("error", &format!("{:?}", e))]);
                     }
                 }
             }
