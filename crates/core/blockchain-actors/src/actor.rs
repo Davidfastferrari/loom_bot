@@ -467,6 +467,7 @@ where
     pub fn with_pool_loader(&mut self, pools_config: PoolsLoadingConfig) -> Result<&mut Self> {
         use std::sync::Arc;
         use loom_defi_pools::PoolLoadersBuilder;
+        use loom_defi_market::PoolLoaderActor;
 
         let provider = Arc::new(self.provider.clone());
         let pool_loaders = Arc::new(
@@ -477,8 +478,9 @@ where
         );
 
         let closure = {
+            let provider = provider.clone();
             let pool_loaders = pool_loaders.clone();
-            move || Box::new(PoolLoaderActor::new(pool_loaders.clone())) as Box<dyn LoomActor + Send + Sync>
+            move || Box::new(PoolLoaderActor::new(provider.clone(), pool_loaders.clone(), pools_config.clone())) as Box<dyn LoomActor + Send + Sync>
         };
         self.actor_manager.start(closure)?;
         Ok(self)
