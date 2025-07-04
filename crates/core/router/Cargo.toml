@@ -21,6 +21,9 @@ tracing.workspace = true
 
 revm.workspace = true
 
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
 [features]
 default = []
 with-blockchain = ["loom-core-blockchain"]
