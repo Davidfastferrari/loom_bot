@@ -1,146 +1,141 @@
-use alloy_network::TransactionResponse;
-use alloy_primitives::{Address, TxHash};
-use alloy_rpc_types::Transaction;
-use eyre::{OptionExt, Result};
-use lazy_static::lazy_static;
-use revm::{Database, DatabaseCommit, DatabaseRef};
+use alloy_primitives::{Address, U256};
+use eyre::{eyre, ErrReport, Result};
+use revm::primitives::Env;
+use revm::DatabaseRef;
 use tokio::sync::broadcast::error::RecvError;
-use tokio::sync::broadcast::Receiver;
 use tracing::{debug, error, info};
-use crate::json_logger::json_log;
+use crate::core::utils::json_logger::json_log;
 use tracing::Level;
 
-use loom_core_actors::{Actor, ActorResult, Broadcaster, Consumer, Producer, WorkerResult};
+use loom_core_actors::{subscribe, Accessor, Actor, ActorResult, Broadcaster, Consumer, Producer, SharedState, WorkerResult};
 use loom_core_actors_macros::{Accessor, Consumer, Producer};
 use loom_core_blockchain::{Blockchain, Strategy};
-use loom_evm_utils::NWETH;
-use loom_types_entities::{MarketState, Swap};
-use loom_types_events::{MarketEvents, MessageSwapCompose, SwapComposeData, SwapComposeMessage, TxComposeData};
+use loom_types_entities::{LatestBlock, Swap};
+use loom_types_events::{MarketEvents, MessageSwapCompose, SwapComposeData, SwapComposeMessage};
 
 lazy_static! {
     static ref COINBASE: Address = "0x1f9090aaE28b8a3dCeaDf281B0F12828e676c326".parse().unwrap();
 }
 
-fn get_merge_list<'a, DB: Clone + Send + Sync + 'static>(
-    request: &SwapComposeData<DB>,
-    swap_paths: &'a [SwapComposeData<DB>],
-) -> Vec<&'a SwapComposeData<DB>> {
-    let mut ret: Vec<&SwapComposeData<DB>> = Vec::new();
-    let mut pools = request.swap.get_pool_id_vec();
-    for p in swap_paths.iter() {
-        if !p.cross_pools(&pools) {
-            pools.extend(p.swap.get_pool_id_vec());
-            ret.push(p);
-        }
-    }
-    ret
-}
-
-async fn diff_path_merger_worker<DB>(
+async fn diff_path_merger_worker<DB: DatabaseRef<Error = ErrReport> + Send + Sync + Clone + 'static>(
+    latest_block: SharedState<LatestBlock>,
     market_events_rx: Broadcaster<MarketEvents>,
     compose_channel_rx: Broadcaster<MessageSwapCompose<DB>>,
     compose_channel_tx: Broadcaster<MessageSwapCompose<DB>>,
-) -> WorkerResult
-where
-    DB: DatabaseRef + Database + DatabaseCommit + Send + Sync + Clone + 'static,
-{
-    let mut market_events_rx: Receiver<MarketEvents> = market_events_rx.subscribe();
+) -> WorkerResult {
+    subscribe!(market_events_rx);
+    subscribe!(compose_channel_rx);
 
-    let mut compose_channel_rx: Receiver<MessageSwapCompose<DB>> = compose_channel_rx.subscribe();
-
-    let mut swap_paths: Vec<SwapComposeData<DB>> = Vec::new();
+    let mut ready_requests: Vec<SwapComposeData<DB>> = Vec::new();
 
     loop {
         tokio::select! {
             msg = market_events_rx.recv() => {
-                if let Ok(msg) = msg {
-                    let market_event_msg : MarketEvents = msg;
-                    if let MarketEvents::BlockHeaderUpdate{block_number, block_hash, timestamp, base_fee, next_base_fee} =  market_event_msg {
-                        json_log(Level::DEBUG, "Block header update", &[
-                            ("block_number", &block_number),
-                            ("block_hash", &format!("{}", block_hash)),
-                            ("timestamp", &timestamp),
-                            ("base_fee", &base_fee),
-                            ("next_base_fee", &next_base_fee),
-                        ]);
-                        swap_paths = Vec::new();
+                let msg : Result<MarketEvents, RecvError> = msg;
+                match msg {
+                    Ok(event) => {
+                        match event {
+                            MarketEvents::BlockHeaderUpdate{..} =>{
+                                json_log(Level::DEBUG, "Cleaning ready requests", &[]);
+                                ready_requests = Vec::new();
+                            }
+                            MarketEvents::BlockStateUpdate{..}=>{
+                                json_log(Level::DEBUG, "State updated", &[]);
+                            }
+                            _=>{}
+                        }
+                    }
+                    Err(e)=>{
+                        json_log(Level::ERROR, "Market event error", &[("error", &format!("{}", e))]);
                     }
                 }
-            }
 
+            },
             msg = compose_channel_rx.recv() => {
                 let msg : Result<MessageSwapCompose<DB>, RecvError> = msg;
                 match msg {
-                    Ok(compose_request)=> {
-                        if let SwapComposeMessage::Ready(sign_request) = compose_request.inner() {
-                            if matches!( sign_request.swap, Swap::BackrunSwapLine(_)) || matches!( sign_request.swap, Swap::BackrunSwapSteps(_)) {
-                                let mut merge_list = get_merge_list(sign_request, &swap_paths);
+                    Ok(swap) => {
 
-                                if !merge_list.is_empty() {
-                                    let swap_vec : Vec<Swap> = merge_list.iter().map(|x|x.swap.clone()).collect();
-                                    json_log(Level::INFO, "Merging started", &[("swap_vec", &format!("{:?}", swap_vec))]);
+                        let compose_data = match swap.inner() {
+                            SwapComposeMessage::Ready(data) => data,
+                            _=>continue,
+                        };
 
-                                    let mut state = MarketState::new(sign_request.poststate.clone().unwrap().clone());
+                        let swap_path = match &compose_data.swap {
+                            Swap::BackrunSwapLine(path) => path,
+                            _=>continue,
+                        };
 
-                                    for dbs in merge_list.iter() {
-                                        state.apply_geth_update_vec( dbs.poststate_update.clone().ok_or_eyre("NO_STATE_UPDATE")?);
+                        json_log(Level::INFO, "MessageSwapPathEncodeRequest received", &[
+                            ("stuffing_txs_hashes", &compose_data.tx_compose.stuffing_txs_hashes),
+                            ("swap", &compose_data.swap),
+                        ]);
+
+                        for req in ready_requests.iter() {
+
+                            let req_swap = match &req.swap {
+                                Swap::BackrunSwapLine(path)=>path,
+                                _ => continue,
+                            };
+
+                            if !compose_data.same_stuffing(&req.tx_compose.stuffing_txs_hashes) {
+                                continue
+                            };
+
+                            match SwapStep::merge_swap_paths( req_swap.clone(), swap_path.clone() ){
+                                Ok((sp0, sp1)) => {
+                                    let latest_block_guard = latest_block.read().await;
+                                    let block_header = latest_block_guard.block_header.clone().unwrap();
+                                    drop(latest_block_guard);
+
+                                    let request = SwapComposeData{
+                                        swap : Swap::BackrunSwapSteps((sp0,sp1)),
+                                        ..compose_data.clone()
+                                    };
+
+                                    let mut evm_env = Env::default();
+                                    evm_env.block.number = U256::from(block_header.number + 1);
+                                    evm_env.block.timestamp = U256::from(block_header.timestamp + 12);
+
+                                    if let Some(db) = compose_data.poststate.clone() {
+                                        let db_clone = db.clone();
+                                        let compose_channel_clone = compose_channel_tx.clone();
+                                        tokio::task::spawn( async move {
+                                                arb_swap_steps_optimizer_task(
+                                                compose_channel_clone,
+                                                &db_clone,
+                                                evm_env,
+                                                request
+                                            ).await
+                                        });
                                     }
-
-                                    merge_list.push(sign_request);
-
-                                    let mut stuffing_txs_hashes : Vec<TxHash> = Vec::new();
-                                    let mut stuffing_txs : Vec<Transaction> = Vec::new();
-
-                                    for req in merge_list.iter() {
-                                        for tx in req.tx_compose.stuffing_txs.iter() {
-                                            if !stuffing_txs_hashes.contains(&tx.tx_hash()) {
-                                                stuffing_txs_hashes.push(tx.tx_hash());
-                                                stuffing_txs.push(tx.clone());
-                                            }
-                                        }
-                                    }
-
-                                    let encode_request = MessageSwapCompose::prepare(
-                                        SwapComposeData {
-                                            tx_compose : TxComposeData {
-                                                stuffing_txs_hashes,
-                                                stuffing_txs,
-                                                ..sign_request.tx_compose.clone()
-                                            },
-                                            swap : Swap::Multiple( merge_list.iter().map(|i| i.swap.clone()  ).collect()) ,
-                                            origin : Some("diffpath_merger".to_string()),
-                                            tips_pct : Some(9000),
-                                            poststate : Some(state.state_db),
-                                            ..sign_request.clone()
-                                        }
-                                    );
-                                    json_log(Level::INFO, "Calculation finished", &[
-                                        ("merge_list_len", &merge_list.len()),
-                                        ("profit", &NWETH::to_float(encode_request.inner.swap.abs_profit_eth())),
-                                    ]);
-
-                                    if let Err(e) = compose_channel_tx.send(encode_request) {
-                                       json_log(Level::ERROR, "Compose channel send error", &[("error", &format!("{}", e))]);
-                                    }
+                                    break; // only first
                                 }
-
-                                swap_paths.push(sign_request.clone());
-                                swap_paths.sort_by(|a, b| b.swap.abs_profit_eth().cmp(&a.swap.abs_profit_eth() ) )
+                                Err(e)=>{
+                                    json_log(Level::ERROR, "SwapPath merge error", &[
+                                        ("ready_requests_len", &ready_requests.len()),
+                                        ("error", &format!("{}", e)),
+                                    ]);
+                                }
                             }
                         }
+                        ready_requests.push(compose_data.clone());
+                        ready_requests.sort_by(|r0,r1| r1.swap.abs_profit().cmp(&r0.swap.abs_profit())  )
+
                     }
                     Err(e)=>{
                         json_log(Level::ERROR, "Compose channel receive error", &[("error", &format!("{}", e))]);
                     }
                 }
-
             }
         }
     }
 }
 
-#[derive(Consumer, Producer, Accessor, Default)]
-pub struct DiffPathMergerActor<DB: Clone + Send + Sync + 'static> {
+#[derive(Consumer, Producer, Accessor)]
+pub struct DiffPathMergerActor<DB: Send + Sync + Clone + 'static> {
+    #[accessor]
+    latest_block: Option<SharedState<LatestBlock>>,
     #[consumer]
     market_events: Option<Broadcaster<MarketEvents>>,
     #[consumer]
@@ -151,18 +146,20 @@ pub struct DiffPathMergerActor<DB: Clone + Send + Sync + 'static> {
 
 impl<DB> DiffPathMergerActor<DB>
 where
-    DB: DatabaseRef + Database + DatabaseCommit + Send + Sync + Clone + Default + 'static,
+    DB: DatabaseRef + Send + Sync + Clone + 'static,
 {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new() -> DiffPathMergerActor<DB> {
+        DiffPathMergerActor {
+            latest_block: None,
+            market_events: None,
+            compose_channel_rx: None,
+            compose_channel_tx: None,
+        }
     }
-
-    pub fn on_bc(self, bc: &Blockchain) -> Self {
-        Self { market_events: Some(bc.market_events_channel()), ..self }
-    }
-
-    pub fn on_strategy(self, strategy: &Strategy<DB>) -> Self {
+    pub fn on_bc(self, bc: &Blockchain, strategy: &Strategy<DB>) -> Self {
         Self {
+            latest_block: Some(bc.latest_block()),
+            market_events: Some(bc.market_events_channel()),
             compose_channel_tx: Some(strategy.swap_compose_channel()),
             compose_channel_rx: Some(strategy.swap_compose_channel()),
             ..self
@@ -172,9 +169,11 @@ where
 
 impl<DB> Actor for DiffPathMergerActor<DB>
 where
-    DB: DatabaseRef + Database + DatabaseCommit + Send + Sync + Clone + Default + 'static,
+    DB: DatabaseRef<Error = ErrReport> + Send + Sync + Clone + 'static,
 {
     fn start(&self) -> ActorResult {
+        let latest_block = self.latest_block.clone()
+            .ok_or_else(|| eyre::eyre!("DiffPathMergerActor: latest_block not set"))?;
         let market_events = self.market_events.clone()
             .ok_or_else(|| eyre::eyre!("DiffPathMergerActor: market_events not set"))?;
         let compose_channel_rx = self.compose_channel_rx.clone()
@@ -183,6 +182,7 @@ where
             .ok_or_else(|| eyre::eyre!("DiffPathMergerActor: compose_channel_tx not set"))?;
 
         let task = tokio::task::spawn(diff_path_merger_worker(
+            latest_block,
             market_events,
             compose_channel_rx,
             compose_channel_tx,
@@ -194,4 +194,4 @@ where
         "DiffPathMergerActor"
     }
 }
-//</create_file>
+</create_file>

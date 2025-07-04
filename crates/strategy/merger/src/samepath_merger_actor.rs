@@ -17,7 +17,7 @@ use revm::{Database, DatabaseCommit, DatabaseRef, Evm};
 use tokio::sync::broadcast::error::RecvError;
 use tokio::sync::RwLock;
 use tracing::{debug, error, info, trace};
-use crate::json_logger::json_log;
+use crate::core::utils::json_logger::json_log;
 use tracing::Level;
 
 use loom_core_actors::{subscribe, Accessor, Actor, ActorResult, Broadcaster, Consumer, Producer, SharedState, WorkerResult};
@@ -29,7 +29,7 @@ use loom_evm_utils::evm_tx_env::tx_to_evm_tx;
 use loom_node_debug_provider::DebugProviderExt;
 use loom_types_blockchain::{debug_trace_call_pre_state, GethStateUpdate, GethStateUpdateVec, TRACING_CALL_OPTS};
 use loom_types_entities::{DataFetcher, FetchState, LatestBlock, MarketState, Swap};
-use loom_types_events::{MarketEvents, MessageSwapCompose, SwapComposeData, SwapComposeMessage, TxComposeData};
+use loom_types_events::{MarketEvents, MessageSwapCompose, SwapComposeData, SwapComposeMessage};
 
 lazy_static! {
     static ref COINBASE: Address = "0x1f9090aaE28b8a3dCeaDf281B0F12828e676c326".parse().unwrap();
@@ -173,12 +173,11 @@ where
                             }
                         }
                         None => {
+                            trace!("Swapping None {idx}");
                             if idx > 0 {
-                                trace!("Swapping None {idx}");
                                 tx_order.swap(idx, idx - 1);
                                 changing = Some(idx - 1)
                             } else {
-                                trace!("Removing None {idx}");
                                 tx_order.remove(0);
                                 changing = None
                             }
@@ -435,4 +434,4 @@ where
         "SamePathMergerActor"
     }
 }
-//</edit_file>
+</create_file>
