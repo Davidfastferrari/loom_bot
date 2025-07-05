@@ -9,7 +9,7 @@ use revm::DatabaseRef;
 use tokio::sync::broadcast::error::RecvError;
 use tokio::sync::broadcast::Receiver;
 use tracing::{debug, error, info};
-use crate::utils::json_logger::json_log;
+use crate::utils::json_log;
 use tracing::Level;
 
 /// encoder task performs initial routing for swap request
