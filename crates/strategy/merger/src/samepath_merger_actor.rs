@@ -11,15 +11,15 @@ use alloy_rpc_types::state::StateOverride;
 use alloy_rpc_types::{BlockOverrides, Transaction};
 use alloy_rpc_types_trace::geth::GethDebugTracingCallOptions;
 use eyre::{eyre, ErrReport, Result};
-use super::utils::json_logger::json_log;
+use crate::utils::json_logger::json_log;
 use super::utils::constants::COINBASE;
 use loom_core_actors_macros::{Consumer, Producer, Accessor};
 use revm::primitives::{BlockEnv, Env, CANCUN};
 use revm::{Database, DatabaseCommit, DatabaseRef, Evm};
 use tokio::sync::broadcast::error::RecvError;
 use tokio::sync::RwLock;
-use tracing::{debug, error, info, trace};
-use crate::json_logger::json_log;
+use tracing::{debug, info, trace};
+// use crate::json_logger::json_log; // removed duplicate/incorrect import
 use tracing::Level;
 
 use loom_core_actors::{subscribe, Actor, ActorResult, Broadcaster, SharedState, WorkerResult};
