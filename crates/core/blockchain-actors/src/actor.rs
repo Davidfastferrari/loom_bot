@@ -65,21 +65,6 @@ pub struct BlockchainActors<P, DB: Clone + Send + Sync + 'static, E: Clone = Mul
     has_signers: bool,
     mutlicaller_address: Option<Address>,
     relays: Vec<RelayConfig>,
-    /// Starts backrun mempool actor
-    pub fn with_backrun_mempool(&mut self, backrun_config: BackrunConfig) -> Result<&mut Self> {
-        let bc = self.bc.clone();
-        let state = self.state.clone();
-        let strategy = self.strategy.clone();
-
-        let closure = {
-            let bc = bc.clone();
-            let state = state.clone();
-            let strategy = strategy.clone();
-            move || Box::new(PendingTxStateChangeProcessorActor::new(client).on_bc(&bc, &state, &strategy)) as Box<dyn LoomActor + Send + Sync>
-        };
-        self.actor_manager.start(closure)?;
-        Ok(self)
-    }
 }
 
 impl<P, DB, E> BlockchainActors<P, DB, E>
