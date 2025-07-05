@@ -78,7 +78,7 @@ where
     P: Provider<N> + DebugProviderExt<N> + Send + Sync + Clone + 'static,
     DB: Database<Error = ErrReport> + DatabaseRef<Error = ErrReport> + DatabaseCommit + Send + Sync + Clone + 'static,
 {
-    json_log(Level::DEBUG, "same_path_merger_task stuffing_txs len", &[("len", &stuffing_txes.len())]);
+    json_log(Level::DEBUG, "same_path_merger_task stuffing_txs len", &[("len", &format!("{}", stuffing_txes.len()))]);
 
     let mut prestate_guard = pre_states.write().await;
 
@@ -157,7 +157,7 @@ where
                 }
                 Err(e) => {
                     json_log(Level::ERROR, "Transaction commit error", &[
-                        ("idx", &idx),
+                        ("idx", &format!("{}", idx)),
                         ("tx_hash", &format!("{:?}", tx.tx_hash())),
                         ("error", &format!("{}", e)),
                     ]);
@@ -269,9 +269,9 @@ async fn same_path_merger_worker<
                     let market_event_msg : MarketEvents = msg;
                     if let MarketEvents::BlockHeaderUpdate{block_number, block_hash,  base_fee, next_base_fee, timestamp} =  market_event_msg {
                         json_log(Level::DEBUG, "Block header update", &[
-                            ("block_number", &block_number),
+                            ("block_number", &format!("{}", block_number)),
                             ("block_hash", &format!("{}", block_hash)),
-                            ("base_fee", &base_fee),
+                            ("base_fee", &format!("{}", base_fee)),
                         ]);
                         cur_block_number = Some( block_number + 1);
                         cur_block_time = Some(timestamp + 12 );
@@ -286,7 +286,7 @@ async fn same_path_merger_worker<
                                 if new_block_hash == block_hash {
                                     cur_state_override = latest_block.read().await.node_state_override();
                                     json_log(Level::DEBUG, "Block state update received", &[
-                                        ("block_number", &block_number),
+                                        ("block_number", &format!("{}", block_number)),
                                         ("block_hash", &format!("{}", block_hash)),
                                     ]);
                                     break;
