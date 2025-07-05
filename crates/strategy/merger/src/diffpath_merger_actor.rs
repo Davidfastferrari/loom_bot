@@ -4,7 +4,6 @@ use revm::primitives::Env;
 use revm::DatabaseRef;
 use super::utils::json_logger::json_log;
 use super::utils::constants::COINBASE;
-use loom_core_actors_macros::{Consumer, Producer, Accessor};
 use loom_core_actors::subscribe;
 use tokio::sync::broadcast::error::RecvError;
 

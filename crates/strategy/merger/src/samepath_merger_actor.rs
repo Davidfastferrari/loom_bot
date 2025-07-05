@@ -22,8 +22,7 @@ use tracing::{debug, error, info, trace};
 use crate::json_logger::json_log;
 use tracing::Level;
 
-use loom_core_actors::{subscribe, Accessor, Actor, ActorResult, Broadcaster, Consumer, Producer, SharedState, WorkerResult};
-use loom_core_actors_macros::{Accessor, Consumer, Producer};
+use loom_core_actors::{subscribe, Actor, ActorResult, Broadcaster, SharedState, WorkerResult};
 use loom_core_blockchain::{Blockchain, BlockchainState, Strategy};
 use loom_evm_db::DatabaseHelpers;
 use loom_evm_utils::evm::evm_transact;
