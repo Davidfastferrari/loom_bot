@@ -112,8 +112,8 @@ impl ActorsManager {
         }
     }
 
-    pub async fn wait(self) {
-        let mut f_remaining_futures = self.tasks;
+    pub async fn wait(&mut self) {
+        let mut f_remaining_futures = std::mem::take(&mut self.tasks);
         let mut futures_counter = f_remaining_futures.len();
 
         while futures_counter > 0 {
