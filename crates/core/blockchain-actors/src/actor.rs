@@ -75,7 +75,7 @@ pub struct BlockchainActors<P, DB: Clone + Send + Sync + 'static, E: Clone = Mul
             let bc = bc.clone();
             let state = state.clone();
             let strategy = strategy.clone();
-            move || Box::new(PendingTxStateChangeProcessorActor::new().on_bc(&bc, &state, &strategy)) as Box<dyn LoomActor + Send + Sync>
+            move || Box::new(PendingTxStateChangeProcessorActor::new(client).on_bc(&bc, &state, &strategy)) as Box<dyn LoomActor + Send + Sync>
         };
         self.actor_manager.start(closure)?;
         Ok(self)
@@ -505,7 +505,7 @@ where
         let closure_diff = {
             let bc = bc.clone();
             let strategy = strategy.clone();
-            move || Box::new(DiffPathMergerActor::new().on_bc(&bc).on_strategy(&strategy)) as Box<dyn LoomActor + Send + Sync>
+            move || Box::new(DiffPathMergerActor::new().on_bc(&bc, &strategy)) as Box<dyn LoomActor + Send + Sync>
         };
         self.actor_manager.start(closure_diff)?;
 
