@@ -106,7 +106,7 @@ where
         }
     }
 
-    pub fn with_preloaded_state(&mut self, pools: Vec<(PoolId, PoolClass)>, required_state: Option<RequiredState>) -> Result<&mut Self> {
+    pub fn with_preloaded_state(self, pools: Vec<(PoolId, PoolClass)>, required_state: Option<RequiredState>) -> Result<Self> {
         use loom_defi_pools::PoolLoadersBuilder;
         use loom_defi_preloader::preload_market_state;
         use loom_types_entities::PoolClass;
