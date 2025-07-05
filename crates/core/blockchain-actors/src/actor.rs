@@ -183,7 +183,8 @@ where
         // Run the preload_market_state async function synchronously
         let rt = Runtime::new()?;
         rt.block_on(async {
-            self.actor_manager.wait().await
+            self.actor_manager.wait().await;
+            Ok(self)
         })
     }
 
