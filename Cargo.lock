@@ -5228,6 +5228,8 @@ dependencies = [
  "loom-types-entities",
  "loom-types-events",
  "revm",
+ "serde",
+ "serde_json",
  "tokio",
  "tracing",
 ]

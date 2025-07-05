@@ -279,4 +279,3 @@ mod test {
         assert_eq!(ready_requests[2].swap.abs_profit(), U256::from(10));
     }
 }
-</attempt_completion>
