@@ -70,13 +70,13 @@ async fn diff_path_merger_worker<DB: DatabaseRef<Error = ErrReport> + Send + Syn
     subscribe!(market_events_rx);
     subscribe!(compose_channel_rx);
 
-    let mut market_events_rx = market_events_rx.subscribe();
-    let mut compose_channel_rx = compose_channel_rx.subscribe();
+    let mut market_events_rx_receiver = market_events_rx.subscribe();
+    let mut compose_channel_rx_receiver = compose_channel_rx.subscribe();
     let mut ready_requests: Vec<SwapComposeData<DB>> = Vec::new();
 
     loop {
         tokio::select! {
-            msg = market_events_rx.recv() => {
+            msg = market_events_rx_receiver.recv() => {
                 let msg : Result<MarketEvents, RecvError> = msg;
                 match msg {
                     Ok(event) => {
@@ -97,7 +97,7 @@ async fn diff_path_merger_worker<DB: DatabaseRef<Error = ErrReport> + Send + Syn
                 }
 
             },
-            msg = compose_channel_rx.recv() => {
+            msg = compose_channel_rx_receiver.recv() => {
                 let msg : Result<MessageSwapCompose<DB>, RecvError> = msg;
                 match msg {
                     Ok(swap) => {
@@ -159,7 +159,7 @@ async fn diff_path_merger_worker<DB: DatabaseRef<Error = ErrReport> + Send + Syn
                             }
                             Err(e)=>{
                                 json_log(Level::ERROR, "SwapPath merge error", &[
-                                    ("ready_requests_len", &ready_requests.len()),
+                                    ("ready_requests_len", &ready_requests.len().to_string()),
                                     ("error", &format!("{:?}", e)),
                                 ]);
                             }
