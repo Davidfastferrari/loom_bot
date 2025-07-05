@@ -5,7 +5,8 @@ use revm::DatabaseRef;
 use tokio::sync::broadcast::error::RecvError;
 use tracing::{debug, error, info};
 use super::utils::json_logger::json_log;
-use loom_core_actors::{Consumer, Producer, Accessor};
+use super::utils::constants::COINBASE;
+use loom_core_actors_macros::{Consumer, Producer, Accessor};
 use tracing::Level;
 
 use loom_core_actors::{subscribe, Accessor, Actor, ActorResult, Broadcaster, Consumer, Producer, SharedState, WorkerResult};

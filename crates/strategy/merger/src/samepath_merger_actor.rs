@@ -11,10 +11,10 @@ use alloy_rpc_types::state::StateOverride;
 use alloy_rpc_types::{BlockOverrides, Transaction};
 use alloy_rpc_types_trace::geth::GethDebugTracingCallOptions;
 use eyre::{eyre, ErrReport, Result};
-use lazy_static::lazy_static;
-use revm::primitives::{BlockEnv, Env, CANCUN};
 use super::utils::json_logger::json_log;
-use loom_core_actors::{Consumer, Producer, Accessor};
+use super::utils::constants::COINBASE;
+use loom_core_actors_macros::{Consumer, Producer, Accessor};
+use revm::primitives::{BlockEnv, Env, CANCUN};
 use revm::{Database, DatabaseCommit, DatabaseRef, Evm};
 use tokio::sync::broadcast::error::RecvError;
 use tokio::sync::RwLock;
@@ -34,9 +34,6 @@ use loom_types_entities::{DataFetcher, FetchState, LatestBlock, MarketState, Swa
 use loom_types_events::{MarketEvents, MessageSwapCompose, SwapComposeData, SwapComposeMessage, TxComposeData};
 use loom_types_entities::SwapStep;
 
-lazy_static! {
-    static ref COINBASE: Address = "0x1f9090aaE28b8a3dCeaDf281B0F12828e676c326".parse().unwrap();
-}
 
 fn get_merge_list<'a, DB: Clone + 'static>(
     request: &SwapComposeData<DB>,
