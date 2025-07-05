@@ -9,7 +9,7 @@ use tokio::sync::broadcast::error::RecvError;
 
 use tracing::{debug, error, info};
 use tracing::Level;
-use loom_core_actors::{Broadcaster, SharedState, WorkerResult, Actor, ActorResult};
+use loom_core_actors::{Broadcaster, SharedState, WorkerResult, Actor, ActorResult, Consumer, Producer, Accessor};
 
 use loom_core_blockchain::{Blockchain, Strategy};
 use loom_types_entities::{LatestBlock, Swap, SwapStep};

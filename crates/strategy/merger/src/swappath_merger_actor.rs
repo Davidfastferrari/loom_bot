@@ -8,7 +8,7 @@ use super::utils::json_log;
 use loom_core_actors_macros::{Consumer, Producer, Accessor};
 use tracing::Level;
 
-use loom_core_actors::{subscribe, Actor, ActorResult, Broadcaster, SharedState, WorkerResult};
+use loom_core_actors::{subscribe, Actor, ActorResult, Broadcaster, SharedState, WorkerResult, Consumer, Producer, Accessor};
 use loom_core_blockchain::{Blockchain, Strategy};
 use loom_types_entities::{LatestBlock, Swap, SwapStep};
 use loom_types_events::{MarketEvents, MessageSwapCompose, SwapComposeData, SwapComposeMessage};

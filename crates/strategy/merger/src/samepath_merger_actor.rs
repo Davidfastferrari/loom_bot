@@ -21,7 +21,7 @@ use tracing::{debug, info, trace};
 // use crate::json_logger::json_log; // removed duplicate/incorrect import
 use tracing::Level;
 
-use loom_core_actors::{subscribe, Actor, ActorResult, Broadcaster, SharedState, WorkerResult};
+use loom_core_actors::{subscribe, Actor, ActorResult, Broadcaster, SharedState, WorkerResult, Consumer, Producer, Accessor};
 use loom_core_blockchain::{Blockchain, BlockchainState, Strategy};
 use loom_evm_db::DatabaseHelpers;
 use loom_evm_utils::evm::evm_transact;
@@ -31,6 +31,8 @@ use loom_types_blockchain::{debug_trace_call_pre_state, GethStateUpdate, GethSta
 use loom_types_entities::{DataFetcher, FetchState, LatestBlock, MarketState, Swap};
 use loom_types_events::{MarketEvents, MessageSwapCompose, SwapComposeData, SwapComposeMessage, TxComposeData};
 use loom_types_entities::SwapStep;
+
+const COINBASE: Address = Address::new([0x1f, 0x90, 0x90, 0xaa, 0xE2, 0x8b, 0x8a, 0x3d, 0xCe, 0xaD, 0xf2, 0x81, 0xB0, 0xF1, 0x28, 0x28, 0xe6, 0x76, 0xc3, 0x26]);
 
 
 fn get_merge_list<'a, DB: Clone + 'static>(
@@ -316,7 +318,7 @@ async fn same_path_merger_worker<
                                             block_overrides : Some(BlockOverrides {
                                                 number : Some( U256::from(cur_block_number.unwrap_or_default())),
                                                 time : Some(cur_block_time.unwrap_or_default()),
-                                                coinbase : Some(*COINBASE),
+                                                coinbase : Some(COINBASE),
                                                 base_fee : Some(U256::from(cur_next_base_fee)),
                                                 ..Default::default()
                                             }),
