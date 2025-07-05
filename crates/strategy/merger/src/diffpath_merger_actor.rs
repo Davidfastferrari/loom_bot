@@ -5,6 +5,8 @@ use revm::DatabaseRef;
 #[macro_use]
 extern crate lazy_static;
 use crate::utils::json_log;
+use loom_core_actors_macros::{Consumer, Producer, Accessor};
+use loom_core_actors::subscribe;
 use tokio::sync::broadcast::error::RecvError;
 
 use tracing::{debug, error, info};
@@ -44,7 +46,7 @@ async fn arb_swap_steps_optimizer_task<DB: DatabaseRef + Send + Sync + Clone>(
                 compose_channel_tx.send(encode_request).map_err(|_| eyre!("CANNOT_SEND"))?;
             }
             Err(e) => {
-                json_log(Level::ERROR, "Optimization error", &[("error", &format!("{:?}", e))]);
+                json_log(Level::ERROR, "Optimization error", &[("error", &format!("{}", e))]);
                 return Err(eyre!("OPTIMIZATION_ERROR"));
             }
         }
@@ -70,6 +72,8 @@ async fn diff_path_merger_worker<DB: DatabaseRef<Error = ErrReport> + Send + Syn
     subscribe!(market_events_rx);
     subscribe!(compose_channel_rx);
 
+    let mut market_events_rx = market_events_rx.subscribe();
+    let mut compose_channel_rx = compose_channel_rx.subscribe();
     let mut ready_requests: Vec<SwapComposeData<DB>> = Vec::new();
 
     loop {

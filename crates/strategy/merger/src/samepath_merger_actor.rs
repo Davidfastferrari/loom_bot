@@ -29,7 +29,7 @@ use loom_evm_utils::evm_tx_env::tx_to_evm_tx;
 use loom_node_debug_provider::DebugProviderExt;
 use loom_types_blockchain::{debug_trace_call_pre_state, GethStateUpdate, GethStateUpdateVec, TRACING_CALL_OPTS};
 use loom_types_entities::{DataFetcher, FetchState, LatestBlock, MarketState, Swap};
-use loom_types_events::{MarketEvents, MessageSwapCompose, SwapComposeData, SwapComposeMessage};
+use loom_types_events::{MarketEvents, MessageSwapCompose, SwapComposeData, SwapComposeMessage, TxComposeData};
 use loom_types_entities::SwapStep;
 
 lazy_static! {
