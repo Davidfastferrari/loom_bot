@@ -200,6 +200,7 @@ where
         rt.block_on(async {
             self.actor_manager.wait().await
         })
+    }
 
     /// Start a custom actor
     pub fn start<F>(&mut self, actor_factory: F) -> Result<&mut Self>
