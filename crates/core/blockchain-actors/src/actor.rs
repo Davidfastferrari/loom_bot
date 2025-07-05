@@ -548,7 +548,8 @@ where
             let bc = bc.clone();
             let state = state.clone();
             let strategy = strategy.clone();
-            move || Box::new(PendingTxStateChangeProcessorActor::new().on_bc(&bc, &state, &strategy)) as Box<dyn LoomActor + Send + Sync>
+            let provider = self.provider.clone();
+            move || Box::new(PendingTxStateChangeProcessorActor::new(provider.clone()).on_bc(&bc, &state, &strategy)) as Box<dyn LoomActor + Send + Sync>
         };
         self.actor_manager.start(closure)?;
         Ok(self)
