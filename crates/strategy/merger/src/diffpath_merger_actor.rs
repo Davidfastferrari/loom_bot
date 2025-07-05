@@ -2,9 +2,10 @@ use alloy_primitives::{Address, U256};
 use eyre::{eyre, ErrReport, Result};
 use revm::primitives::Env;
 use revm::DatabaseRef;
-#[macro_use]
-extern crate lazy_static;
-use crate::utils::json_log;
+lazy_static! {
+    static ref COINBASE: Address = "0x1f9090aaE28b8a3dCeaDf281B0F12828e676c326".parse().unwrap();
+}
+use crate::json_logger::json_log;
 use loom_core_actors_macros::{Consumer, Producer, Accessor};
 use loom_core_actors::subscribe;
 use tokio::sync::broadcast::error::RecvError;

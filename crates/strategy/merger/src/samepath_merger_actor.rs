@@ -17,7 +17,7 @@ use revm::{Database, DatabaseCommit, DatabaseRef, Evm};
 use tokio::sync::broadcast::error::RecvError;
 use tokio::sync::RwLock;
 use tracing::{debug, error, info, trace};
-use crate::core::utils::json_logger::json_log;
+use crate::json_logger::json_log;
 use tracing::Level;
 
 use loom_core_actors::{subscribe, Accessor, Actor, ActorResult, Broadcaster, Consumer, Producer, SharedState, WorkerResult};
