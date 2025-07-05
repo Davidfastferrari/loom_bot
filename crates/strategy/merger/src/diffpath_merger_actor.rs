@@ -2,9 +2,9 @@ use alloy_primitives::{Address, U256};
 use eyre::{eyre, ErrReport, Result};
 use revm::primitives::Env;
 use revm::DatabaseRef;
-use super::utils::json_logger::json_log;
-use super::utils::constants::COINBASE;
+use super::utils::json_log;
 use loom_core_actors::subscribe;
+use loom_core_actors_macros::{Accessor, Consumer, Producer};
 use tokio::sync::broadcast::error::RecvError;
 
 use tracing::{debug, error, info};
@@ -17,9 +17,7 @@ use loom_types_events::{MarketEvents, MessageSwapCompose, SwapComposeData, SwapC
 
 use std::collections::HashMap;
 
-lazy_static! {
-    static ref COINBASE: Address = "0x1f9090aaE28b8a3dCeaDf281B0F12828e676c326".parse().unwrap();
-}
+const COINBASE: Address = Address::new([0x1f, 0x90, 0x90, 0xaa, 0xE2, 0x8b, 0x8a, 0x3d, 0xCe, 0xaD, 0xf2, 0x81, 0xB0, 0xF1, 0x28, 0x28, 0xe6, 0x76, 0xc3, 0x26]);
 
 async fn arb_swap_steps_optimizer_task<DB: DatabaseRef + Send + Sync + Clone>(
     compose_channel_tx: Broadcaster<MessageSwapCompose<DB>>,
@@ -67,9 +65,6 @@ async fn diff_path_merger_worker<DB: DatabaseRef<Error = ErrReport> + Send + Syn
     compose_channel_rx: Broadcaster<MessageSwapCompose<DB>>,
     compose_channel_tx: Broadcaster<MessageSwapCompose<DB>>,
 ) -> WorkerResult {
-    subscribe!(market_events_rx);
-    subscribe!(compose_channel_rx);
-
     let mut market_events_rx_receiver = market_events_rx.subscribe();
     let mut compose_channel_rx_receiver = compose_channel_rx.subscribe();
     let mut ready_requests: Vec<SwapComposeData<DB>> = Vec::new();
@@ -128,7 +123,7 @@ async fn diff_path_merger_worker<DB: DatabaseRef<Error = ErrReport> + Send + Syn
                                 continue
                             };
 
-                        match SwapStep::merge_swap_paths( req_swap.clone(), swap_path.clone(), *COINBASE ){
+                        match SwapStep::merge_swap_paths( req_swap.clone(), swap_path.clone(), COINBASE ){
                             Ok((sp0, sp1)) => {
                                 let latest_block_guard = latest_block.read().await;
                                 let block_header = latest_block_guard.block_header.clone().unwrap();

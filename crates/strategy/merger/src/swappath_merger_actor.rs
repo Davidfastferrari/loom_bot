@@ -4,8 +4,7 @@ use revm::primitives::Env;
 use revm::DatabaseRef;
 use tokio::sync::broadcast::error::RecvError;
 use tracing::{debug, error, info};
-use super::utils::json_logger::json_log;
-use super::utils::constants::COINBASE;
+use super::utils::json_log;
 use loom_core_actors_macros::{Consumer, Producer, Accessor};
 use tracing::Level;
 
@@ -61,14 +60,13 @@ async fn arb_swap_path_merger_worker<DB: DatabaseRef<Error = ErrReport> + Send +
     compose_channel_rx: Broadcaster<MessageSwapCompose<DB>>,
     compose_channel_tx: Broadcaster<MessageSwapCompose<DB>>,
 ) -> WorkerResult {
-    subscribe!(market_events_rx);
-    subscribe!(compose_channel_rx);
-
+    let mut market_events_rx_receiver = market_events_rx.subscribe();
+    let mut compose_channel_rx_receiver = compose_channel_rx.subscribe();
     let mut ready_requests: Vec<SwapComposeData<DB>> = Vec::new();
 
     loop {
         tokio::select! {
-            msg = market_events_rx.recv() => {
+            msg = market_events_rx_receiver.recv() => {
                 let msg : Result<MarketEvents, RecvError> = msg;
                 match msg {
                     Ok(event) => {
@@ -89,7 +87,7 @@ async fn arb_swap_path_merger_worker<DB: DatabaseRef<Error = ErrReport> + Send +
                 }
 
             },
-            msg = compose_channel_rx.recv() => {
+            msg = compose_channel_rx_receiver.recv() => {
                 let msg : Result<MessageSwapCompose<DB>, RecvError> = msg;
                 match msg {
                     Ok(swap) => {

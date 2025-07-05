@@ -11,8 +11,7 @@ use alloy_rpc_types::state::StateOverride;
 use alloy_rpc_types::{BlockOverrides, Transaction};
 use alloy_rpc_types_trace::geth::GethDebugTracingCallOptions;
 use eyre::{eyre, ErrReport, Result};
-use crate::utils::json_logger::json_log;
-use super::utils::constants::COINBASE;
+use super::utils::json_log;
 use loom_core_actors_macros::{Consumer, Producer, Accessor};
 use revm::primitives::{BlockEnv, Env, CANCUN};
 use revm::{Database, DatabaseCommit, DatabaseRef, Evm};
@@ -248,8 +247,8 @@ async fn same_path_merger_worker<
     compose_channel_rx: Broadcaster<MessageSwapCompose<DB>>,
     compose_channel_tx: Broadcaster<MessageSwapCompose<DB>>,
 ) -> WorkerResult {
-    subscribe!(market_events_rx);
-    subscribe!(compose_channel_rx);
+    let mut market_events_rx_receiver = market_events_rx.subscribe();
+    let mut compose_channel_rx_receiver = compose_channel_rx.subscribe();
 
     let mut swap_paths: HashMap<TxHash, Vec<SwapComposeData<DB>>> = HashMap::new();
 
@@ -262,7 +261,7 @@ async fn same_path_merger_worker<
 
     loop {
         tokio::select! {
-            msg = market_events_rx.recv() => {
+            msg = market_events_rx_receiver.recv() => {
                 if let Ok(msg) = msg {
                     let market_event_msg : MarketEvents = msg;
                     if let MarketEvents::BlockHeaderUpdate{block_number, block_hash,  base_fee, next_base_fee, timestamp} =  market_event_msg {
@@ -280,7 +279,7 @@ async fn same_path_merger_worker<
                         let new_block_hash = block_hash;
 
                         for _counter in 0..5  {
-                            if let Ok(MarketEvents::BlockStateUpdate{block_hash}) = market_events_rx.recv().await {
+                            if let Ok(MarketEvents::BlockStateUpdate{block_hash}) = market_events_rx_receiver.recv().await {
                                 if new_block_hash == block_hash {
                                     cur_state_override = latest_block.read().await.node_state_override();
                                     json_log(Level::DEBUG, "Block state update received", &[
@@ -295,7 +294,7 @@ async fn same_path_merger_worker<
                 }
             }
 
-            msg = compose_channel_rx.recv() => {
+            msg = compose_channel_rx_receiver.recv() => {
                 let msg : Result<MessageSwapCompose<DB>, RecvError> = msg;
                 match msg {
                     Ok(compose_request)=>{
