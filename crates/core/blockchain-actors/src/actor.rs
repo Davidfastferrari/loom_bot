@@ -147,7 +147,7 @@ where
 
         // Prepare vectors to collect data for preloading
         let mut copied_accounts = Vec::new();
-        let mut new_accounts = Vec::new();
+        let mut new_accounts: Vec<Address> = Vec::new();
         let mut token_balances: Vec<(Address, Address, U256)> = Vec::new();
 
         // For each pool, fetch pool state and collect data
