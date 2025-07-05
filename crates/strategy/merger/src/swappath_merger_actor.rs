@@ -4,7 +4,8 @@ use revm::primitives::Env;
 use revm::DatabaseRef;
 use tokio::sync::broadcast::error::RecvError;
 use tracing::{debug, error, info};
-use crate::json_logger::json_log;
+use super::utils::json_logger::json_log;
+use loom_core_actors::{Consumer, Producer, Accessor};
 use tracing::Level;
 
 use loom_core_actors::{subscribe, Accessor, Actor, ActorResult, Broadcaster, Consumer, Producer, SharedState, WorkerResult};
