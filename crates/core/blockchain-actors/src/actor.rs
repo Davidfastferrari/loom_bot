@@ -115,7 +115,7 @@ where
         }
     }
 
-    pub fn with_preloaded_state(mut self, pools: Vec<(PoolId, PoolClass)>, required_state: Option<RequiredState>) -> Result<Self> {
+    pub fn with_preloaded_state(&mut self, pools: Vec<(PoolId, PoolClass)>, required_state: Option<RequiredState>) -> Result<&mut Self> {
         use loom_defi_pools::PoolLoadersBuilder;
         use loom_defi_preloader::preload_market_state;
         use loom_types_entities::PoolClass;
@@ -193,8 +193,9 @@ where
         let rt = Runtime::new()?;
         rt.block_on(async {
             self.actor_manager.wait().await;
-            Ok(self)
-        })
+            Ok(())
+        })?;
+        Ok(self)
     }
 
     /// Start a custom actor
