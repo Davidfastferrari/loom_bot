@@ -570,7 +570,8 @@ where
         database: String,
         tags: Vec<(String, String)>,
     ) -> Result<&mut Self> {
-        let closure = move || Box::new(InfluxDbWriterActor::new(url.clone(), database.clone(), tags.clone())) as Box<dyn LoomActor + Send + Sync>;
+        let tags_map: std::collections::HashMap<String, String> = tags.clone().into_iter().collect();
+        let closure = move || Box::new(InfluxDbWriterActor::new(url.clone(), database.clone(), tags_map.clone())) as Box<dyn LoomActor + Send + Sync>;
         self.actor_manager.start(closure)?;
         Ok(self)
     }
