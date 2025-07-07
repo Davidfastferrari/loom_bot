@@ -560,7 +560,17 @@ where
         _router: Router,
         _db_pool: DbPool,
     ) -> Result<&mut Self> {
-        // TODO: Implement actual web server actor logic here
+        Ok(self)
+    }
+}
+
+impl<P, DB> BlockchainActors<P, DB> {
+    pub fn with_web_server(
+        &mut self,
+        _host: String,
+        _router: Router,
+        _db_pool: DbPool,
+    ) -> Result<&mut Self> {
         Ok(self)
     }
 }
