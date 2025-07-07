@@ -103,7 +103,7 @@ async fn main() -> Result<()> {
         panic!("Cannot start block player : {}", e);
     }
 
-    tokio::task::spawn(bc_actors.wait());
+    bc_actors.wait().await;
     let compose_channel = strategy.swap_compose_channel();
 
     let mut header_sub = bc.new_block_headers_channel().subscribe();
