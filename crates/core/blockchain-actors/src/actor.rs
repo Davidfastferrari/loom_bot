@@ -106,7 +106,7 @@ where
         }
     }
 
-    pub fn with_preloaded_state(self, pools: Vec<(PoolId, PoolClass)>, required_state: Option<RequiredState>) -> Result<Self> {
+    pub fn with_preloaded_state(mut self, pools: Vec<(PoolId, PoolClass)>, required_state: Option<RequiredState>) -> Result<Self> {
         use loom_defi_pools::PoolLoadersBuilder;
         use loom_defi_preloader::preload_market_state;
         use loom_types_entities::PoolClass;
@@ -147,7 +147,7 @@ where
 
         // Prepare vectors to collect data for preloading
         let mut copied_accounts = Vec::new();
-        let mut new_accounts: Vec<Address> = Vec::new();
+        let new_accounts: Vec<Address> = Vec::new();
         let mut token_balances: Vec<(Address, Address, U256)> = Vec::new();
 
         // For each pool, fetch pool state and collect data
