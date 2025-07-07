@@ -3,6 +3,15 @@ extern crate loom_types_blockchain;
 
 use alloy_network::Ethereum;
 use alloy_primitives::{Address, B256, U256};
+
+// ... rest of the code ...
+
+// Add this at the end of the impl block for BlockchainActors
+// (right before the final closing curly brace of the impl)
+//
+//     pub async fn wait(&mut self) {
+//         self.actor_manager.wait().await;
+//     }
 use alloy_provider::{Provider, RootProvider};
 use axum::Router;
 use eyre::{eyre, ErrReport, Result};
@@ -539,5 +548,9 @@ where
         };
         self.actor_manager.start(closure)?;
         Ok(self)
+    }
+
+    pub async fn wait(&mut self) {
+        self.actor_manager.wait().await;
     }
 }
