@@ -563,14 +563,3 @@ where
         Ok(self)
     }
 }
-
-impl<P, DB> BlockchainActors<P, DB> {
-    pub fn with_web_server(
-        &mut self,
-        _host: String,
-        _router: Router,
-        _db_pool: DbPool,
-    ) -> Result<&mut Self> {
-        Ok(self)
-    }
-}
