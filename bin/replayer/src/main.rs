@@ -91,6 +91,7 @@ async fn main() -> Result<()> {
         .initialize_signers_with_anvil()?
         .with_market_state_preloader()?
         .with_preloaded_state(vec![(PoolId::Address(UniswapV3PoolAddress::USDC_WETH_500), PoolClass::UniswapV3)], Some(required_state))?
+        .with_block_events(NodeBlockActorConfig::all_enabled())?
         .with_block_history()?
         .with_swap_encoder(swap_encoder)?;
 
