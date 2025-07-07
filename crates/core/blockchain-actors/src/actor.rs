@@ -553,4 +553,14 @@ where
     pub async fn wait(&mut self) {
         self.actor_manager.wait().await;
     }
+
+    pub fn with_web_server(
+        &mut self,
+        _host: String,
+        _router: Router,
+        _db_pool: DbPool,
+    ) -> Result<&mut Self> {
+        // TODO: Implement actual web server actor logic here
+        Ok(self)
+    }
 }
