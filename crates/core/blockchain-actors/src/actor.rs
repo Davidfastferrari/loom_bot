@@ -193,7 +193,7 @@ where
         let rt = Runtime::new()?;
         rt.block_on(async {
             self.actor_manager.wait().await;
-            Ok(())
+            Ok::<(), eyre::ErrReport>(())
         })?;
         Ok(self)
     }
