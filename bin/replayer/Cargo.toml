@@ -25,7 +25,6 @@ loom-types-blockchain.workspace = true
 loom-types-entities.workspace = true
 loom-types-events.workspace = true
 loom-node-actor-config.workspace = true
-loom-node-actor-config.workspace = true
 
 alloy.workspace = true
 clap.workspace = true
