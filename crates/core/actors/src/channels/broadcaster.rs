@@ -6,6 +6,7 @@ use tokio::sync::broadcast::Receiver;
 use tracing::{debug, error, warn};
 
 /// Enhanced Broadcaster with reconnection capability and keep-alive mechanism
+#[derive(Clone)]
 pub struct Broadcaster<T>
 where
     T: Clone + Send + Sync + 'static,
