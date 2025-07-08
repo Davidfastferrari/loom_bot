@@ -1,39 +1,6 @@
 [package]
 name = "replayer"
-version.workspace = true
-edition.workspace = true
-rust-version.workspace = true
-license.workspace = true
-homepage.workspace = true
-repository.workspace = true
-exclude.workspace = true
+version = "0.1.0"
+edition = "2021"
 
 [dependencies]
-loom-core-actors.workspace = true
-loom-core-actors-macros.workspace = true
-loom-core-blockchain.workspace = true
-loom-core-blockchain-actors.workspace = true
-loom-defi-abi.workspace = true
-loom-defi-address-book.workspace = true
-loom-defi-pools.workspace = true
-loom-evm-db.workspace = true
-loom-evm-utils.workspace = true
-loom-execution-multicaller.workspace = true
-loom-node-debug-provider.workspace = true
-loom-node-player.workspace = true
-loom-types-blockchain.workspace = true
-loom-types-entities.workspace = true
-loom-types-events.workspace = true
-loom-node-actor-config.workspace = true
-loom-node-actor-config.workspace = true
-
-alloy.workspace = true
-clap.workspace = true
-eyre.workspace = true
-futures.workspace = true
-serde.workspace = true
-tokio.workspace = true
-toml.workspace = true
-tracing.workspace = true
-tracing-subscriber.workspace = true
-url.workspace = true
