@@ -14,6 +14,7 @@ use tokio::select;
 use url::Url;
 
 use loom_node_debug_provider::HttpCachedTransport;
+use loom_node_actor_config::NodeBlockActorConfig;
 
 use loom_core_blockchain::{Blockchain, BlockchainState, Strategy};
 use loom_core_blockchain_actors::BlockchainActors;
