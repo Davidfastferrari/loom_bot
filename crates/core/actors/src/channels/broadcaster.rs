@@ -52,7 +52,7 @@ impl<T: Clone + Send + Sync + 'static> Broadcaster<T> {
                 // If sending failed due to no receivers, but we have tracked subscribers,
                 // recreate the channel and try again
                 let active_count = *self.active_subscribers.read().unwrap();
-                if active_count > 0 && e.is_closed() {
+if active_count > 0 && e.to_string().contains("closed") {
                     warn!("Send failed but channel has {} tracked subscribers. Recreating channel and retrying.", active_count);
                     // Recreate the channel
                     let (new_sender, _) = broadcast::channel(self.capacity);
