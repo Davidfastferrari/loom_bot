@@ -1,4 +1,5 @@
 pub use accountnoncetx::AccountNonceAndTransactions;
+pub use base_tx_deserializer::get_transaction_with_base_support;
 pub use chain_parameters::ChainParameters;
 pub use chunked_fetcher::{fetch_block_with_transactions_chunked, fetch_block_trace_chunked};
 pub use fetchstate::FetchState;
@@ -12,6 +13,7 @@ pub use state_update::{
     debug_trace_transaction, get_touched_addresses, GethStateUpdate, GethStateUpdateVec, TRACING_CALL_OPTS, TRACING_OPTS,
 };
 mod accountnoncetx;
+mod base_tx_deserializer;
 mod chain_parameters;
 mod chunked_fetcher;
 mod fetchstate;

@@ -7668,6 +7668,7 @@ dependencies = [
  "loom-evm-db",
  "loom-evm-utils",
  "loom-execution-multicaller",
+ "loom-node-actor-config",
  "loom-node-debug-provider",
  "loom-node-player",
  "loom-types-blockchain",

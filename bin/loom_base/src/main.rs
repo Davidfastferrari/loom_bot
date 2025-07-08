@@ -240,16 +240,68 @@ async fn main() -> Result<()> {
         }
     });
 
+    // Set up graceful shutdown handling
+    let (shutdown_sender, mut shutdown_receiver) = tokio::sync::mpsc::channel::<()>(1);
+    let shutdown_sender_clone = shutdown_sender.clone();
+    
+    // Handle Ctrl+C signal for graceful shutdown
+    tokio::spawn(async move {
+        match tokio::signal::ctrl_c().await {
+            Ok(()) => {
+                info!("Received shutdown signal, initiating graceful shutdown...");
+                let _ = shutdown_sender_clone.send(()).await;
+            }
+            Err(err) => {
+                error!("Failed to listen for shutdown signal: {}", err);
+            }
+        }
+    });
+    
     // Main event loop
     let mut s = blockchain.market_events_channel().subscribe();
     
     // Add a small delay to prevent CPU spinning if messages are processed very quickly
     let throttle_delay = std::time::Duration::from_millis(10);
     
+    // Keep track of active tasks for proper shutdown
+    let mut active_tasks = worker_task_vec.len();
+    info!("Started {} worker tasks", active_tasks);
+    
+    // Create a channel for worker task completion notifications
+    let (task_complete_tx, mut task_complete_rx) = tokio::sync::mpsc::channel::<()>(active_tasks);
+    
+    // Spawn a task to monitor worker tasks and notify when they complete
+    let task_monitor = tokio::spawn(async move {
+        while !worker_task_vec.is_empty() {
+            let (result, index, remaining_futures) = futures::future::select_all(worker_task_vec).await;
+            match result {
+                Ok(work_result) => match work_result {
+                    Ok(s) => {
+                        info!("ActorWorker {index} finished: {s}");
+                        let _ = task_complete_tx.send(()).await;
+                    }
+                    Err(e) => {
+                        error!("ActorWorker {index} error: {e}");
+                        let _ = task_complete_tx.send(()).await;
+                    }
+                },
+                Err(e) => {
+                    error!("ActorWorker join error {index}: {e}");
+                    let _ = task_complete_tx.send(()).await;
+                }
+            }
+            worker_task_vec = remaining_futures;
+        }
+    });
+    
+    // Main event loop with proper shutdown handling
+    let mut shutdown_initiated = false;
+    let mut shutdown_complete = false;
+    
     loop {
-        // Use tokio::select to handle both message reception and potential shutdown signals
+        // Use tokio::select to handle message reception, task completion, and shutdown signals
         tokio::select! {
-            msg = s.recv() => {
+            msg = s.recv(), if !shutdown_initiated => {
                 if let Ok(msg) = msg {
                     match msg {
                         MarketEvents::BlockTxUpdate { block_number, block_hash } => {
@@ -261,17 +313,63 @@ async fn main() -> Result<()> {
                         _ => {}
                     }
                 } else {
-                    // Handle the error case - either break the loop or return with an error
-                    error!("Error receiving message from channel");
+                    // Handle the error case - channel closed
+                    error!("Market events channel closed, attempting to resubscribe");
+                    // Try to resubscribe
+                    s = blockchain.market_events_channel().subscribe();
+                }
+            }
+            
+            // Monitor task completion for shutdown coordination
+            Some(_) = task_complete_rx.recv(), if shutdown_initiated => {
+                active_tasks -= 1;
+                info!("Worker task completed during shutdown, {} remaining", active_tasks);
+                if active_tasks == 0 {
+                    info!("All worker tasks completed, shutdown complete");
+                    shutdown_complete = true;
                     break;
                 }
             }
+            
+            // Handle shutdown signal
+            Some(_) = shutdown_receiver.recv() => {
+                if !shutdown_initiated {
+                    info!("Initiating graceful shutdown sequence");
+                    shutdown_initiated = true;
+                    
+                    // Here you would send shutdown signals to all actors
+                    // For example, you could have a shutdown channel for each actor
+                    
+                    // Wait for a maximum of 10 seconds for graceful shutdown
+                    tokio::spawn(async move {
+                        tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+                        info!("Shutdown timeout reached, forcing exit");
+                        std::process::exit(0);
+                    });
+                }
+            }
+            
             // Add a small delay to prevent CPU spinning
-            _ = tokio::time::sleep(throttle_delay) => {
+            _ = tokio::time::sleep(throttle_delay), if !shutdown_initiated => {
                 // Just a throttle, do nothing
             }
+            
+            // If shutdown is initiated but no tasks are completing, periodically check status
+            _ = tokio::time::sleep(std::time::Duration::from_secs(1)), if shutdown_initiated && !shutdown_complete => {
+                info!("Waiting for {} worker tasks to complete...", active_tasks);
+            }
+        }
+        
+        // Break the loop if shutdown is complete
+        if shutdown_complete {
+            break;
         }
     }
+    
+    // Cancel the task monitor if we're exiting the loop
+    task_monitor.abort();
+    
+    info!("Loom Base shutting down gracefully");
     
     // Return Ok to satisfy the Result<()> return type
     Ok(())

@@ -7,6 +7,8 @@ use alloy_rpc_types_trace::geth::GethDebugTracingOptions;
 use eyre::{eyre, Result};
 use tracing::{debug, error, info, warn};
 
+use crate::base_tx_deserializer::get_transaction_with_base_support;
+
 /// Fetches block data in chunks to avoid WebSocket message size limitations
 pub async fn fetch_block_with_transactions_chunked<P>(
     provider: P,
@@ -43,31 +45,23 @@ where
         debug!("Fetching transaction chunk {}/{}", i + 1, total_chunks);
         
         let mut chunk_transactions = Vec::with_capacity(chunk.len());
-            for tx_hash in chunk {
-                match provider.get_transaction_by_hash(*tx_hash).await {
-                    Ok(Some(tx)) => chunk_transactions.push(tx),
-                    Ok(None) => {
-                        warn!("Transaction {} not found, skipping", tx_hash);
-                        // Skip adding a placeholder transaction to avoid compilation errors and message size issues.
-                        // This means missing transactions will be omitted from the result.
-                        // This may affect index consistency but prevents runtime errors.
-                    }
-                    Err(e) => {
-                        let err_msg = e.to_string();
-                        if err_msg.contains("unknown variant") && (err_msg.contains("0x7e") || err_msg.contains("0x7f") || err_msg.contains("0x80")) {
-                            warn!("Transaction {} has unknown type (possibly Base-specific), skipping: {}", tx_hash, err_msg);
-                            // Skip this transaction but continue with others
-                            continue;
-                        } else if err_msg.contains("deserialization error") {
-                            warn!("Transaction {} deserialization failed, skipping: {}", tx_hash, err_msg);
-                            continue;
-                        } else {
-                            // For other errors, propagate them
-                            return Err(e.into());
-                        }
-                    }
+        for tx_hash in chunk {
+            // Use our enhanced transaction fetcher that can handle Base-specific formats
+            match get_transaction_with_base_support(provider.clone(), *tx_hash).await {
+                Ok(Some(tx)) => chunk_transactions.push(tx),
+                Ok(None) => {
+                    warn!("Transaction {} not found or has unsupported format, skipping", tx_hash);
+                    // Skip adding a placeholder transaction to avoid compilation errors and message size issues.
+                    // This means missing transactions will be omitted from the result.
+                    // This may affect index consistency but prevents runtime errors.
+                }
+                Err(e) => {
+                    error!("Failed to fetch transaction {}: {}", tx_hash, e);
+                    // For serious errors, propagate them
+                    return Err(e);
                 }
             }
+        }
         
         all_transactions.extend(chunk_transactions);
     }
