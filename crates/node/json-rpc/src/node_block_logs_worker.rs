@@ -3,8 +3,8 @@ use std::time::Duration;
 
 use alloy_provider::Provider;
 use alloy_rpc_types::{Filter, Header};
-use tokio::sync::broadcast::Receiver;
-use tracing::{debug, error};
+use tokio::sync::broadcast::{Receiver, error::RecvError};
+use tracing::{debug, error, warn};
 
 use loom_core_actors::{subscribe, Broadcaster, WorkerResult};
 use loom_types_events::{BlockLogs, Message, MessageBlockLogs};
@@ -43,16 +43,20 @@ pub async fn new_node_block_logs_worker<N: Network, P: Provider<N> + Send + Sync
             Err(e) => {
                 error!("Error receiving block header: {}", e);
                 // If we get a lagged error, we can continue with a new subscription
-                if e.is_lagged() {
-                    warn!("BlockLogs worker lagged behind, resubscribing");
-                    receiver = block_header_receiver.subscribe();
-                    continue;
+                match e {
+                    RecvError::Lagged(_) => {
+                        warn!("BlockLogs worker lagged behind, resubscribing");
+                        receiver = block_header_receiver.subscribe();
+                        continue;
+                    }
+                    RecvError::Closed => {
+                        // If the channel is closed, attempt to resubscribe
+                        warn!("BlockLogs channel appears closed, attempting to resubscribe");
+                        tokio::time::sleep(Duration::from_secs(1)).await;
+                        receiver = block_header_receiver.subscribe();
+                        continue;
+                    }
                 }
-                // If the channel is closed, attempt to resubscribe
-                warn!("BlockLogs channel appears closed, attempting to resubscribe");
-                tokio::time::sleep(Duration::from_secs(1)).await;
-                receiver = block_header_receiver.subscribe();
-                continue;
             }
         };
 

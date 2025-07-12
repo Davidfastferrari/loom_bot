@@ -4,6 +4,7 @@ use alloy_rpc_types::{BlockId, Header};
 use alloy_rpc_types_trace::geth::{GethTrace, PreStateFrame};
 use alloy_rpc_types_trace::common::TraceResult;
 use std::time::Duration;
+use tokio::sync::broadcast::error::RecvError;
 use tracing::{debug, error, info, warn};
 
 use loom_core_actors::{subscribe, Broadcaster, WorkerResult};
@@ -51,16 +52,20 @@ where
             Err(e) => {
                 error!("Error receiving block header in state worker: {}", e);
                 // If we get a lagged error, we can continue with a new subscription
-                if e.is_lagged() {
-                    warn!("BlockState worker lagged behind, resubscribing");
-                    receiver = block_header_receiver.subscribe();
-                    continue;
+                match e {
+                    RecvError::Lagged(_) => {
+                        warn!("BlockState worker lagged behind, resubscribing");
+                        receiver = block_header_receiver.subscribe();
+                        continue;
+                    }
+                    RecvError::Closed => {
+                        // If the channel is closed, attempt to resubscribe
+                        warn!("BlockState channel appears closed, attempting to resubscribe");
+                        tokio::time::sleep(Duration::from_secs(1)).await;
+                        receiver = block_header_receiver.subscribe();
+                        continue;
+                    }
                 }
-                // If the channel is closed, attempt to resubscribe
-                warn!("BlockState channel appears closed, attempting to resubscribe");
-                tokio::time::sleep(Duration::from_secs(1)).await;
-                receiver = block_header_receiver.subscribe();
-                continue;
             }
         };
 
