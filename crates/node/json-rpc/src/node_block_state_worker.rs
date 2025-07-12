@@ -151,7 +151,7 @@ where
                         // Enhanced error handling for chunked approach
                         match sender.send(Message::new_with_time(BlockStateUpdate { 
                             block_header: block_header.clone(), 
-                            state_update: post_state 
+                            state_update: post_state.clone() 
                         })) {
                             Ok(_) => {
                                 info!("BlockState processing finished using chunked approach {} {}", block_number, block_hash);
