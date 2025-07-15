@@ -219,27 +219,6 @@ async fn main() -> Result<()> {
         worker_task_vec.extend(start_actor("Block latency recorder actor", result));
     }
 
-    // Monitor worker tasks
-    tokio::task::spawn(async move {
-        while !worker_task_vec.is_empty() {
-            let (result, _index, remaining_futures) = futures::future::select_all(worker_task_vec).await;
-            match result {
-                Ok(work_result) => match work_result {
-                    Ok(s) => {
-                        info!("ActorWorker {_index} finished: {s}")
-                    }
-                    Err(e) => {
-                        error!("ActorWorker {_index} error: {e}")
-                    }
-                },
-                Err(e) => {
-                    error!("ActorWorker join error {_index}: {e}")
-                }
-            }
-            worker_task_vec = remaining_futures;
-        }
-    });
-
     // Set up graceful shutdown handling
     let (shutdown_sender, mut shutdown_receiver) = tokio::sync::mpsc::channel::<()>(1);
     let shutdown_sender_clone = shutdown_sender.clone();
