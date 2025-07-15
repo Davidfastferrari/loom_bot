@@ -11,7 +11,7 @@ services:
       - ./config.toml:/app/config.toml:ro
     environment:
       - RUST_LOG=info
-      - MAINNET_WS=wss://base-mainnet.g.alchemy.com/v2/TNqLsUr-1r20DnYhBhHqghjNlcZpQYNw
+      - MAINNET_WS=wss://base-mainnet.g.alchemy.com/v2/E08VrhfX0pO4GT_tJsUQpjKIXu_D1S05
       - MAINNET_HTTP=https://base-mainnet.g.alchemy.com/v2/E08VrhfX0pO4GT_tJsUQpjKIXu_D1S05
       - DATA=87b9c2f432538c706b11c803258efc0b6e931381cd7e70d3ef1ec498dfee2b06
       - MULTICALLER_ADDRESS=0x6E3b634eBd2EbBffb41a49fA6edF6df6bFe8c0Ee
