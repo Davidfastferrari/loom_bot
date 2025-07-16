@@ -5748,6 +5748,7 @@ dependencies = [
  "alloy-rpc-types",
  "alloy-transport",
  "eyre",
+ "futures-util",
  "loom-core-actors",
  "loom-core-actors-macros",
  "loom-core-blockchain",

@@ -6,6 +6,7 @@ use alloy_provider::{Provider, ProviderBuilder, RootProvider};
 use alloy_rpc_client::{ClientBuilder, WsConnect};
 use eyre::{eyre, Result};
 use loom_core_topology_shared::create_optimized_ws_connect;
+use loom_core_topology::rate_limited_provider::RateLimitedProvider;
 use std::time::Duration;
 use tracing::{debug, error, info, warn};
 use url::Url;
@@ -60,6 +61,7 @@ where
                         let provider = ProviderBuilder::new()
                             .disable_recommended_fillers()
                             .on_client(client);
+                        let provider = RateLimitedProvider::new(provider, 1);
                         debug!("Successfully connected to WebSocket endpoint");
                         return Ok(provider);
                     }
@@ -86,7 +88,7 @@ where
                 let provider = ProviderBuilder::new()
                     .disable_recommended_fillers()
                     .on_client(client);
-
+                let provider = RateLimitedProvider::new(provider, 1);
                 debug!("Successfully connected to HTTP endpoint");
                 return Ok(provider);
             }
