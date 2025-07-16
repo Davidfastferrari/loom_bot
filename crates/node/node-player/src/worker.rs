@@ -1,3 +1,4 @@
+use futures_util::FutureExt;
 use crate::mempool::replayer_mempool_task;
 use alloy_eips::BlockId;
 use alloy_network::Ethereum;
@@ -190,7 +191,7 @@ where
         },
         Err(e) => {
             tracing::error!("node_player_worker panicked: {:?}", e);
-            Err("node_player_worker panicked".into())
+            Err(eyre::eyre!("node_player_worker panicked"))
         }
     }
 }
