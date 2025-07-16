@@ -33,3 +33,5 @@ alloy-transport.workspace = true
 
 #revm
 revm.workspace = true
+
+futures-util = "0.3"
