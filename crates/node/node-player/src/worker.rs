@@ -36,7 +36,9 @@ where
     DB: Database + DatabaseRef + DatabaseCommit + Send + Sync + Clone + DatabaseLoomExt + 'static,
     <DB as DatabaseRef>::Error: Debug,
 {
-    for curblock_number in RangeInclusive::new(start_block, end_block) {
+    tracing::info!("node_player_worker started");
+    let result = std::panic::AssertUnwindSafe(async {
+        for curblock_number in RangeInclusive::new(start_block, end_block) {
         //let curblock_number = provider.client().transport().fetch_next_block().await?;
         let block = provider.get_block_by_number(curblock_number.into(), BlockTransactionsKind::Hashes).await?;
 
@@ -180,4 +182,15 @@ where
     }
 
     Ok("Node block player worker finished".to_string())
+    }).catch_unwind().await;
+    match result {
+        Ok(r) => {
+            tracing::info!("node_player_worker exited normally");
+            r
+        },
+        Err(e) => {
+            tracing::error!("node_player_worker panicked: {:?}", e);
+            Err("node_player_worker panicked".into())
+        }
+    }
 }
