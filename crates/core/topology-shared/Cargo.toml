@@ -5,3 +5,5 @@ edition = "2021"
 
 [dependencies]
 alloy-transport-ws.workspace = true
+alloy-provider.workspace = true
+tokio.workspace = true

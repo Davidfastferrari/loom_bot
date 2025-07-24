@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::rate_limited_provider::RateLimitedProvider;
+use loom_core_topology_shared::RateLimitedProvider;
 use crate::topology_config::TransportType;
 use crate::topology_config::{BroadcasterConfig, ClientConfig, EncoderConfig, EstimatorConfig, SignersConfig, TopologyConfig};
 use alloy_primitives::Address;

@@ -1,5 +1,8 @@
 use alloy_transport_ws::WsConnect;
 
+pub mod rate_limited_provider;
+pub use rate_limited_provider::RateLimitedProvider;
+
 /// Creates a WebSocket connection with optimized parameters for handling large block data
 pub fn create_optimized_ws_connect(url: &str) -> WsConnect {
     let ws_connect = WsConnect::new(url);
