@@ -7,3 +7,4 @@ edition = "2021"
 alloy-transport-ws.workspace = true
 alloy-provider.workspace = true
 tokio.workspace = true
+tracing.workspace = true

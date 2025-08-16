@@ -31,6 +31,7 @@ members = [
     "crates/core/mempool",
     "crates/core/router",
     "crates/core/topology",
+    "crates/core/topology-shared",
     "crates/defi/abi",
     "crates/defi/address-book",
     "crates/defi/health-monitor",
@@ -90,6 +91,7 @@ loom-core-blockchain-actors = { path = "crates/core/blockchain-actors" }
 loom-core-mempool = { path = "crates/core/mempool" }
 loom-core-router = { path = "crates/core/router" }
 loom-core-topology = { path = "crates/core/topology" }
+loom-core-topology-shared = { path = "crates/core/topology-shared" }
 loom-core-blockchain-types = { path = "crates/core/blockchain-types" }
 url = "2.5.2"
 # defi

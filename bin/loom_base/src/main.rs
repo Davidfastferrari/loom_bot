@@ -72,11 +72,11 @@ async fn main() -> Result<()> {
 
     let mut worker_task_vec = topology.start_actors().await.map_err(Into::<eyre::Report>::into)?;
 
-    // Get blockchain and client for Ethereum network
+    // Get blockchain and client for Base network
     let client = topology.get_client(Some("local".to_string()).as_ref()).map_err(Into::<eyre::Report>::into)?;
-    let blockchain = topology.get_blockchain(Some("ethereum".to_string()).as_ref()).map_err(Into::<eyre::Report>::into)?;
-    let blockchain_state = topology.get_blockchain_state(Some("ethereum".to_string()).as_ref()).map_err(Into::<eyre::Report>::into)?;
-    let strategy = topology.get_strategy(Some("ethereum".to_string()).as_ref()).map_err(Into::<eyre::Report>::into)?;
+    let blockchain = topology.get_blockchain(Some("base".to_string()).as_ref()).map_err(Into::<eyre::Report>::into)?;
+    let blockchain_state = topology.get_blockchain_state(Some("base".to_string()).as_ref()).map_err(Into::<eyre::Report>::into)?;
+    let strategy = topology.get_strategy(Some("base".to_string()).as_ref()).map_err(Into::<eyre::Report>::into)?;
 
     let tx_signers = topology.get_signers(Some("env_signer".to_string()).as_ref())?;
 
@@ -84,10 +84,10 @@ async fn main() -> Result<()> {
     let backrun_config: BackrunConfigSection = load_from_file("./config.toml".to_string().into()).await?;
     let mut backrun_config: BackrunConfig = backrun_config.backrun_strategy;
     
-    // Set Ethereum mainnet chain ID
-    let chain_id = 1; // Ethereum mainnet chain ID
-    info!("Using chain ID: {}", chain_id);
-    backrun_config = backrun_config.with_chain_id(chain_id);
+    // Use the chain ID from the backrun config
+    let chain_id = backrun_config.chain_id;
+    info!("Using chain ID from config: {}", chain_id);
+    // No need to set chain_id again as it's already in the config
 
     // Retry logic with exponential backoff for get_block_number
     let mut retries = 0;
