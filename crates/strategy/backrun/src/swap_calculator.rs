@@ -35,21 +35,27 @@ impl<LDT: LoomDataTypes> PoolWrapperExt<LDT> for PoolWrapper<LDT> {
 }
 
 lazy_static! {
-    // Default starting amount for optimization (0.01 ETH)
-    static ref DEFAULT_OPTIMIZE_INPUT: U256 = parse_units("0.01", "ether").unwrap().get_absolute();
+    // Default starting amount for optimization (0.1 ETH for better opportunities)
+    static ref DEFAULT_OPTIMIZE_INPUT: U256 = parse_units("0.1", "ether").unwrap().get_absolute();
     
     // Maximum capital in USD (with 6 decimals) - $100,000
     static ref MAX_CAPITAL_USD: U256 = U256::from(100_000_000_000u64);
     
-    // Flash loan fee reduced from 0.9% to 0.3%
-    static ref FLASH_LOAN_FEE_NUMERATOR: U256 = U256::from(3);
-    static ref FLASH_LOAN_FEE_DENOMINATOR: U256 = U256::from(1000);
+    // Flash loan fee optimized for Ethereum mainnet (0.05% for Aave)
+    static ref FLASH_LOAN_FEE_NUMERATOR: U256 = U256::from(5);
+    static ref FLASH_LOAN_FEE_DENOMINATOR: U256 = U256::from(10000);
+    
+    // Minimum profit threshold (0.001 ETH = ~$2-3)
+    static ref MIN_PROFIT_THRESHOLD: U256 = parse_units("0.001", "ether").unwrap().get_absolute();
+    
+    // Gas cost estimation (21000 base + ~200000 for complex swaps)
+    static ref ESTIMATED_GAS_COST: U256 = U256::from(250000);
 }
 
 pub struct SwapCalculator {}
 
 impl SwapCalculator {
-    /// Calculate the optimal input amount and profit for a swap path
+    /// Calculate the optimal input amount and profit for a swap path with enhanced profitability checks
     #[inline]
     pub fn calculate<'a, DB: DatabaseRef<Error = ErrReport>, LDT: LoomDataTypes>(
         path: &'a mut SwapLine<LDT>,
@@ -58,34 +64,92 @@ impl SwapCalculator {
     ) -> Result<&'a mut SwapLine<LDT>, SwapError<LDT>> {
         let first_token = path.get_first_token().unwrap();
         
-        // Start with the default amount
-        if let Some(amount_in) = first_token.calc_token_value_from_eth(*DEFAULT_OPTIMIZE_INPUT) {
-            // First create a clone to work with
-            let mut path_clone = path.clone();
-            
-            // First try with the default amount to see if the path is profitable
-            let result = path_clone.optimize_with_in_amount(state, env.clone(), amount_in);
-            
-            if result.is_ok() {
-                // If profitable, try to optimize the input amount for maximum profit
-                let optimized_result = Self::optimize_input_amount(&mut path_clone, state, env, amount_in);
+        // Start with multiple test amounts to find the best range
+        let test_amounts = vec![
+            parse_units("0.01", "ether").unwrap().get_absolute(),
+            parse_units("0.1", "ether").unwrap().get_absolute(),
+            parse_units("1.0", "ether").unwrap().get_absolute(),
+            parse_units("5.0", "ether").unwrap().get_absolute(),
+        ];
+        
+        let mut best_path: Option<SwapLine<LDT>> = None;
+        let mut best_profit = U256::ZERO;
+        
+        for test_eth_amount in test_amounts {
+            if let Some(amount_in) = first_token.calc_token_value_from_eth(test_eth_amount) {
+                let mut path_clone = path.clone();
                 
-                if optimized_result.is_ok() {
-                    // Copy the optimized values back to the original path
-                    *path = path_clone;
-                    return Ok(path);
+                // Test this amount
+                if let Ok(_) = path_clone.optimize_with_in_amount(state, env.clone(), amount_in) {
+                    let profit = path_clone.abs_profit_eth();
+                    
+                    // Check if this is profitable after costs
+                    if Self::is_profitable_after_costs(profit, test_eth_amount, &env) {
+                        if profit > best_profit {
+                            best_profit = profit;
+                            
+                            // Try to optimize around this amount
+                            if let Ok(_) = Self::optimize_input_amount(&mut path_clone, state, env.clone(), amount_in) {
+                                let optimized_profit = path_clone.abs_profit_eth();
+                                if optimized_profit > profit {
+                                    best_path = Some(path_clone);
+                                    best_profit = optimized_profit;
+                                } else {
+                                    // Keep the non-optimized version if it was better
+                                    path_clone.optimize_with_in_amount(state, env.clone(), amount_in).ok();
+                                    best_path = Some(path_clone);
+                                }
+                            } else {
+                                best_path = Some(path_clone);
+                            }
+                        }
+                    }
                 }
-                
-                // Even if optimization failed, use the initial result
-                *path = path_clone;
-                return Ok(path);
-            } else {
-                // Return the error from the initial attempt
-                return Err(path_clone.to_error("OPTIMIZATION_FAILED".to_string()));
             }
-        } else {
-            return Err(path.to_error("PRICE_NOT_SET".to_string()));
         }
+        
+        if let Some(best) = best_path {
+            *path = best;
+            debug!("Found profitable path with profit: {} ETH", best_profit);
+            Ok(path)
+        } else {
+            Err(path.to_error("NO_PROFITABLE_AMOUNT_FOUND".to_string()))
+        }
+    }
+    
+    /// Check if a trade is profitable after accounting for gas costs and fees
+    #[inline]
+    fn is_profitable_after_costs(profit: U256, input_amount: U256, env: &Env) -> bool {
+        // Calculate gas cost in ETH
+        let gas_price = env.tx.gas_price.unwrap_or(U256::from(20_000_000_000u64)); // 20 gwei default
+        let gas_cost_wei = gas_price * *ESTIMATED_GAS_COST;
+        
+        // Calculate flash loan fee
+        let flash_loan_fee = Self::calculate_flash_loan_fee(input_amount);
+        
+        // Total costs
+        let total_costs = gas_cost_wei + flash_loan_fee;
+        
+        // Profit must exceed costs plus minimum threshold
+        let required_profit = total_costs + *MIN_PROFIT_THRESHOLD;
+        
+        let is_profitable = profit > required_profit;
+        
+        if is_profitable {
+            debug!("Trade is profitable: profit={} ETH, costs={} ETH, net={} ETH", 
+                   profit, total_costs, profit.saturating_sub(total_costs));
+        } else {
+            debug!("Trade not profitable: profit={} ETH, required={} ETH", profit, required_profit);
+        }
+        
+        is_profitable
+    }
+    
+    /// Calculate flash loan fee based on input amount
+    #[inline]
+    fn calculate_flash_loan_fee(input_amount: U256) -> U256 {
+        // Aave flash loan fee is 0.05% (5 basis points)
+        input_amount * *FLASH_LOAN_FEE_NUMERATOR / *FLASH_LOAN_FEE_DENOMINATOR
     }
     
     /// Optimize the input amount using binary search to find the most profitable amount

@@ -15,6 +15,9 @@ use loom::strategy::merger::{ArbSwapPathMergerActor, DiffPathMergerActor, SamePa
 use loom::types::entities::strategy_config::load_from_file;
 use loom::types::events::MarketEvents;
 use loom::strategy::simple_arb::SimpleArbFinderActor;
+use loom::broadcast::accounts::SignersActor;
+use loom::broadcast::broadcaster::FlashbotsBroadcastActor;
+use loom::execution::estimator::EvmEstimatorActor;
 
 fn initialize_logging() {
     env_logger::Builder::from_env(
@@ -69,11 +72,11 @@ async fn main() -> Result<()> {
 
     let mut worker_task_vec = topology.start_actors().await.map_err(Into::<eyre::Report>::into)?;
 
-    // Get blockchain and client for Base network
+    // Get blockchain and client for Ethereum network
     let client = topology.get_client(Some("local".to_string()).as_ref()).map_err(Into::<eyre::Report>::into)?;
-    let blockchain = topology.get_blockchain(Some("base".to_string()).as_ref()).map_err(Into::<eyre::Report>::into)?;
-    let blockchain_state = topology.get_blockchain_state(Some("base".to_string()).as_ref()).map_err(Into::<eyre::Report>::into)?;
-    let strategy = topology.get_strategy(Some("base".to_string()).as_ref()).map_err(Into::<eyre::Report>::into)?;
+    let blockchain = topology.get_blockchain(Some("ethereum".to_string()).as_ref()).map_err(Into::<eyre::Report>::into)?;
+    let blockchain_state = topology.get_blockchain_state(Some("ethereum".to_string()).as_ref()).map_err(Into::<eyre::Report>::into)?;
+    let strategy = topology.get_strategy(Some("ethereum".to_string()).as_ref()).map_err(Into::<eyre::Report>::into)?;
 
     let tx_signers = topology.get_signers(Some("env_signer".to_string()).as_ref())?;
 
@@ -81,8 +84,8 @@ async fn main() -> Result<()> {
     let backrun_config: BackrunConfigSection = load_from_file("./config.toml".to_string().into()).await?;
     let mut backrun_config: BackrunConfig = backrun_config.backrun_strategy;
     
-    // Set Base network chain ID (using default for Base network)
-    let chain_id = 8453; // Base network chain ID
+    // Set Ethereum mainnet chain ID
+    let chain_id = 1; // Ethereum mainnet chain ID
     info!("Using chain ID: {}", chain_id);
     backrun_config = backrun_config.with_chain_id(chain_id);
 
@@ -149,6 +152,38 @@ async fn main() -> Result<()> {
         .start();
     
     worker_task_vec.extend(start_actor("Swap path encoder actor", result));
+
+    // Start the EVM estimator actor (critical for converting Prepare -> Estimate -> Ready)
+    info!("Starting EVM estimator actor");
+    let multicaller_encoder = MulticallerSwapEncoder::new(multicaller_address);
+    let mut evm_estimator_actor = EvmEstimatorActor::new(client.clone(), multicaller_encoder);
+    let result = evm_estimator_actor
+        .consume(strategy.swap_compose_channel())
+        .produce(strategy.swap_compose_channel())
+        .produce(blockchain.health_monitor_channel())
+        .produce(blockchain.influxdb_write_channel())
+        .start();
+    
+    worker_task_vec.extend(start_actor("EVM estimator actor", result));
+
+    // Start the signers actor (critical for converting Sign -> Broadcast)
+    info!("Starting signers actor");
+    let mut signers_actor = SignersActor::new();
+    let result = signers_actor
+        .consume(blockchain.tx_compose_channel())
+        .produce(blockchain.tx_compose_channel())
+        .start();
+    
+    worker_task_vec.extend(start_actor("Signers actor", result));
+
+    // Start the flashbots broadcaster actor (critical for actually broadcasting transactions)
+    info!("Starting flashbots broadcaster actor");
+    let mut flashbots_broadcaster_actor = FlashbotsBroadcastActor::new(client.clone(), true); // true = allow broadcast
+    let result = flashbots_broadcaster_actor
+        .consume(blockchain.tx_compose_channel())
+        .start();
+    
+    worker_task_vec.extend(start_actor("Flashbots broadcaster actor", result));
 
     // Start the merger actors
     info!("Starting swap path merger actor");

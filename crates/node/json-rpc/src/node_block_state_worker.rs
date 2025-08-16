@@ -46,23 +46,44 @@ where
     });
 
     loop {
-        // Attempt to receive a message with error handling
+        // Attempt to receive a message with enhanced error handling
         let block_header = match receiver.recv().await {
             Ok(header) => header,
             Err(e) => {
                 error!("Error receiving block header in state worker: {}", e);
-                // If we get a lagged error, we can continue with a new subscription
+                // Enhanced error handling with retry logic
                 match e {
-                    RecvError::Lagged(_) => {
-                        warn!("BlockState worker lagged behind, resubscribing");
+                    RecvError::Lagged(skipped) => {
+                        warn!("BlockState worker lagged behind by {} messages, resubscribing", skipped);
                         receiver = block_header_receiver.subscribe();
                         continue;
                     }
                     RecvError::Closed => {
-                        // If the channel is closed, attempt to resubscribe
-                        warn!("BlockState channel appears closed, attempting to resubscribe");
-                        tokio::time::sleep(Duration::from_secs(1)).await;
-                        receiver = block_header_receiver.subscribe();
+                        // If the channel is closed, attempt multiple resubscription attempts
+                        warn!("BlockState channel closed, attempting recovery");
+                        
+                        let mut retry_count = 0;
+                        let max_retries = 5;
+                        
+                        while retry_count < max_retries {
+                            tokio::time::sleep(Duration::from_millis(1000 * (retry_count + 1))).await;
+                            
+                            // Check if the broadcaster is still healthy
+                            if block_header_receiver.is_healthy() {
+                                receiver = block_header_receiver.subscribe();
+                                info!("Successfully resubscribed to BlockState channel after {} attempts", retry_count + 1);
+                                break;
+                            }
+                            
+                            retry_count += 1;
+                            warn!("Resubscription attempt {} failed, retrying...", retry_count);
+                        }
+                        
+                        if retry_count >= max_retries {
+                            error!("Failed to resubscribe to BlockState channel after {} attempts", max_retries);
+                            return Err(eyre::eyre!("Channel permanently closed"));
+                        }
+                        
                         continue;
                     }
                 }

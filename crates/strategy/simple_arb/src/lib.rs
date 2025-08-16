@@ -65,8 +65,8 @@ async fn find_arbitrage_paths<DB: DatabaseRef<Error = ErrReport> + Send + Sync +
         return Err(eyre!("No main tokens found"));
     }
     
-    // Maximum path length (3-5 hops)
-    let max_path_length = 4;
+    // Maximum path length (2-4 hops for efficiency and higher profit margins)
+    let max_path_length = 3;
     
     // For each main token, find paths that start and end with it
     for start_token in main_tokens.iter() {

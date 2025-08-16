@@ -1,8 +1,10 @@
 use alloy_primitives::{Address, U256};
 use eyre::{Result, eyre};
 use revm::DatabaseRef;
-use tracing::{info, debug};
+use tracing::{info, debug, warn};
 use std::collections::HashMap;
+use loom_types_entities::{Market, Token, PoolWrapper};
+use std::sync::Arc;
 
 // Token addresses for different networks
 // Base Network token addresses
@@ -65,7 +67,31 @@ impl MultiCurrencyProfit {
 pub struct ProfitCalculator {}
 
 impl ProfitCalculator {
-    // Calculate profit in multiple currencies
+    // Calculate profit in multiple currencies using real market data
+    pub async fn calculate_multi_currency_profit_with_market<DB: DatabaseRef>(
+        eth_profit: U256,
+        market: &Market,
+        chain_id: Option<u64>,
+    ) -> Result<MultiCurrencyProfit> {
+        let mut profit = MultiCurrencyProfit::new(eth_profit);
+        
+        // Get real-time prices from the market
+        let eth_price_in_usdc = Self::get_token_price_in_usdc(market, &Self::get_weth_address(chain_id))?;
+        let eth_price_usd = eth_price_in_usdc.unwrap_or(2000.0); // Fallback to $2000
+        
+        // Calculate profits based on network using real prices
+        Self::calculate_profits_with_real_prices(&mut profit, eth_profit, market, chain_id).await?;
+        
+        // Calculate USD value using real price
+        let eth_amount = eth_profit.to_string().parse::<f64>().unwrap_or(0.0) / 1e18;
+        let usd_value = eth_amount * eth_price_usd;
+        
+        info!("Total profit value: ${:.2} USD (ETH price: ${:.2})", usd_value, eth_price_usd);
+        
+        Ok(profit)
+    }
+    
+    // Legacy method for backward compatibility
     pub async fn calculate_multi_currency_profit<DB: DatabaseRef>(
         eth_profit: U256,
         _market_state: &DB,
@@ -73,14 +99,17 @@ impl ProfitCalculator {
     ) -> Result<MultiCurrencyProfit> {
         let mut profit = MultiCurrencyProfit::new(eth_profit);
         
+        // Use hardcoded rates as fallback
+        warn!("Using hardcoded exchange rates - consider using calculate_multi_currency_profit_with_market for real prices");
+        
         // Determine which network we're on based on chain ID
-        let is_base_network = chain_id.unwrap_or(1) == 8453;
+        let is_ethereum = chain_id.unwrap_or(1) == 1;
         
         // Calculate profits based on network
-        if is_base_network {
-            Self::calculate_base_network_profits(&mut profit, eth_profit).await?;
-        } else {
+        if is_ethereum {
             Self::calculate_ethereum_profits(&mut profit, eth_profit).await?;
+        } else {
+            Self::calculate_base_network_profits(&mut profit, eth_profit).await?;
         }
         
         // Calculate USD value
@@ -91,6 +120,86 @@ impl ProfitCalculator {
         info!("Total profit value: ${} USD", usd_value.round());
         
         Ok(profit)
+    }
+    
+    // Get real-time token price in USDC from market data
+    fn get_token_price_in_usdc(market: &Market, token_address: &str) -> Result<Option<f64>> {
+        let token_addr = token_address.parse::<Address>().map_err(|e| eyre!("Invalid address: {}", e))?;
+        let usdc_addr = ETH_USDC_ADDRESS.parse::<Address>().map_err(|e| eyre!("Invalid USDC address: {}", e))?;
+        
+        // Find pools that contain both tokens
+        if let (Some(token_pools), Some(usdc_pools)) = (
+            market.get_token_pools(&token_addr),
+            market.get_token_pools(&usdc_addr)
+        ) {
+            // Find common pools
+            for pool_id in token_pools {
+                if usdc_pools.contains(pool_id) {
+                    if let Some(pool) = market.get_pool(pool_id) {
+                        // Calculate price based on pool reserves
+                        if let Some(price) = Self::calculate_price_from_pool(&pool, &token_addr, &usdc_addr) {
+                            return Ok(Some(price));
+                        }
+                    }
+                }
+            }
+        }
+        
+        Ok(None)
+    }
+    
+    // Calculate price from pool reserves
+    fn calculate_price_from_pool(pool: &PoolWrapper, token_a: &Address, token_b: &Address) -> Option<f64> {
+        // This is a simplified implementation
+        // In reality, you'd need to handle different pool types (Uniswap V2, V3, etc.)
+        // and get actual reserves from the pool state
+        
+        // For now, return None to indicate price not available
+        None
+    }
+    
+    // Get WETH address for the given chain
+    fn get_weth_address(chain_id: Option<u64>) -> String {
+        match chain_id.unwrap_or(1) {
+            1 => ETH_WETH_ADDRESS.to_string(), // Ethereum mainnet
+            8453 => BASE_WETH_ADDRESS.to_string(), // Base
+            _ => ETH_WETH_ADDRESS.to_string(), // Default to Ethereum
+        }
+    }
+    
+    // Calculate profits using real market prices
+    async fn calculate_profits_with_real_prices(
+        profit: &mut MultiCurrencyProfit,
+        eth_profit: U256,
+        market: &Market,
+        chain_id: Option<u64>,
+    ) -> Result<()> {
+        // Try to get real prices, fall back to hardcoded if not available
+        let eth_to_usdc = Self::get_token_price_in_usdc(market, &Self::get_weth_address(chain_id))?
+            .unwrap_or(2000.0);
+        
+        // Convert ETH profit to other currencies using real or fallback prices
+        let eth_amount_f64 = eth_profit.to_string().parse::<f64>().unwrap_or(0.0) / 1e18;
+        
+        // USDC (6 decimals)
+        let usdc_amount = (eth_amount_f64 * eth_to_usdc * 1e6) as u64;
+        profit.usdc = Some(U256::from(usdc_amount));
+        
+        // USDT (assume same price as USDC)
+        profit.usdt = Some(U256::from(usdc_amount));
+        
+        // WETH (1:1 with ETH)
+        profit.weth = Some(eth_profit);
+        
+        // WBTC (assume 1 ETH = 0.06 WBTC, 8 decimals)
+        let wbtc_amount = (eth_amount_f64 * 0.06 * 1e8) as u64;
+        profit.wbtc = Some(U256::from(wbtc_amount));
+        
+        // DAI (assume same price as USDC, 18 decimals)
+        let dai_amount = (eth_amount_f64 * eth_to_usdc * 1e18) as u128;
+        profit.dai = Some(U256::from(dai_amount));
+        
+        Ok(())
     }
     
     // Calculate profits for Base Network

@@ -133,14 +133,12 @@ async fn state_change_arb_searcher_task<DB: DatabaseRef<Error = ErrReport> + Dat
                         trace!("Calc result received: {}", mut_item);
 
                         if let Ok(profit) = mut_item.profit() {
-                            // Calculate minimum profit threshold based on network
-                            let min_profit_threshold = if backrun_config_clone.is_base_network() {
-                                backrun_config_clone.min_profit_wei()
-                            } else {
-                                U256::from(state_update_event.next_base_fee * 100_000)
-                            };
+                            // Calculate realistic minimum profit threshold
+                            let gas_cost = U256::from(state_update_event.next_base_fee) * U256::from(300_000); // Estimated gas usage
+                            let flash_loan_fee = mut_item.abs_profit_eth() / U256::from(10000) * U256::from(5); // 0.05% fee
+                            let min_profit_threshold = gas_cost + flash_loan_fee + backrun_config_clone.min_profit_wei();
                             
-                            // Check if profit is positive and exceeds the minimum threshold
+                            // Check if profit is positive and exceeds the realistic minimum threshold
                             if profit.is_positive() && mut_item.abs_profit_eth() > min_profit_threshold {
                                 // Calculate profit in multiple currencies for logging purposes
                                 // This doesn't block the main flow since we're just sending the original swap item
@@ -193,12 +191,27 @@ async fn state_change_arb_searcher_task<DB: DatabaseRef<Error = ErrReport> + Dat
                 // Clone backrun_config for use in this scope
                 let backrun_config_clone = backrun_config.clone();
                 
-                // Calculate optimized gas price with boost
+                // Calculate optimized gas price with dynamic boost based on profit
                 let base_gas_price = U256::from(state_update_event.next_base_fee);
-                let optimized_gas_price = backrun_config_clone.calculate_gas_price(base_gas_price);
+                let eth_profit = swap_line.abs_profit_eth();
+                
+                // Dynamic gas boost: higher profit = more aggressive bidding
+                let profit_ratio = eth_profit / (base_gas_price * U256::from(300_000)); // profit vs gas cost ratio
+                let dynamic_boost = if profit_ratio > U256::from(10) {
+                    50 // 50% boost for very profitable trades
+                } else if profit_ratio > U256::from(5) {
+                    30 // 30% boost for profitable trades
+                } else {
+                    backrun_config_clone.gas_boost_percent() // Default boost
+                };
+                
+                let optimized_gas_price = base_gas_price * (U256::from(100 + dynamic_boost)) / U256::from(100);
                 
                 // Calculate priority fee (the part above base fee)
                 let priority_fee = u64::try_from(optimized_gas_price.saturating_sub(base_gas_price)).unwrap_or(0);
+                
+                info!("Dynamic gas pricing: profit_ratio={}, boost={}%, gas_price={}", 
+                      profit_ratio, dynamic_boost, optimized_gas_price);
                 
                 // Determine if we should use private transactions
                 let use_private_tx = backrun_config_clone.private_tx_enabled();

@@ -1,9 +1,35 @@
 use eyre::{eyre, Result};
 use std::sync::{Arc, RwLock};
 use tokio::sync::broadcast;
-use tokio::sync::broadcast::error::SendError;
+use tokio::sync::broadcast::error::{RecvError, SendError};
 use tokio::sync::broadcast::Receiver;
 use tracing::{debug, error, warn};
+
+/// A wrapper around Receiver that tracks active subscribers
+pub struct TrackedReceiver<T> {
+    receiver: Receiver<T>,
+    active_subscribers: Arc<RwLock<usize>>,
+}
+
+impl<T: Clone> TrackedReceiver<T> {
+    pub async fn recv(&mut self) -> Result<T, RecvError> {
+        self.receiver.recv().await
+    }
+    
+    pub fn try_recv(&mut self) -> Result<T, tokio::sync::broadcast::error::TryRecvError> {
+        self.receiver.try_recv()
+    }
+}
+
+impl<T> Drop for TrackedReceiver<T> {
+    fn drop(&mut self) {
+        let mut count = self.active_subscribers.write().unwrap();
+        if *count > 0 {
+            *count -= 1;
+            debug!("Subscriber dropped, remaining active: {}", *count);
+        }
+    }
+}
 
 /// Enhanced Broadcaster with reconnection capability and keep-alive mechanism
 #[derive(Clone)]
@@ -74,7 +100,7 @@ impl<T: Clone + Send + Sync + 'static> Broadcaster<T> {
     }
 
     /// Subscribe to the broadcast channel and track the subscription
-    pub fn subscribe(&self) -> Receiver<T> {
+    pub fn subscribe(&self) -> TrackedReceiver<T> {
         // Increment the active subscriber count
         {
             let mut count = self.active_subscribers.write().unwrap();
@@ -86,8 +112,11 @@ impl<T: Clone + Send + Sync + 'static> Broadcaster<T> {
         let receiver = self.sender.read().unwrap().subscribe();
         let active_subscribers = self.active_subscribers.clone();
         
-        // Return the receiver
-        receiver
+        // Return a tracked receiver that decrements count on drop
+        TrackedReceiver {
+            receiver,
+            active_subscribers,
+        }
     }
     
     /// Get the current number of active subscribers

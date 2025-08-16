@@ -5291,7 +5291,9 @@ dependencies = [
 name = "loom-core-topology-shared"
 version = "0.1.0"
 dependencies = [
+ "alloy-provider",
  "alloy-transport-ws",
+ "tokio",
 ]
 
 [[package]]
