@@ -51,7 +51,7 @@ impl Blockchain<LoomDataTypesEthereum> {
         let influx_write_channel: Broadcaster<WriteQuery> = Broadcaster::new(1000);
         let tasks_channel: Broadcaster<LoomTask> = Broadcaster::new(1000);
 
-        let mut market_instance = Market::default();
+        let market_instance = Market::default();
 
         // TODO: add_default_tokens_to_market is not available in this crate. Implement or import as needed.
         // if let Err(error) = crate::add_default_tokens_to_market(&mut market_instance, chain_id) {

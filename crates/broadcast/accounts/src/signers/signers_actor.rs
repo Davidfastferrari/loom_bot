@@ -73,7 +73,7 @@ async fn request_listener_worker<LDT: LoomDataTypes>(
     compose_channel_rx: Broadcaster<MessageTxCompose<LDT>>,
     compose_channel_tx: Broadcaster<MessageTxCompose<LDT>>,
 ) -> WorkerResult {
-    let mut compose_channel_rx: Receiver<MessageTxCompose<LDT>> = compose_channel_rx.subscribe();
+    let mut compose_channel_rx = compose_channel_rx.subscribe();
 
     loop {
         tokio::select! {
