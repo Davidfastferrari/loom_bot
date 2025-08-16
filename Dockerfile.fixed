@@ -34,7 +34,9 @@ COPY . .
 
 # Apply fixes to the codebase
 COPY fix_all_issues.sh /app/fix_all_issues.sh
+COPY fix_compilation_errors.sh /app/fix_compilation_errors.sh
 RUN chmod +x /app/fix_all_issues.sh && bash /app/fix_all_issues.sh
+RUN chmod +x /app/fix_compilation_errors.sh && bash /app/fix_compilation_errors.sh
 
 # Cache dependencies
 RUN cargo fetch

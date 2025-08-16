@@ -57,4 +57,18 @@ echo "Ensuring proper error handling in binaries..."
 # This is a more complex change that would require more sophisticated parsing
 # For now, we'll just check if the error handling is already in place
 
+# 8. Fix the TrackedReceiver type mismatch in signers_actor.rs
+echo "Fixing TrackedReceiver type mismatch in signers_actor.rs..."
+if grep -q "let mut compose_channel_rx: Receiver<MessageTxCompose<LDT>> = compose_channel_rx.subscribe()" crates/broadcast/accounts/src/signers/signers_actor.rs; then
+  sed -i 's/let mut compose_channel_rx: Receiver<MessageTxCompose<LDT>> = compose_channel_rx.subscribe()/let mut compose_channel_rx = compose_channel_rx.subscribe()/' crates/broadcast/accounts/src/signers/signers_actor.rs
+  echo "Fixed type mismatch in signers_actor.rs"
+fi
+
+# 9. Fix unused mutable variable in blockchain-shared/lib.rs
+echo "Fixing unused mutable variable in blockchain-shared/lib.rs..."
+if grep -q "let mut market_instance = Market::default()" crates/core/blockchain-shared/src/lib.rs; then
+  sed -i 's/let mut market_instance = Market::default()/let market_instance = Market::default()/' crates/core/blockchain-shared/src/lib.rs
+  echo "Fixed unused mutable variable in blockchain-shared/lib.rs"
+fi
+
 echo "All fixes applied successfully!"

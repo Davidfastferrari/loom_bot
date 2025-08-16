@@ -29,6 +29,16 @@
 - **Fix**: Added code to verify and update the multicaller address to match the configuration
 - **Impact**: This ensures consistent multicaller address usage across the application
 
+### 6. Type Mismatch in `signers_actor.rs`
+- **Issue**: The code was trying to cast a `TrackedReceiver` to a `Receiver` type, causing a compilation error
+- **Fix**: Removed the explicit type annotation and let the compiler infer the correct type
+- **Impact**: This fixes a compilation error in the `loom-broadcast-accounts` crate
+
+### 7. Unused Mutable Variable in `blockchain-shared`
+- **Issue**: The `market_instance` variable was declared as mutable but never modified
+- **Fix**: Removed the `mut` keyword from the variable declaration
+- **Impact**: This fixes a warning in the `loom-core-blockchain-shared` crate
+
 ## Fix Scripts Created
 
 1. **`fix_all_issues.sh`**: Comprehensive script that fixes all identified issues
