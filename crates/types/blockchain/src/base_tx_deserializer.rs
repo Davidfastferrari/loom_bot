@@ -3,7 +3,6 @@ use alloy_provider::Provider;
 use alloy_rpc_types::Transaction;
 use eyre::{eyre, Result};
 use tracing::{debug, warn, error};
-use serde_json::Value;
 
 /// Enhanced transaction deserializer that can handle various transaction formats including EIP-4844, EIP-1559, and legacy
 pub async fn get_transaction_with_enhanced_support<P>(
