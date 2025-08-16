@@ -29,7 +29,7 @@ macro_rules! run_sync {
 }
 
 #[inline]
-pub fn subscribe_helper<A: Clone + Send + Sync>(broadcaster: &Broadcaster<A>) -> tokio::sync::broadcast::Receiver<A> {
+pub fn subscribe_helper<A: Clone + Send + Sync>(broadcaster: &Broadcaster<A>) -> crate::channels::TrackedReceiver<A> {
     broadcaster.subscribe()
 }
 
