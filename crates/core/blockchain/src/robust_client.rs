@@ -15,10 +15,11 @@ pub async fn create_robust_provider<N>(
     url: &str,
     transport_type: &str,
     max_retries: usize,
-) -> Result<impl Provider<N>>
+) -> Result<RateLimitedProvider<N>>
 where
     N: Network,
     RootProvider: Provider<N>,
+    RateLimitedProvider<N>: Provider<N>,
 {
     let mut retry_count = 0;
     let max_retry_delay = Duration::from_secs(10);
