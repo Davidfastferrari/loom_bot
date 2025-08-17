@@ -1,8 +1,8 @@
 
 use loom_core_blockchain_actors_blockchain::{BackrunBot, ArbitrageBot};
 use loom_core_blockchain_actors_block_history::BlockHistoryActor;
-use alloy_network::Network;
-use alloy_provider::{Provider, ProviderBuilder, RootProvider};
+use alloy_network::Ethereum;
+use alloy_provider::{ProviderBuilder};
 use alloy_rpc_client::{ClientBuilder, WsConnect};
 use eyre::{eyre, Result};
 use loom_core_topology_shared::{create_optimized_ws_connect, RateLimitedProvider};
@@ -11,16 +11,11 @@ use tracing::{debug, error, info, warn};
 use url::Url;
 
 /// Creates a robust provider with automatic reconnection and error handling
-pub async fn create_robust_provider<N>(
+pub async fn create_robust_provider(
     url: &str,
     transport_type: &str,
     max_retries: usize,
-) -> Result<RateLimitedProvider<N>>
-where
-    N: Network,
-    RootProvider: Provider<N>,
-    RateLimitedProvider<N>: Provider<N>,
-{
+) -> Result<RateLimitedProvider<Ethereum>> {
     let mut retry_count = 0;
     let max_retry_delay = Duration::from_secs(10);
 
@@ -60,7 +55,7 @@ where
                     Ok(client) => {
                         let provider = ProviderBuilder::new()
                             .disable_recommended_fillers()
-                            .on_client(client);
+                            .on_client::<Ethereum>(client);
                         let provider = RateLimitedProvider::new(provider, 1);
                         debug!("Successfully connected to WebSocket endpoint");
                         return Ok(provider);
@@ -87,7 +82,7 @@ where
                 let client = ClientBuilder::default().http(parsed_url);
                 let provider = ProviderBuilder::new()
                     .disable_recommended_fillers()
-                    .on_client(client);
+                    .on_client::<Ethereum>(client);
                 let provider = RateLimitedProvider::new(provider, 1);
                 debug!("Successfully connected to HTTP endpoint");
                 return Ok(provider);
