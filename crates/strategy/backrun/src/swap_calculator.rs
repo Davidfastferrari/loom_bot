@@ -65,7 +65,7 @@ impl SwapCalculator {
         let first_token = path.get_first_token().unwrap();
         
         // Start with multiple test amounts to find the best range
-        let test_amounts = vec![
+        let test_amounts: Vec<U256> = vec![
             parse_units("0.01", "ether").unwrap().into(),
             parse_units("0.1", "ether").unwrap().into(),
             parse_units("1.0", "ether").unwrap().into(),
@@ -121,7 +121,8 @@ impl SwapCalculator {
     #[inline]
     fn is_profitable_after_costs(profit: U256, input_amount: U256, env: &Env) -> bool {
         // Calculate gas cost in ETH
-        let gas_price: U256 = env.tx.gas_price.unwrap_or(U256::from(20_000_000_000u64)); // 20 gwei default
+        // alloy U256 has no unwrap_or; fallback manually
+        let gas_price: U256 = if env.tx.gas_price.is_zero() { U256::from(20_000_000_000u64) } else { env.tx.gas_price }; // 20 gwei default
         let gas_cost_wei = gas_price * *ESTIMATED_GAS_COST;
         
         // Calculate flash loan fee
