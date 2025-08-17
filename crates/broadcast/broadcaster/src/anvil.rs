@@ -5,7 +5,6 @@ use alloy_provider::Provider;
 use alloy_rpc_types::BlockTransactions;
 use eyre::Result;
 use tokio::sync::broadcast::error::RecvError;
-use tokio::sync::broadcast::Receiver;
 use tracing::{error, info};
 
 use loom_core_actors::{Actor, ActorResult, Broadcaster, Consumer, WorkerResult};
@@ -45,7 +44,7 @@ async fn anvil_broadcaster_worker<P>(client: P, bundle_rx: Broadcaster<MessageTx
 where
     P: Provider<Ethereum> + AnvilProviderExt<Ethereum> + Send + Sync + Clone + 'static,
 {
-    let mut bundle_rx: Receiver<MessageTxCompose> = bundle_rx.subscribe();
+    let mut bundle_rx = bundle_rx.subscribe();
 
     loop {
         tokio::select! {

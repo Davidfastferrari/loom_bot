@@ -55,7 +55,7 @@ pub async fn create_robust_provider(
                     Ok(client) => {
                         let provider = ProviderBuilder::new()
                             .disable_recommended_fillers()
-                            .on_client::<Ethereum>(client);
+                            .on_client(client);
                         let provider = RateLimitedProvider::new(provider, 1);
                         debug!("Successfully connected to WebSocket endpoint");
                         return Ok(provider);
@@ -82,7 +82,7 @@ pub async fn create_robust_provider(
                 let client = ClientBuilder::default().http(parsed_url);
                 let provider = ProviderBuilder::new()
                     .disable_recommended_fillers()
-                    .on_client::<Ethereum>(client);
+                    .on_client(client);
                 let provider = RateLimitedProvider::new(provider, 1);
                 debug!("Successfully connected to HTTP endpoint");
                 return Ok(provider);
