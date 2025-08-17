@@ -36,7 +36,7 @@ impl<LDT: LoomDataTypes> PoolWrapperExt<LDT> for PoolWrapper<LDT> {
 
 lazy_static! {
     // Default starting amount for optimization (0.1 ETH for better opportunities)
-    static ref DEFAULT_OPTIMIZE_INPUT: U256 = parse_units("0.1", "ether").unwrap();
+    static ref DEFAULT_OPTIMIZE_INPUT: U256 = parse_units("0.1", "ether").unwrap().into();
     
     // Maximum capital in USD (with 6 decimals) - $100,000
     static ref MAX_CAPITAL_USD: U256 = U256::from(100_000_000_000u64);
@@ -46,7 +46,7 @@ lazy_static! {
     static ref FLASH_LOAN_FEE_DENOMINATOR: U256 = U256::from(10000);
     
     // Minimum profit threshold (0.001 ETH = ~$2-3)
-    static ref MIN_PROFIT_THRESHOLD: U256 = parse_units("0.001", "ether").unwrap();
+    static ref MIN_PROFIT_THRESHOLD: U256 = parse_units("0.001", "ether").unwrap().into();
     
     // Gas cost estimation (21000 base + ~200000 for complex swaps)
     static ref ESTIMATED_GAS_COST: U256 = U256::from(250000);
@@ -66,17 +66,17 @@ impl SwapCalculator {
         
         // Start with multiple test amounts to find the best range
         let test_amounts = vec![
-            parse_units("0.01", "ether").unwrap(),
-            parse_units("0.1", "ether").unwrap(),
-            parse_units("1.0", "ether").unwrap(),
-            parse_units("5.0", "ether").unwrap(),
+            parse_units("0.01", "ether").unwrap().into(),
+            parse_units("0.1", "ether").unwrap().into(),
+            parse_units("1.0", "ether").unwrap().into(),
+            parse_units("5.0", "ether").unwrap().into(),
         ];
         
         let mut best_path: Option<SwapLine<LDT>> = None;
         let mut best_profit = U256::ZERO;
         
         for test_eth_amount in test_amounts {
-            if let Some(amount_in) = first_token.calc_token_value_from_eth(test_eth_amount) {
+            if let Some(amount_in) = first_token.calc_token_value_from_eth(test_eth_amount.into()) {
                 let mut path_clone = path.clone();
                 
                 // Test this amount
@@ -84,7 +84,7 @@ impl SwapCalculator {
                     let profit = path_clone.abs_profit_eth();
                     
                     // Check if this is profitable after costs
-                    if Self::is_profitable_after_costs(profit, test_eth_amount, &env) {
+                    if Self::is_profitable_after_costs(profit, test_eth_amount.into(), &env) {
                         if profit > best_profit {
                             best_profit = profit;
                             
@@ -121,7 +121,7 @@ impl SwapCalculator {
     #[inline]
     fn is_profitable_after_costs(profit: U256, input_amount: U256, env: &Env) -> bool {
         // Calculate gas cost in ETH
-        let gas_price = env.tx.gas_price.unwrap_or_else(|| U256::from(20_000_000_000u64)); // 20 gwei default
+        let gas_price: U256 = env.tx.gas_price.unwrap_or(U256::from(20_000_000_000u64)); // 20 gwei default
         let gas_cost_wei = gas_price * *ESTIMATED_GAS_COST;
         
         // Calculate flash loan fee
@@ -278,7 +278,7 @@ impl SwapCalculator {
         let max_from_liquidity = min_liquidity / U256::from(10);
         
         // Get the maximum amount in ETH that we're willing to use
-        let max_eth_amount = parse_units("10", "ether").unwrap();
+        let max_eth_amount: U256 = parse_units("10", "ether").unwrap().into();
         
         // Convert max ETH to token amount
         let max_token_amount = first_token.calc_token_value_from_eth(max_eth_amount)
