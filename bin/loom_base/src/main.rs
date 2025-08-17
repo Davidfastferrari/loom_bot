@@ -15,8 +15,9 @@ use loom::strategy::merger::{ArbSwapPathMergerActor, DiffPathMergerActor, SamePa
 use loom::types::entities::strategy_config::load_from_file;
 use loom::types::events::MarketEvents;
 use loom::strategy::simple_arb::SimpleArbFinderActor;
-use loom::broadcast::accounts::SignersActor;
+use loom::broadcast::accounts::TxSignersActor;
 use loom::broadcast::broadcaster::FlashbotsBroadcastActor;
+use loom::broadcast::flashbots::Flashbots;
 use loom::execution::estimator::EvmEstimatorActor;
 
 fn initialize_logging() {
@@ -85,7 +86,7 @@ async fn main() -> Result<()> {
     let mut backrun_config: BackrunConfig = backrun_config.backrun_strategy;
     
     // Use the chain ID from the backrun config
-    let chain_id = backrun_config.chain_id;
+    let chain_id = backrun_config.chain_id();
     info!("Using chain ID from config: {}", chain_id);
     // No need to set chain_id again as it's already in the config
 
@@ -155,8 +156,9 @@ async fn main() -> Result<()> {
 
     // Start the EVM estimator actor (critical for converting Prepare -> Estimate -> Ready)
     info!("Starting EVM estimator actor");
-    let multicaller_encoder = MulticallerSwapEncoder::new(multicaller_address);
-    let mut evm_estimator_actor = EvmEstimatorActor::new(client.clone(), multicaller_encoder);
+    // Build encoder
+    let multicaller_encoder = MulticallerSwapEncoder::default_with_address(multicaller_address);
+    let mut evm_estimator_actor = EvmEstimatorActor::new_with_provider(multicaller_encoder, Some(client.clone()));
     let result = evm_estimator_actor
         .consume(strategy.swap_compose_channel())
         .produce(strategy.swap_compose_channel())
@@ -168,7 +170,7 @@ async fn main() -> Result<()> {
 
     // Start the signers actor (critical for converting Sign -> Broadcast)
     info!("Starting signers actor");
-    let mut signers_actor = SignersActor::new();
+    let mut signers_actor = TxSignersActor::new();
     let result = signers_actor
         .consume(blockchain.tx_compose_channel())
         .produce(blockchain.tx_compose_channel())
@@ -178,7 +180,9 @@ async fn main() -> Result<()> {
 
     // Start the flashbots broadcaster actor (critical for actually broadcasting transactions)
     info!("Starting flashbots broadcaster actor");
-    let mut flashbots_broadcaster_actor = FlashbotsBroadcastActor::new(client.clone(), true); // true = allow broadcast
+    // Initialize Flashbots client with default relays
+    let flashbots = Flashbots::new(client.clone(), "https://relay.flashbots.net", None).with_default_relays();
+    let mut flashbots_broadcaster_actor = FlashbotsBroadcastActor::new(flashbots.into(), true); // true = allow broadcast
     let result = flashbots_broadcaster_actor
         .consume(blockchain.tx_compose_channel())
         .start();
