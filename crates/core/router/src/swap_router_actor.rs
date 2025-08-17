@@ -82,7 +82,7 @@ async fn swap_router_worker<DB: DatabaseRef + Clone + Send + Sync + 'static>(
     swap_compose_channel_tx: Broadcaster<MessageSwapCompose<DB>>,
     tx_compose_channel_tx: Broadcaster<MessageTxCompose>,
 ) -> WorkerResult {
-    let mut compose_channel_rx: Receiver<MessageSwapCompose<DB>> = swap_compose_channel_rx.subscribe();
+    let mut compose_channel_rx = swap_compose_channel_rx.subscribe();
 
     info!("swap router worker started");
 
