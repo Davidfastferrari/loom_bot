@@ -121,7 +121,7 @@ impl SwapCalculator {
     #[inline]
     fn is_profitable_after_costs(profit: U256, input_amount: U256, env: &Env) -> bool {
         // Calculate gas cost in ETH
-        let gas_price = env.tx.gas_price.unwrap_or(U256::from(20_000_000_000u64)); // 20 gwei default
+        let gas_price = env.tx.gas_price.unwrap_or_else(|| U256::from(20_000_000_000u64)); // 20 gwei default
         let gas_cost_wei = gas_price * *ESTIMATED_GAS_COST;
         
         // Calculate flash loan fee
@@ -150,7 +150,7 @@ impl SwapCalculator {
     fn calculate_flash_loan_fee(input_amount: U256) -> U256 {
         // Aave flash loan fee is 0.05% (5 basis points)
         input_amount * *FLASH_LOAN_FEE_NUMERATOR / *FLASH_LOAN_FEE_DENOMINATOR
-    }
+    } // kept private for internal use
     
     /// Optimize the input amount using binary search to find the most profitable amount
     #[inline]
@@ -292,10 +292,10 @@ impl SwapCalculator {
         }
     }
     
-    /// Calculate the flash loan fee for a given amount
-    /// Fee reduced from 0.9% to 0.3%
+    /// Calculate the flash loan fee for a given amount (public API)
+    /// Mirrors the internal fee method to avoid duplicate definitions
     #[inline]
-    pub fn calculate_flash_loan_fee(amount: U256) -> U256 {
+    pub fn flash_loan_fee(amount: U256) -> U256 {
         (amount * *FLASH_LOAN_FEE_NUMERATOR) / *FLASH_LOAN_FEE_DENOMINATOR
     }
     

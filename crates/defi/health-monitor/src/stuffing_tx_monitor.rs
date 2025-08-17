@@ -48,8 +48,8 @@ pub async fn stuffing_tx_monitor_worker<P: Provider<Ethereum> + Clone + 'static>
     market_events_rx: Broadcaster<MarketEvents>,
     influxdb_write_channel_tx: Broadcaster<WriteQuery>,
 ) -> WorkerResult {
-    let mut tx_compose_channel_rx: Receiver<MessageTxCompose> = tx_compose_channel_rx.subscribe();
-    let mut market_events_rx: Receiver<MarketEvents> = market_events_rx.subscribe();
+    let mut tx_compose_channel_rx = tx_compose_channel_rx.subscribe();
+    let mut market_events_rx = market_events_rx.subscribe();
 
     let mut txs_to_check: HashMap<TxHash, TxToCheck> = HashMap::new();
 
