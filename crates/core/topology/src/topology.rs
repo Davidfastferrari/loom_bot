@@ -360,6 +360,45 @@ impl<
         self.initialize_blockchains(&chain_id_map)?;
         info!("Initialized {} blockchains", self.blockchains.len());
 
+        // Pre-create signer shared states from config so subsequent actors can access them
+        for (signer_name, _) in self.config.signers.iter() {
+            if !self.signers.contains_key(signer_name) {
+                info!("Initializing signer state: {}", signer_name);
+                let signers_state = SharedState::new(TxSigners::default());
+                self.signers.insert(signer_name.clone(), signers_state);
+            }
+        }
+        // Set default signer if not set
+        if self.default_signer_name.is_none() {
+            if let Some(first_signer) = self.config.signers.keys().next() {
+                self.default_signer_name = Some(first_signer.clone());
+                info!("Default signer name set to {}", first_signer);
+            }
+        }
+
+        // Preload encoder addresses from config so estimators/mergers can resolve them
+        for (enc_name, enc_cfg) in self.config.encoders.iter() {
+            match enc_cfg {
+                EncoderConfig::SwapStep(cfg) => {
+                    match cfg.address.parse::<Address>() {
+                        Ok(addr) => {
+                            self.multicaller_encoders.insert(enc_name.clone(), addr);
+                        }
+                        Err(e) => {
+                            warn!("Invalid multicaller address for encoder '{}': {}", enc_name, e);
+                        }
+                    }
+                }
+            }
+        }
+        // Set default encoder if not set
+        if self.default_multicaller_encoder_name.is_none() {
+            if let Some(first_encoder) = self.config.encoders.keys().next() {
+                self.default_multicaller_encoder_name = Some(first_encoder.clone());
+                info!("Default multicaller encoder set to {}", first_encoder);
+            }
+        }
+
         // Set default client name if not already set and clients are available
         if self.default_client_name.is_none() && !clients.is_empty() {
             self.default_client_name = Some(clients.keys().next().unwrap().clone());

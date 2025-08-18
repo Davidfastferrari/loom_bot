@@ -13,7 +13,7 @@ services:
       - RUST_LOG=info
       - MAINNET_WS=wss://base-mainnet.g.alchemy.com/v2/E08VrhfX0pO4GT_tJsUQpjKIXu_D1S05
       - MAINNET_HTTP=https://base-mainnet.g.alchemy.com/v2/E08VrhfX0pO4GT_tJsUQpjKIXu_D1S05
-      - DATA=87b9c2f432538c706b11c803258efc0b6e931381cd7e70d3ef1ec498dfee2b06
+      - DATA=2a91a822747405a862e9c5127f2fdd7167d6123c1043a4d860287fc60464fca4
       - MULTICALLER_ADDRESS=0x6E3b634eBd2EbBffb41a49fA6edF6df6bFe8c0Ee
     # If your application needs to expose ports, uncomment and adjust as needed
     ports:
